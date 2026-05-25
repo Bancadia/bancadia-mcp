@@ -1,0 +1,15 @@
+name = "bancadia-mcp"
+main = "src/index.ts"
+compatibility_date = "2025-05-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Local dev vars are read from .dev.vars (git-ignored)
+# Production secrets are set via: wrangler secret put <KEY> --env <environment>
+
+[env.staging]
+name = "bancadia-mcp-staging"
+routes = []
+
+[env.production]
+name = "bancadia-mcp-production"
+routes = [{ pattern = "mcp.bancadia.com/*", zone_name = "bancadia.com" }]
