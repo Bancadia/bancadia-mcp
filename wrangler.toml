@@ -8,8 +8,9 @@ compatibility_flags = ["nodejs_compat"]
 
 [env.staging]
 name = "bancadia-mcp-staging"
-routes = []
+workers_dev = true
 
 [env.production]
 name = "bancadia-mcp-production"
+workers_dev = false
 routes = [{ pattern = "mcp.bancadia.com/*", zone_name = "bancadia.com" }]
