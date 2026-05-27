@@ -3,4 +3,6 @@ export interface Env {
   SUPABASE_SERVICE_ROLE_KEY: string
   UPSTASH_REDIS_REST_URL: string
   UPSTASH_REDIS_REST_TOKEN: string
+  RATE_LIMIT_REQUESTS?: string
+  RATE_LIMIT_WINDOW_SECONDS?: string
 }

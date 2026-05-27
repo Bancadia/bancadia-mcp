@@ -1,4 +1,6 @@
 import { Hono } from 'hono'
+import { Ratelimit } from '@upstash/ratelimit'
+import { Redis } from '@upstash/redis'
 import type { Env } from './types'
 import { getToolManifest } from './lib/tools'
 import { authenticate } from './lib/auth'
@@ -37,8 +39,8 @@ app.post('/', async (c) => {
 
   // All other methods require auth
   if (method === 'tools/call') {
-    const isAuthed = await authenticate(c.req.raw, c.env, c.executionCtx)
-    if (!isAuthed) {
+    const { valid, tokenHash } = await authenticate(c.req.raw, c.env, c.executionCtx)
+    if (!valid) {
       return c.json(
         {
           jsonrpc: '2.0',
@@ -52,6 +54,32 @@ app.post('/', async (c) => {
         401
       )
     }
+
+    // Per-token rate limiting
+    const limit = parseInt(c.env.RATE_LIMIT_REQUESTS ?? '100')
+    const window = parseInt(c.env.RATE_LIMIT_WINDOW_SECONDS ?? '60')
+    const ratelimit = new Ratelimit({
+      redis: new Redis({ url: c.env.UPSTASH_REDIS_REST_URL, token: c.env.UPSTASH_REDIS_REST_TOKEN }),
+      limiter: Ratelimit.slidingWindow(limit, `${window} s`),
+      prefix: 'rl',
+    })
+    const { success, limit: rlLimit, remaining, reset } = await ratelimit.limit(`token:${tokenHash}`)
+
+    const rlHeaders = {
+      'X-RateLimit-Limit': String(rlLimit),
+      'X-RateLimit-Remaining': String(remaining),
+      'X-RateLimit-Reset': String(Math.floor(reset / 1000)),
+    }
+
+    if (!success) {
+      Object.entries(rlHeaders).forEach(([k, v]) => c.header(k, v))
+      return c.json(
+        { jsonrpc: '2.0', id, error: { code: -32029, message: 'Rate limit exceeded.' } },
+        429
+      )
+    }
+
+    Object.entries(rlHeaders).forEach(([k, v]) => c.header(k, v))
 
     const { name, arguments: args = {} } = params as {
       name: string

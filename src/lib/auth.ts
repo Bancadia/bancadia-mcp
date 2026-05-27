@@ -13,15 +13,15 @@ export async function authenticate(
   request: Request,
   env: Env,
   ctx: ExecutionContext
-): Promise<boolean> {
+): Promise<{ valid: boolean; tokenHash: string | null }> {
   const authHeader = request.headers.get('Authorization')
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return false
+    return { valid: false, tokenHash: null }
   }
 
   const token = authHeader.slice('Bearer '.length).trim()
   if (!token) {
-    return false
+    return { valid: false, tokenHash: null }
   }
 
   const hash = await sha256hex(token)
@@ -33,7 +33,7 @@ export async function authenticate(
 
   const cached = await redis.get<boolean>(`token:${hash}`)
   if (cached !== null) {
-    return cached
+    return { valid: cached, tokenHash: cached ? hash : null }
   }
 
   // Cache miss — query Supabase
@@ -49,5 +49,5 @@ export async function authenticate(
 
   ctx.waitUntil(redis.set(`token:${hash}`, isValid, { ex: 60 }))
 
-  return isValid
+  return { valid: isValid, tokenHash: isValid ? hash : null }
 }

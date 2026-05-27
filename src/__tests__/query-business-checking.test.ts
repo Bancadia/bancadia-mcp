@@ -10,6 +10,16 @@ vi.mock('@upstash/redis', () => ({
   }),
 }))
 
+vi.mock('@upstash/ratelimit', () => {
+  const RatelimitMock = vi.fn(function () {
+    return {
+      limit: vi.fn().mockResolvedValue({ success: true, limit: 100, remaining: 99, reset: Date.now() + 60000 }),
+    }
+  }) as unknown as { new (...args: unknown[]): unknown; slidingWindow: ReturnType<typeof vi.fn> }
+  RatelimitMock.slidingWindow = vi.fn().mockReturnValue({})
+  return { Ratelimit: RatelimitMock }
+})
+
 vi.mock('../lib/supabase', () => ({
   createSupabaseClient: vi.fn(),
 }))

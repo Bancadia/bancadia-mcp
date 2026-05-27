@@ -2,7 +2,6 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
 
 // Mocks must be at the top level (hoisted by vitest).
-// Redis constructor must use function keyword — arrow functions are not new-able.
 vi.mock('@upstash/redis', () => ({
   Redis: vi.fn(function () {
     return {
@@ -12,11 +11,17 @@ vi.mock('@upstash/redis', () => ({
   }),
 }))
 
+// Default: within limit. Individual tests override via mockImplementation.
+const mockLimit = vi.fn().mockResolvedValue({
+  success: true,
+  limit: 100,
+  remaining: 99,
+  reset: 1700000060000, // fixed ms timestamp → 1700000060 Unix seconds
+})
+
 vi.mock('@upstash/ratelimit', () => {
   const RatelimitMock = vi.fn(function () {
-    return {
-      limit: vi.fn().mockResolvedValue({ success: true, limit: 100, remaining: 99, reset: Date.now() + 60000 }),
-    }
+    return { limit: mockLimit }
   }) as unknown as { new (...args: unknown[]): unknown; slidingWindow: ReturnType<typeof vi.fn> }
   RatelimitMock.slidingWindow = vi.fn().mockReturnValue({})
   return { Ratelimit: RatelimitMock }
@@ -45,9 +50,6 @@ const toolsCallBody = {
   params: { name: 'query_hysa', arguments: {} },
 }
 
-// Build a Supabase chain that handles both:
-// - auth token lookup (.select().eq().is().single())
-// - query handler chaining (.select().eq().order().gte()/.lte() then thenable)
 function makeSupabaseChain(
   singleResult = { data: { token_hash: 'valid' }, error: null },
   queryData: unknown[] = []
@@ -61,11 +63,10 @@ function makeSupabaseChain(
   return chain
 }
 
-// Set up Redis mock so it's a proper constructor
 function makeRedisInstance(
   overrides: { get?: ReturnType<typeof vi.fn>; set?: ReturnType<typeof vi.fn> } = {}
 ) {
-  const get = overrides.get ?? vi.fn().mockResolvedValue(null)
+  const get = overrides.get ?? vi.fn().mockResolvedValue(true) // cache hit: valid
   const set = overrides.set ?? vi.fn().mockResolvedValue('OK')
   const instance = { get, set }
   vi.mocked(RedisModule.Redis).mockImplementation(function () {
@@ -74,52 +75,77 @@ function makeRedisInstance(
   return instance
 }
 
-describe('auth middleware', () => {
+describe('rate limiting', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Default: cache miss, DB returns valid token, query returns empty results
-    makeRedisInstance()
+    // Default: cache hit (token valid), supabase returns valid token, query returns empty results
+    makeRedisInstance({ get: vi.fn().mockResolvedValue(true) })
 
     vi.mocked(createSupabaseClient).mockReturnValue({
       from: vi.fn().mockImplementation(() => makeSupabaseChain()),
     } as unknown as ReturnType<typeof createSupabaseClient>)
+
+    // Reset to within-limit default
+    mockLimit.mockResolvedValue({
+      success: true,
+      limit: 100,
+      remaining: 99,
+      reset: 1700000060000,
+    })
   })
 
-  it('returns 401 when Authorization header is missing', async () => {
-    const request = post(toolsCallBody)
-    const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
-    await waitOnExecutionContext(ctx)
-
-    expect(response.status).toBe(401)
-    const body = await response.json<{ error: { code: number } }>()
-    expect(body.error.code).toBe(-32001)
-  })
-
-  it('returns 401 when Authorization is malformed (no Bearer prefix)', async () => {
-    const request = post(toolsCallBody, { Authorization: 'Token abc123' })
-    const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
-    await waitOnExecutionContext(ctx)
-
-    expect(response.status).toBe(401)
-    const body = await response.json<{ error: { code: number } }>()
-    expect(body.error.code).toBe(-32001)
-  })
-
-  it('returns 200 when token is valid (cache hit true)', async () => {
-    makeRedisInstance({ get: vi.fn().mockResolvedValue(true) })
-
+  it('returns 200 with X-RateLimit-* headers when within limit', async () => {
     const request = post(toolsCallBody, { Authorization: 'Bearer sk_valid_token' })
     const ctx = createExecutionContext()
     const response = await app.fetch(request, env, ctx)
     await waitOnExecutionContext(ctx)
 
     expect(response.status).toBe(200)
+    expect(response.headers.get('X-RateLimit-Limit')).toBe('100')
+    expect(response.headers.get('X-RateLimit-Remaining')).toBe('99')
+    expect(response.headers.get('X-RateLimit-Reset')).toBe('1700000060')
   })
 
-  it('returns 401 when token is invalid (cache hit false)', async () => {
+  it('returns 429 with X-RateLimit-* headers and error body when over limit', async () => {
+    const resetMs = 1700000060000
+    mockLimit.mockResolvedValue({
+      success: false,
+      limit: 100,
+      remaining: 0,
+      reset: resetMs,
+    })
+
+    const request = post(toolsCallBody, { Authorization: 'Bearer sk_valid_token' })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    expect(response.status).toBe(429)
+    expect(response.headers.get('X-RateLimit-Limit')).toBe('100')
+    expect(response.headers.get('X-RateLimit-Remaining')).toBe('0')
+    expect(response.headers.get('X-RateLimit-Reset')).toBe('1700000060')
+
+    const body = await response.json<{ error: { code: number; message: string } }>()
+    expect(body.error.code).toBe(-32029)
+    expect(body.error.message).toBe('Rate limit exceeded.')
+  })
+
+  it('returns 401 without any X-RateLimit-* headers when unauthenticated', async () => {
+    // No Authorization header
+    const request = post(toolsCallBody)
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    expect(response.status).toBe(401)
+    expect(response.headers.get('X-RateLimit-Limit')).toBeNull()
+    expect(response.headers.get('X-RateLimit-Remaining')).toBeNull()
+    expect(response.headers.get('X-RateLimit-Reset')).toBeNull()
+  })
+
+  it('does not consume quota on 401 (rate limiter not called)', async () => {
+    // Invalid token: cache hit returns false
     makeRedisInstance({ get: vi.fn().mockResolvedValue(false) })
 
     const request = post(toolsCallBody, { Authorization: 'Bearer sk_invalid_token' })
@@ -128,22 +154,7 @@ describe('auth middleware', () => {
     await waitOnExecutionContext(ctx)
 
     expect(response.status).toBe(401)
-  })
-
-  it('returns 200 on cache miss with valid DB token, and Redis set is called', async () => {
-    const setMock = vi.fn().mockResolvedValue('OK')
-    makeRedisInstance({ get: vi.fn().mockResolvedValue(null), set: setMock })
-
-    const request = post(toolsCallBody, { Authorization: 'Bearer sk_valid_token' })
-    const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
-    await waitOnExecutionContext(ctx)
-
-    expect(response.status).toBe(200)
-    expect(setMock).toHaveBeenCalledWith(
-      expect.stringMatching(/^token:/),
-      true,
-      { ex: 60 }
-    )
+    expect(mockLimit).not.toHaveBeenCalled()
+    expect(response.headers.get('X-RateLimit-Limit')).toBeNull()
   })
 })
