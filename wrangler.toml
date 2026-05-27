@@ -6,6 +6,12 @@ compatibility_flags = ["nodejs_compat"]
 # Local dev vars are read from .dev.vars (git-ignored)
 # Production secrets are set via: wrangler secret put <KEY> --env <environment>
 
+[vars]
+SUPABASE_URL = "https://test.supabase.co"
+SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key"
+UPSTASH_REDIS_REST_URL = "https://test.upstash.io"
+UPSTASH_REDIS_REST_TOKEN = "test-token"
+
 [env.staging]
 name = "bancadia-mcp-staging"
 workers_dev = true
