@@ -1,9 +1,10 @@
 import { createClient } from '@supabase/supabase-js'
 import type { Env } from '../types'
+import type { Database } from './database.types'
 
 // Per-request factory — no module-level singleton (stateless Workers isolates)
 export function createSupabaseClient(env: Env) {
-  return createClient(env.SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
+  return createClient<Database>(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, {
     auth: { persistSession: false },
   })
 }

@@ -11,5 +11,17 @@
     "skipLibCheck": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "src/**/*.test.ts"]
+  "exclude": [
+    "node_modules",
+    "src/**/*.test.ts",
+    // Dead code, unrouted in src/index.ts pending deletion — built against a schema
+    // predating the hybrid-schema redesign and no longer compiles against the typed
+    // Supabase client. Do not fix in place; delete these alongside their handlers.
+    "src/handlers/query-hysa.ts",
+    "src/handlers/query-personal-savings.ts",
+    "src/handlers/query-personal-checking.ts",
+    "src/handlers/query-personal-cd.ts",
+    "src/handlers/query-business-savings.ts",
+    "src/handlers/query-business-cd.ts"
+  ]
 }

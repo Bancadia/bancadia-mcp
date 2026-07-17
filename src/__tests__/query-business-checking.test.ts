@@ -50,18 +50,50 @@ const sampleListing = {
   product_name: 'Business Checking Pro',
   monthly_fee: 0,
   monthly_fee_waiver_condition: null,
-  free_transactions_per_month: 100,
-  entity_types_accepted: ['llc', 'sole_proprietor', 'corporation'],
-  integrations: ['quickbooks', 'stripe'],
-  cash_deposit_available: true,
-  sub_accounts_supported: true,
-  rtp_enabled: true,
-  outgoing_domestic_wire_fee: 15,
+  minimum_opening_deposit: 0,
+  entity_types_accepted: ['llc', 'sole_prop', 's_corp'],
+  available_states: ['ALL'],
+  insurance_type: 'fdic',
   application_url: 'https://example.com/apply',
   last_modified: '2026-01-01',
   is_verified: true,
   listing_status: 'active',
   institutions: { name: 'Example Bank' },
+  business_checking_details: {
+    free_transactions_per_month: 100,
+    cash_deposit_available: true,
+    sub_accounts_supported: true,
+    rtp_supported: true,
+    rtp_network: 'both',
+    accounting_integration_available: true,
+    tax_integration_available: false,
+    expense_integration_available: true,
+    interest_bearing: true,
+    apy: 1.25,
+    apy_tiers: null,
+    outgoing_domestic_wire_fee: 15,
+  },
+  business_deposit_plan_tiers: [
+    {
+      plan_name: 'Standard',
+      monthly_fee: 0,
+      monthly_fee_waiver_condition: null,
+      apy: 1.25,
+      apy_max_balance_eligible: null,
+      apy_condition: null,
+      is_default: true,
+      sort_order: 0,
+    },
+  ],
+  business_deposit_promotions: [
+    {
+      bonus_amount: 300,
+      condition_description: 'Deposit $2,500 within 30 days',
+      minimum_deposit: 2500,
+      expiry_date: null,
+      promo_url: 'https://example.com/promo',
+    },
+  ],
 }
 
 describe('query_business_checking handler', () => {
@@ -95,7 +127,7 @@ describe('query_business_checking handler', () => {
   it('JS-side entity_types_accepted filter: only listings containing all requested types', async () => {
     const fullTypes = {
       ...sampleListing,
-      entity_types_accepted: ['llc', 'sole_proprietor', 'corporation'],
+      entity_types_accepted: ['llc', 'sole_prop', 's_corp'],
     }
     const partialTypes = { ...sampleListing, entity_types_accepted: ['llc'] }
     const chain = mockQueryChain({ data: [fullTypes, partialTypes], error: null })
@@ -109,7 +141,7 @@ describe('query_business_checking handler', () => {
       method: 'tools/call',
       params: {
         name: 'query_business_checking',
-        arguments: { entity_types_accepted: ['llc', 'sole_proprietor'] },
+        arguments: { entity_types_accepted: ['llc', 'sole_prop'] },
       },
     })
     const ctx = createExecutionContext()
@@ -120,20 +152,17 @@ describe('query_business_checking handler', () => {
     const results = JSON.parse(body.result.content[0].text) as Array<{
       entity_types_accepted: string[]
     }>
-    // Only fullTypes matches both llc and sole_proprietor
+    // Only fullTypes matches both llc and sole_prop
     expect(results.length).toBe(1)
     expect(results[0].entity_types_accepted).toContain('llc')
-    expect(results[0].entity_types_accepted).toContain('sole_proprietor')
+    expect(results[0].entity_types_accepted).toContain('sole_prop')
   })
 
-  it('JS-side integrations filter: only listings with all requested integrations', async () => {
-    const bothIntegrations = { ...sampleListing, integrations: ['quickbooks', 'stripe', 'xero'] }
-    const onlyQuickbooks = { ...sampleListing, integrations: ['quickbooks'] }
-    const noIntegrations = { ...sampleListing, integrations: null }
-    const chain = mockQueryChain({
-      data: [bothIntegrations, onlyQuickbooks, noIntegrations],
-      error: null,
-    })
+  it('JS-side available_states filter: ALL listings included, non-matching excluded', async () => {
+    const allStates = { ...sampleListing, available_states: ['ALL'] }
+    const caOnly = { ...sampleListing, available_states: ['CA', 'NY'] }
+    const txOnly = { ...sampleListing, available_states: ['TX'] }
+    const chain = mockQueryChain({ data: [allStates, caOnly, txOnly], error: null })
     vi.mocked(createSupabaseClient).mockReturnValue({
       from: vi.fn().mockReturnValue(chain),
     } as unknown as ReturnType<typeof createSupabaseClient>)
@@ -144,7 +173,7 @@ describe('query_business_checking handler', () => {
       method: 'tools/call',
       params: {
         name: 'query_business_checking',
-        arguments: { integrations: ['quickbooks', 'stripe'] },
+        arguments: { available_states: ['CA'] },
       },
     })
     const ctx = createExecutionContext()
@@ -153,12 +182,41 @@ describe('query_business_checking handler', () => {
 
     const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
     const results = JSON.parse(body.result.content[0].text) as Array<{
-      integrations: string[] | null
+      available_states: string[]
     }>
-    // Only bothIntegrations has both quickbooks and stripe
+    expect(results.length).toBe(2)
+    expect(results.some((r) => r.available_states.includes('ALL'))).toBe(true)
+    expect(results.some((r) => r.available_states.includes('CA'))).toBe(true)
+    expect(
+      results.some((r) => r.available_states.includes('TX') && !r.available_states.includes('CA'))
+    ).toBe(false)
+  })
+
+  it('accounting_integration_available server-side filter is passed through in output', async () => {
+    const chain = mockQueryChain({ data: [sampleListing], error: null })
+    vi.mocked(createSupabaseClient).mockReturnValue({
+      from: vi.fn().mockReturnValue(chain),
+    } as unknown as ReturnType<typeof createSupabaseClient>)
+
+    const request = post({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: 'query_business_checking',
+        arguments: { accounting_integration_available: true },
+      },
+    })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
+    const results = JSON.parse(body.result.content[0].text) as Array<{
+      accounting_integration_available: boolean
+    }>
     expect(results.length).toBe(1)
-    expect(results[0].integrations).toContain('quickbooks')
-    expect(results[0].integrations).toContain('stripe')
+    expect(results[0].accounting_integration_available).toBe(true)
   })
 
   it('result objects contain all required fields', async () => {
@@ -185,15 +243,29 @@ describe('query_business_checking handler', () => {
     expect(item).toHaveProperty('product_name')
     expect(item).toHaveProperty('monthly_fee')
     expect(item).toHaveProperty('monthly_fee_waiver_condition')
-    expect(item).toHaveProperty('free_transactions_per_month')
+    expect(item).toHaveProperty('minimum_opening_deposit')
     expect(item).toHaveProperty('entity_types_accepted')
-    expect(item).toHaveProperty('integrations')
+    expect(item).toHaveProperty('available_states')
+    expect(item).toHaveProperty('insurance_type')
+    expect(item).toHaveProperty('free_transactions_per_month')
     expect(item).toHaveProperty('cash_deposit_available')
     expect(item).toHaveProperty('sub_accounts_supported')
+    expect(item).toHaveProperty('rtp_supported')
+    expect(item).toHaveProperty('rtp_network')
+    expect(item).toHaveProperty('accounting_integration_available')
+    expect(item).toHaveProperty('tax_integration_available')
+    expect(item).toHaveProperty('expense_integration_available')
+    expect(item).toHaveProperty('interest_bearing')
+    expect(item).toHaveProperty('apy')
+    expect(item).toHaveProperty('apy_tiers')
     expect(item).toHaveProperty('outgoing_domestic_wire_fee')
+    expect(item).toHaveProperty('plan_tiers')
+    expect(item).toHaveProperty('promotions')
     expect(item).toHaveProperty('application_url')
     expect(item).toHaveProperty('last_modified')
     expect(item).toHaveProperty('is_verified')
     expect(item.institution_name).toBe('Example Bank')
+    expect(item.plan_tiers[0].plan_name).toBe('Standard')
+    expect(item.promotions[0].bonus_amount).toBe(300)
   })
 })

@@ -8,7 +8,7 @@ compatibility_flags = ["nodejs_compat"]
 
 [vars]
 SUPABASE_URL = "https://test.supabase.co"
-SUPABASE_SERVICE_ROLE_KEY = "test-service-role-key"
+SUPABASE_SECRET_KEY = "test-secret-key"
 UPSTASH_REDIS_REST_URL = "https://test.upstash.io"
 UPSTASH_REDIS_REST_TOKEN = "test-token"
 
