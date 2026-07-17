@@ -1,0 +1,918 @@
+openapi: 3.1.0
+info:
+  title: Bancadia MCP
+  version: "2.0.0"
+  description: |
+    A Cloudflare Worker exposing a Model Context Protocol (MCP) server over
+    JSON-RPC 2.0. MCP clients query Bancadia's registry of deposit account
+    products with structured filters.
+
+    ## Transport
+
+    All tool interaction happens through a single endpoint: `POST /`. The
+    JSON-RPC `method` field in the request body determines behavior — this is
+    not a REST API with one route per resource. Three request methods and one
+    notification are supported:
+
+    | method                     | auth required | description                                     |
+    |----------------------------|----------------|--------------------------------------------------|
+    | `initialize`               | no             | MCP lifecycle handshake — protocol/capability negotiation. |
+    | `tools/list`               | no             | Returns the manifest of callable tools.          |
+    | `tools/call`               | yes (Bearer)   | Invokes a tool by name with arguments.            |
+    | `notifications/initialized` | n/a           | Client→server notification sent after `initialize`; any request omitting `id` is treated the same way (see below). |
+
+    Any other `method` value, or an unrecognized tool `name` passed to
+    `tools/call`, returns a JSON-RPC error with HTTP status `404`.
+
+    Calling `initialize` before `tools/list`/`tools/call` is not required by
+    this server — it's accepted for spec-compliant clients that perform the
+    full MCP lifecycle handshake, but clients that skip straight to
+    `tools/list`/`tools/call` continue to work exactly as before, since
+    authorization here is enforced per `tools/call` request (via bearer
+    token), not per session.
+
+    ## Notifications
+
+    Per JSON-RPC 2.0, a request that omits `id` entirely is a *notification*
+    and never receives a response body — the server acknowledges it with an
+    empty HTTP `202`. This applies generically to any id-less request, not
+    just `notifications/initialized` specifically (e.g. `notifications/cancelled`
+    is handled the same way).
+
+    ## Authentication
+
+    `tools/call` requires `Authorization: Bearer <api-token>`. Tokens are
+    obtained by registering at bancadia.com/developer/signup. Missing,
+    malformed (no `Bearer` prefix), or revoked/unknown tokens all return
+    HTTP `401` with JSON-RPC error code `-32001`.
+
+    ## Rate limiting
+
+    Successful `tools/call` requests are subject to a per-token sliding-window
+    rate limit (default: 100 requests / 60s, configurable server-side).
+    `X-RateLimit-*` response headers are present on every `tools/call`
+    response (success or rate-limited) — never on `tools/list`, `/health`, or
+    `/.well-known/mcp`, since only `tools/call` is rate-limited. Exceeding the
+    limit returns HTTP `429` with JSON-RPC error code `-32029`.
+
+    ## Result encoding
+
+    Per the MCP spec, `tools/call` results are wrapped in a
+    `content: [{ type: "text", text: "<json-string>" }]` block rather than
+    returned as native JSON — `text` is a JSON-encoded string that the client
+    must `JSON.parse()` to obtain the actual array of results
+    (see `BusinessCheckingResult`).
+
+    ## Available tools
+
+    Only `query_business_checking` is currently routed. Several other tool
+    names (`query_hysa`, `query_personal_savings`, `query_personal_checking`,
+    `query_personal_cd`, `query_business_savings`, `query_business_cd`) existed
+    historically and are retained in `bancadia-mcp`'s source for a future
+    cleanup pass, but are not reachable — calling any of them returns the
+    `-32601 Unknown tool` error, and none appear in `tools/list` or
+    `/.well-known/mcp`.
+
+servers:
+  - url: https://mcp.bancadia.com
+    description: Production
+  - url: http://localhost:8787
+    description: Local development (wrangler dev)
+
+tags:
+  - name: Discovery
+    description: Unauthenticated endpoints for health checks and MCP discovery.
+  - name: MCP
+    description: The JSON-RPC 2.0 endpoint used for tool discovery and invocation.
+
+security:
+  - {}
+
+paths:
+  /health:
+    get:
+      tags: [Discovery]
+      summary: Health check
+      operationId: getHealth
+      security: []
+      responses:
+        "200":
+          description: The worker is up.
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [status]
+                properties:
+                  status:
+                    type: string
+                    enum: [ok]
+              example:
+                status: ok
+
+  /.well-known/mcp:
+    get:
+      tags: [Discovery]
+      summary: Public MCP discovery document
+      description: >-
+        Unauthenticated discovery endpoint. Advertises the JSON-RPC endpoint
+        URL and a summary (name + description only, no `inputSchema`) of every
+        currently-routed tool.
+      operationId: getWellKnownMcp
+      security: []
+      responses:
+        "200":
+          description: Discovery document.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WellKnownMcpResponse"
+              example:
+                name: Bancadia MCP
+                version: "2.0.0"
+                endpoint: https://mcp.bancadia.com
+                tools_list: https://mcp.bancadia.com/
+                tools:
+                  - name: query_business_checking
+                    description: >-
+                      Query the Bancadia registry for business checking
+                      account products using compound filter criteria.
+                      Returns active, verified listings from financial
+                      institutions.
+
+  /:
+    post:
+      tags: [MCP]
+      summary: JSON-RPC 2.0 endpoint (initialize, tools/list, tools/call, notifications)
+      operationId: postJsonRpc
+      security:
+        - bearerAuth: []
+        - {}
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              description: >-
+                A discriminator is deliberately not declared here: three of
+                these branches key off distinct `method` string constants
+                (`initialize`, `tools/list`, `tools/call`), but
+                `JsonRpcNotification` accepts any `method` value (e.g.
+                `notifications/initialized`, `notifications/cancelled`), which
+                isn't expressible as a discriminator mapping.
+              oneOf:
+                - $ref: "#/components/schemas/InitializeRequest"
+                - $ref: "#/components/schemas/ToolsListRequest"
+                - $ref: "#/components/schemas/ToolsCallRequest"
+                - $ref: "#/components/schemas/JsonRpcNotification"
+            examples:
+              initialize:
+                summary: initialize — MCP lifecycle handshake, no auth required
+                value:
+                  jsonrpc: "2.0"
+                  id: 0
+                  method: initialize
+                  params:
+                    protocolVersion: "2025-06-18"
+                    capabilities: {}
+                    clientInfo:
+                      name: example-client
+                      version: "1.0.0"
+              initialized:
+                summary: notifications/initialized — sent after a successful initialize response
+                value:
+                  jsonrpc: "2.0"
+                  method: notifications/initialized
+              toolsList:
+                summary: tools/list — no auth required
+                value:
+                  jsonrpc: "2.0"
+                  id: 1
+                  method: tools/list
+              toolsCall:
+                summary: tools/call — query_business_checking
+                value:
+                  jsonrpc: "2.0"
+                  id: 1
+                  method: tools/call
+                  params:
+                    name: query_business_checking
+                    arguments:
+                      monthly_fee_max: 0
+                      rtp_supported: true
+                      rtp_network: both
+                      accounting_integration_available: true
+                      entity_types_accepted: [llc, s_corp]
+                      available_states: [CA, NY]
+      responses:
+        "200":
+          description: >-
+            Success. Body shape depends on the request's `method` — see the
+            `oneOf` schema and per-method examples.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/InitializeResponse"
+                  - $ref: "#/components/schemas/ToolsListResponse"
+                  - $ref: "#/components/schemas/ToolsCallResponse"
+              examples:
+                initialize:
+                  summary: initialize response
+                  value:
+                    jsonrpc: "2.0"
+                    id: 0
+                    result:
+                      protocolVersion: "2025-06-18"
+                      capabilities:
+                        tools: {}
+                      serverInfo:
+                        name: Bancadia MCP
+                        version: "2.0.0"
+                toolsList:
+                  summary: tools/list response
+                  value:
+                    jsonrpc: "2.0"
+                    id: 1
+                    result:
+                      tools:
+                        - name: query_business_checking
+                          description: >-
+                            Query the Bancadia registry for business checking
+                            account products using compound filter criteria.
+                            Returns active, verified listings from financial
+                            institutions.
+                          inputSchema:
+                            type: object
+                            properties:
+                              monthly_fee_max: { type: number, description: "Maximum monthly fee" }
+                              minimum_opening_deposit_max: { type: number, description: "Maximum minimum opening deposit" }
+                              entity_types_accepted:
+                                type: array
+                                items: { type: string }
+                                description: "Returns listings accepting all specified entity types (e.g. llc, s_corp)"
+                              available_states:
+                                type: array
+                                items: { type: string }
+                                description: "Returns listings available in all specified states"
+                              insurance_type:
+                                type: string
+                                enum: [fdic, ncua, uninsured]
+                                description: "Deposit insurance type"
+                              cash_deposit_available: { type: boolean, description: "Whether cash deposits are supported" }
+                              sub_accounts_supported: { type: boolean, description: "Whether sub-accounts are supported" }
+                              free_transactions_min: { type: number, description: "Minimum free transactions per month" }
+                              rtp_supported: { type: boolean, description: "Whether real-time payments (any rail) are supported at all" }
+                              rtp_network:
+                                type: string
+                                enum: [fednow, rtp_network, both, none]
+                                description: "Which real-time payment rail is supported"
+                              accounting_integration_available: { type: boolean, description: "Whether the account connects to any accounting software (e.g. QuickBooks, Xero)" }
+                              tax_integration_available: { type: boolean, description: "Whether the account connects to any tax-prep or tax-filing software/service" }
+                              expense_integration_available: { type: boolean, description: "Whether the account connects to any expense/spend-management software" }
+                              interest_bearing: { type: boolean, description: "Whether the account earns interest" }
+                              apy_min: { type: number, description: "Minimum APY (inclusive), for interest-bearing accounts" }
+                            additionalProperties: false
+                toolsCall:
+                  summary: tools/call response — content[0].text is a JSON-encoded string
+                  value:
+                    jsonrpc: "2.0"
+                    id: 1
+                    result:
+                      content:
+                        - type: text
+                          text: >-
+                            [{"institution_name":"Example Bank","product_name":"Business
+                            Checking Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0}],"promotions":[{"bonus_amount":300,"condition_description":"Deposit
+                            $2,500 within 30
+                            days","minimum_deposit":2500,"expiry_date":null,"promo_url":"https://example.com/promo"}],"application_url":"https://example.com/apply","last_modified":"2026-01-01T00:00:00Z","is_verified":true}]
+        "202":
+          description: >-
+            The request was a JSON-RPC notification (no `id` field) — per
+            JSON-RPC 2.0, notifications never receive a response body. Applies
+            to `notifications/initialized` and any other id-less request.
+        "401":
+          description: >-
+            Unauthorized. Returned for `tools/call` when the `Authorization`
+            header is missing, malformed, or carries an unknown/revoked token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonRpcErrorResponse"
+              example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                  code: -32001
+                  message: >-
+                    Unauthorized. Register at bancadia.com/developer/signup
+                    to obtain an API token.
+        "404":
+          description: >-
+            Returned in two cases, both using JSON-RPC error code `-32601`:
+            the top-level `method` is not `tools/list` or `tools/call`, or
+            `tools/call`'s `params.name` does not match a routed tool.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonRpcErrorResponse"
+              examples:
+                unknownTool:
+                  summary: Unknown/unrouted tool name
+                  value:
+                    jsonrpc: "2.0"
+                    id: 1
+                    error:
+                      code: -32601
+                      message: "Unknown tool: query_hysa"
+                unknownMethod:
+                  summary: Unrecognized top-level method
+                  value:
+                    jsonrpc: "2.0"
+                    id: 1
+                    error:
+                      code: -32601
+                      message: "Method not found: notifications/foo"
+        "429":
+          description: Per-token rate limit exceeded.
+          headers:
+            X-RateLimit-Limit:
+              $ref: "#/components/headers/X-RateLimit-Limit"
+            X-RateLimit-Remaining:
+              $ref: "#/components/headers/X-RateLimit-Remaining"
+            X-RateLimit-Reset:
+              $ref: "#/components/headers/X-RateLimit-Reset"
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonRpcErrorResponse"
+              example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                  code: -32029
+                  message: "Rate limit exceeded."
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: >-
+        Required only for `tools/call`. Obtain a token at
+        bancadia.com/developer/signup.
+
+  headers:
+    X-RateLimit-Limit:
+      description: Max requests allowed in the current sliding window.
+      schema: { type: integer, example: 100 }
+    X-RateLimit-Remaining:
+      description: Requests remaining in the current sliding window.
+      schema: { type: integer, example: 99 }
+    X-RateLimit-Reset:
+      description: Unix timestamp (seconds) when the window resets.
+      schema: { type: integer, example: 1768598400 }
+
+  schemas:
+    JsonRpcId:
+      description: Echoed back verbatim from the request; not validated server-side.
+      oneOf:
+        - type: string
+        - type: integer
+        - type: "null"
+
+    JsonRpcRequestBase:
+      type: object
+      required: [jsonrpc, id, method]
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        id:
+          $ref: "#/components/schemas/JsonRpcId"
+        method:
+          type: string
+
+    JsonRpcNotification:
+      type: object
+      description: >-
+        A JSON-RPC 2.0 notification: any request that omits `id` entirely
+        (not merely `id: null`). Never receives a response body — the server
+        acknowledges with an empty HTTP 202 regardless of `method`.
+        `notifications/initialized` (sent after a successful `initialize`
+        response) is the one this server expects in practice, but any id-less
+        request is handled identically.
+      required: [jsonrpc, method]
+      properties:
+        jsonrpc:
+          type: string
+          const: "2.0"
+        method:
+          type: string
+          example: notifications/initialized
+        params:
+          type: object
+
+    InitializeRequest:
+      allOf:
+        - $ref: "#/components/schemas/JsonRpcRequestBase"
+        - type: object
+          required: [params]
+          properties:
+            method:
+              type: string
+              const: initialize
+            params:
+              type: object
+              required: [protocolVersion, capabilities]
+              properties:
+                protocolVersion:
+                  type: string
+                  description: >-
+                    The client's preferred MCP protocol version. If not one of
+                    this server's supported versions, the response falls back
+                    to the latest version this server supports rather than
+                    rejecting the request.
+                  example: "2025-06-18"
+                capabilities:
+                  type: object
+                  description: Client capabilities. Not inspected by this server.
+                clientInfo:
+                  type: object
+                  properties:
+                    name: { type: string }
+                    version: { type: string }
+
+    ToolsListRequest:
+      allOf:
+        - $ref: "#/components/schemas/JsonRpcRequestBase"
+        - type: object
+          properties:
+            method:
+              type: string
+              const: tools/list
+
+    ToolsCallRequest:
+      allOf:
+        - $ref: "#/components/schemas/JsonRpcRequestBase"
+        - type: object
+          required: [params]
+          properties:
+            method:
+              type: string
+              const: tools/call
+            params:
+              $ref: "#/components/schemas/ToolsCallParams"
+
+    ToolsCallParams:
+      type: object
+      required: [name]
+      properties:
+        name:
+          type: string
+          description: >-
+            Only `query_business_checking` is currently routed; any other
+            value returns the `-32601 Unknown tool` error.
+          enum: [query_business_checking]
+        arguments:
+          $ref: "#/components/schemas/BusinessCheckingQueryArguments"
+
+    BusinessCheckingQueryArguments:
+      type: object
+      additionalProperties: false
+      description: >-
+        All filters are optional and combine with AND semantics. Array
+        filters (`entity_types_accepted`, `available_states`) require every
+        requested value to be present on a listing (not "any of").
+      properties:
+        monthly_fee_max:
+          type: number
+          description: Maximum monthly fee.
+        minimum_opening_deposit_max:
+          type: number
+          description: Maximum minimum opening deposit.
+        entity_types_accepted:
+          type: array
+          items:
+            type: string
+          description: >-
+            Returns listings accepting all specified entity types. Valid
+            values (from `entity_type_enum`): llc, s_corp, c_corp, sole_prop,
+            partnership, nonprofit. Not enforced server-side — unrecognized
+            values simply never match.
+        available_states:
+          type: array
+          items:
+            type: string
+          description: >-
+            Returns listings available in all specified states. A listing
+            whose `available_states` includes the literal value `ALL` always
+            matches, regardless of which states are requested.
+        insurance_type:
+          type: string
+          enum: [fdic, ncua, uninsured]
+          description: Deposit insurance type.
+        cash_deposit_available:
+          type: boolean
+          description: Whether cash deposits are supported.
+        sub_accounts_supported:
+          type: boolean
+          description: Whether sub-accounts are supported.
+        free_transactions_min:
+          type: number
+          description: Minimum free transactions per month.
+        rtp_supported:
+          type: boolean
+          description: Whether real-time payments (any rail) are supported at all.
+        rtp_network:
+          type: string
+          enum: [fednow, rtp_network, both, none]
+          description: Which real-time payment rail is supported.
+        accounting_integration_available:
+          type: boolean
+          description: >-
+            Whether the account connects to any accounting software (e.g.
+            QuickBooks, Xero). Category-level only — the specific product(s)
+            are not filterable.
+        tax_integration_available:
+          type: boolean
+          description: Whether the account connects to any tax-prep or tax-filing software/service.
+        expense_integration_available:
+          type: boolean
+          description: Whether the account connects to any expense/spend-management software.
+        interest_bearing:
+          type: boolean
+          description: Whether the account earns interest.
+        apy_min:
+          type: number
+          description: Minimum APY (inclusive), for interest-bearing accounts.
+
+    Tool:
+      type: object
+      required: [name, description, inputSchema]
+      properties:
+        name:
+          type: string
+        description:
+          type: string
+        inputSchema:
+          type: object
+          description: JSON Schema describing this tool's `arguments` object.
+
+    WellKnownMcpResponse:
+      type: object
+      required: [name, version, endpoint, tools_list, tools]
+      properties:
+        name:
+          type: string
+        version:
+          type: string
+        endpoint:
+          type: string
+          format: uri
+        tools_list:
+          type: string
+          format: uri
+        tools:
+          type: array
+          items:
+            type: object
+            required: [name, description]
+            properties:
+              name: { type: string }
+              description: { type: string }
+
+    InitializeResponse:
+      type: object
+      required: [jsonrpc, id, result]
+      properties:
+        jsonrpc: { type: string, const: "2.0" }
+        id: { $ref: "#/components/schemas/JsonRpcId" }
+        result:
+          type: object
+          required: [protocolVersion, capabilities, serverInfo]
+          properties:
+            protocolVersion:
+              type: string
+              description: >-
+                The negotiated version — the client's requested version if
+                this server supports it, otherwise this server's latest
+                supported version.
+              example: "2025-06-18"
+            capabilities:
+              type: object
+              description: >-
+                This server only advertises the `tools` capability (no
+                `resources`, `prompts`, `logging`, or `sampling`), and does not
+                support `tools.listChanged` notifications — the tool set is
+                static per deployment.
+              properties:
+                tools:
+                  type: object
+            serverInfo:
+              type: object
+              required: [name, version]
+              properties:
+                name: { type: string, example: Bancadia MCP }
+                version: { type: string, example: "2.0.0" }
+
+    ToolsListResponse:
+      type: object
+      required: [jsonrpc, id, result]
+      properties:
+        jsonrpc: { type: string, const: "2.0" }
+        id: { $ref: "#/components/schemas/JsonRpcId" }
+        result:
+          type: object
+          required: [tools]
+          properties:
+            tools:
+              type: array
+              items:
+                $ref: "#/components/schemas/Tool"
+
+    ToolsCallResponse:
+      type: object
+      required: [jsonrpc, id, result]
+      properties:
+        jsonrpc: { type: string, const: "2.0" }
+        id: { $ref: "#/components/schemas/JsonRpcId" }
+        result:
+          type: object
+          required: [content]
+          properties:
+            content:
+              type: array
+              minItems: 1
+              maxItems: 1
+              items:
+                type: object
+                required: [type, text]
+                properties:
+                  type:
+                    type: string
+                    const: text
+                  text:
+                    type: string
+                    description: >-
+                      JSON-encoded string. `JSON.parse(text)` yields an array
+                      of `BusinessCheckingResult` (empty array if nothing
+                      matched, or if the underlying query errored — errors
+                      are not surfaced to the caller).
+                    contentMediaType: application/json
+                    contentSchema:
+                      type: array
+                      items:
+                        $ref: "#/components/schemas/BusinessCheckingResult"
+
+    JsonRpcErrorResponse:
+      type: object
+      required: [jsonrpc, id, error]
+      properties:
+        jsonrpc: { type: string, const: "2.0" }
+        id: { $ref: "#/components/schemas/JsonRpcId" }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: integer
+              enum: [-32001, -32029, -32601]
+              description: |
+                -32001: unauthorized (HTTP 401)
+                -32029: rate limit exceeded (HTTP 429)
+                -32601: unknown tool or unrecognized method (HTTP 404)
+            message:
+              type: string
+
+    ApyTierRate:
+      type: object
+      required: [interest_rate, apy]
+      properties:
+        interest_rate: { type: number, description: "Decimal, e.g. 0.0130 = 1.30%" }
+        apy: { type: number, description: "Decimal, e.g. 0.0130 = 1.30%" }
+
+    ApyTiers:
+      type:
+        - object
+        - "null"
+      description: >-
+        Canonical balance-tiered rate schema (bancadia-db migration 037).
+        Only populated when `interest_bearing` is true and the rate varies by
+        balance; null for flat-rate or non-interest accounts. The flat `apy`
+        field always holds the best available rate for indexing, independent
+        of this structure.
+      properties:
+        effective_date:
+          type: string
+          format: date
+        relationship_condition:
+          type:
+            - string
+            - "null"
+          description: Qualifying criteria for the relationship rate, or null if none exists.
+        tiers:
+          type: array
+          items:
+            type: object
+            required: [min_balance, max_balance, standard]
+            properties:
+              min_balance:
+                type: integer
+                description: Whole-dollar amount.
+              max_balance:
+                type:
+                  - integer
+                  - "null"
+                description: Whole-dollar amount; null = no upper bound on this tier.
+              standard:
+                $ref: "#/components/schemas/ApyTierRate"
+              relationship:
+                allOf:
+                  - $ref: "#/components/schemas/ApyTierRate"
+                description: Omitted per-tier when the product has no relationship rate.
+
+    PlanTier:
+      type: object
+      description: >-
+        One row per paid subscription plan (e.g. a Bluevine-style
+        Standard/Plus/Premier ladder) whose pricing/APY differs from the
+        listing's flat default. Empty array for products with a single,
+        unconditional pricing tier.
+      required: [plan_name, monthly_fee, is_default, sort_order]
+      properties:
+        plan_name:
+          type: string
+        monthly_fee:
+          type: number
+        monthly_fee_waiver_condition:
+          type:
+            - string
+            - "null"
+        apy:
+          type:
+            - number
+            - "null"
+          description: APY on this plan, or null if this plan does not earn interest.
+        apy_max_balance_eligible:
+          type:
+            - number
+            - "null"
+          description: Maximum balance eligible to earn interest on this plan; null = no cap.
+        apy_condition:
+          type:
+            - string
+            - "null"
+          description: Activity/eligibility requirement to earn this plan's stated APY.
+        is_default:
+          type: boolean
+          description: >-
+            Marks the plan whose values seed the listing's flat `monthly_fee`
+            / `apy` fields. At most one true per listing.
+        sort_order:
+          type: integer
+          description: Display order, cheapest to priciest (0 = cheapest).
+
+    Promotion:
+      type: object
+      description: One-to-many welcome/bonus offers for this listing. Empty array if none.
+      required: [bonus_amount, condition_description]
+      properties:
+        bonus_amount:
+          type: integer
+        condition_description:
+          type: string
+        minimum_deposit:
+          type:
+            - integer
+            - "null"
+        expiry_date:
+          type:
+            - string
+            - "null"
+          format: date
+        promo_url:
+          type:
+            - string
+            - "null"
+          format: uri
+
+    BusinessCheckingResult:
+      type: object
+      description: One item of the array encoded in `ToolsCallResponse.result.content[0].text`.
+      required:
+        - institution_name
+        - product_name
+        - monthly_fee
+        - minimum_opening_deposit
+        - entity_types_accepted
+        - available_states
+        - insurance_type
+        - plan_tiers
+        - promotions
+        - application_url
+        - last_modified
+        - is_verified
+      properties:
+        institution_name:
+          type:
+            - string
+            - "null"
+        product_name:
+          type: string
+        monthly_fee:
+          type: number
+        monthly_fee_waiver_condition:
+          type:
+            - string
+            - "null"
+        minimum_opening_deposit:
+          type: number
+        entity_types_accepted:
+          type: array
+          items:
+            type: string
+            enum: [llc, s_corp, c_corp, sole_prop, partnership, nonprofit]
+        available_states:
+          type: array
+          items:
+            type: string
+          description: '`["ALL"]` indicates nationwide availability.'
+        insurance_type:
+          type: string
+          enum: [fdic, ncua, uninsured]
+        free_transactions_per_month:
+          type:
+            - integer
+            - "null"
+        cash_deposit_available:
+          type:
+            - boolean
+            - "null"
+        sub_accounts_supported:
+          type:
+            - boolean
+            - "null"
+        rtp_supported:
+          type:
+            - boolean
+            - "null"
+        rtp_network:
+          type:
+            - string
+            - "null"
+          enum: [fednow, rtp_network, both, none, null]
+          description: Null whenever rtp_supported is false.
+        accounting_integration_available:
+          type:
+            - boolean
+            - "null"
+        tax_integration_available:
+          type:
+            - boolean
+            - "null"
+        expense_integration_available:
+          type:
+            - boolean
+            - "null"
+        interest_bearing:
+          type:
+            - boolean
+            - "null"
+        apy:
+          type:
+            - number
+            - "null"
+          description: >-
+            Best available APY for indexing/search — if the product has
+            multiple plan tiers, this mirrors the highest APY across
+            `plan_tiers`, not necessarily the default plan's APY.
+        apy_tiers:
+          $ref: "#/components/schemas/ApyTiers"
+        outgoing_domestic_wire_fee:
+          type:
+            - number
+            - "null"
+        plan_tiers:
+          type: array
+          items:
+            $ref: "#/components/schemas/PlanTier"
+        promotions:
+          type: array
+          items:
+            $ref: "#/components/schemas/Promotion"
+        application_url:
+          type: string
+          format: uri
+        last_modified:
+          type: string
+          format: date-time
+        is_verified:
+          type: boolean

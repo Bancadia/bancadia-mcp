@@ -42,7 +42,7 @@ const toolsCallBody = {
   jsonrpc: '2.0',
   id: 1,
   method: 'tools/call',
-  params: { name: 'query_hysa', arguments: {} },
+  params: { name: 'query_business_checking', arguments: {} },
 }
 
 // Build a Supabase chain that handles both:
