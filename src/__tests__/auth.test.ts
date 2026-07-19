@@ -2,14 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
 
 // Mocks must be at the top level (hoisted by vitest).
-// Redis constructor must use function keyword — arrow functions are not new-able.
 vi.mock('@upstash/redis', () => ({
-  Redis: vi.fn(function () {
-    return {
-      get: vi.fn().mockResolvedValue(null),
-      set: vi.fn().mockResolvedValue('OK'),
-    }
-  }),
+  Redis: vi.fn(),
 }))
 
 vi.mock('@upstash/ratelimit', () => {
@@ -27,13 +21,13 @@ vi.mock('../lib/supabase', () => ({
 }))
 
 import app from '../index'
-import * as RedisModule from '@upstash/redis'
 import { createSupabaseClient } from '../lib/supabase'
+import { mockRedis, withSession } from './helpers'
 
 function post(body: object, headers: Record<string, string> = {}) {
   return new Request('http://localhost/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: { 'Content-Type': 'application/json', ...withSession(headers) },
     body: JSON.stringify(body),
   })
 }
@@ -61,25 +55,12 @@ function makeSupabaseChain(
   return chain
 }
 
-// Set up Redis mock so it's a proper constructor
-function makeRedisInstance(
-  overrides: { get?: ReturnType<typeof vi.fn>; set?: ReturnType<typeof vi.fn> } = {}
-) {
-  const get = overrides.get ?? vi.fn().mockResolvedValue(null)
-  const set = overrides.set ?? vi.fn().mockResolvedValue('OK')
-  const instance = { get, set }
-  vi.mocked(RedisModule.Redis).mockImplementation(function () {
-    return instance
-  } as unknown as typeof RedisModule.Redis)
-  return instance
-}
-
 describe('auth middleware', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Default: cache miss, DB returns valid token, query returns empty results
-    makeRedisInstance()
+    // Default: token cache miss, DB returns valid token, session valid
+    mockRedis({ tokenValid: null })
 
     vi.mocked(createSupabaseClient).mockReturnValue({
       from: vi.fn().mockImplementation(() => makeSupabaseChain()),
@@ -109,7 +90,7 @@ describe('auth middleware', () => {
   })
 
   it('returns 200 when token is valid (cache hit true)', async () => {
-    makeRedisInstance({ get: vi.fn().mockResolvedValue(true) })
+    mockRedis({ tokenValid: true })
 
     const request = post(toolsCallBody, { Authorization: 'Bearer sk_valid_token' })
     const ctx = createExecutionContext()
@@ -120,7 +101,7 @@ describe('auth middleware', () => {
   })
 
   it('returns 401 when token is invalid (cache hit false)', async () => {
-    makeRedisInstance({ get: vi.fn().mockResolvedValue(false) })
+    mockRedis({ tokenValid: false })
 
     const request = post(toolsCallBody, { Authorization: 'Bearer sk_invalid_token' })
     const ctx = createExecutionContext()
@@ -132,7 +113,7 @@ describe('auth middleware', () => {
 
   it('returns 200 on cache miss with valid DB token, and Redis set is called', async () => {
     const setMock = vi.fn().mockResolvedValue('OK')
-    makeRedisInstance({ get: vi.fn().mockResolvedValue(null), set: setMock })
+    mockRedis({ tokenValid: null, set: setMock })
 
     const request = post(toolsCallBody, { Authorization: 'Bearer sk_valid_token' })
     const ctx = createExecutionContext()

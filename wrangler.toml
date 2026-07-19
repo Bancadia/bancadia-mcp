@@ -11,6 +11,8 @@ SUPABASE_URL = "https://test.supabase.co"
 SUPABASE_SECRET_KEY = "test-secret-key"
 UPSTASH_REDIS_REST_URL = "https://test.upstash.io"
 UPSTASH_REDIS_REST_TOKEN = "test-token"
+SESSION_TTL_SECONDS = "1800"
+ALLOWED_ORIGINS = "https://bancadia.com,https://app.bancadia.com"
 
 [env.staging]
 name = "bancadia-mcp-staging"

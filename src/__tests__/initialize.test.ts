@@ -1,16 +1,26 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
-import app from '../index'
 
-function post(body: object) {
+vi.mock('@upstash/redis', () => ({
+  Redis: vi.fn(),
+}))
+
+import app from '../index'
+import { mockRedis, withSession } from './helpers'
+
+function post(body: object, headers: Record<string, string> = {}) {
   return new Request('http://localhost/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     body: JSON.stringify(body),
   })
 }
 
 describe('initialize', () => {
+  beforeEach(() => {
+    mockRedis()
+  })
+
   it('returns 200 with protocolVersion, capabilities, and serverInfo, no auth required', async () => {
     const request = post({
       jsonrpc: '2.0',
@@ -43,6 +53,16 @@ describe('initialize', () => {
     expect(body.result.serverInfo).toEqual({ name: 'Bancadia MCP', version: '2.0.0' })
   })
 
+  it('issues an Mcp-Session-Id header on the response', async () => {
+    const request = post({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Mcp-Session-Id')).toBeTruthy()
+  })
+
   it('falls back to the latest supported protocol version when the client requests an unknown one', async () => {
     const request = post({
       jsonrpc: '2.0',
@@ -70,8 +90,12 @@ describe('initialize', () => {
 })
 
 describe('JSON-RPC notifications', () => {
+  beforeEach(() => {
+    mockRedis()
+  })
+
   it('notifications/initialized returns an empty 202 with no JSON-RPC envelope', async () => {
-    const request = post({ jsonrpc: '2.0', method: 'notifications/initialized' })
+    const request = post({ jsonrpc: '2.0', method: 'notifications/initialized' }, withSession())
     const ctx = createExecutionContext()
     const response = await app.fetch(request, env, ctx)
     await waitOnExecutionContext(ctx)
@@ -82,11 +106,23 @@ describe('JSON-RPC notifications', () => {
   })
 
   it('any id-less request is treated as a notification, regardless of method name', async () => {
-    const request = post({ jsonrpc: '2.0', method: 'notifications/cancelled', params: { requestId: 1 } })
+    const request = post(
+      { jsonrpc: '2.0', method: 'notifications/cancelled', params: { requestId: 1 } },
+      withSession()
+    )
     const ctx = createExecutionContext()
     const response = await app.fetch(request, env, ctx)
     await waitOnExecutionContext(ctx)
 
     expect(response.status).toBe(202)
+  })
+
+  it('a notification without a session id is rejected with 400', async () => {
+    const request = post({ jsonrpc: '2.0', method: 'notifications/initialized' })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    expect(response.status).toBe(400)
   })
 })

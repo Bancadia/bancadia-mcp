@@ -1,16 +1,26 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
+
+vi.mock('@upstash/redis', () => ({
+  Redis: vi.fn(),
+}))
+
 import app from '../index'
+import { mockRedis, withSession } from './helpers'
 
 function post(body: object) {
   return new Request('http://localhost/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...withSession() },
     body: JSON.stringify(body),
   })
 }
 
 describe('tools/list', () => {
+  beforeEach(() => {
+    mockRedis()
+  })
+
   it('returns 200 with result containing a tools array', async () => {
     const request = post({ jsonrpc: '2.0', id: 1, method: 'tools/list' })
     const ctx = createExecutionContext()
@@ -48,5 +58,27 @@ describe('tools/list', () => {
       expect(tool).toHaveProperty('description')
       expect(tool).toHaveProperty('inputSchema')
     }
+  })
+
+  it('returns 400 when the Mcp-Session-Id header is missing', async () => {
+    const request = new Request('http://localhost/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/list' }),
+    })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    expect(response.status).toBe(400)
+  })
+
+  it('does not require an Authorization header', async () => {
+    const request = post({ jsonrpc: '2.0', id: 1, method: 'tools/list' })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    expect(response.status).toBe(200)
   })
 })
