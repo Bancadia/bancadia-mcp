@@ -9,27 +9,70 @@ info:
 
     ## Transport
 
-    All tool interaction happens through a single endpoint: `POST /`. The
-    JSON-RPC `method` field in the request body determines behavior — this is
-    not a REST API with one route per resource. Three request methods and one
-    notification are supported:
+    This server implements the MCP **Streamable HTTP** transport
+    (`2025-06-18/basic/transports`). The MCP endpoint (`/`) accepts `POST`,
+    `GET`, and `DELETE`. The JSON-RPC `method` field in a `POST` body
+    determines behavior — this is not a REST API with one route per resource.
+    Three request methods and one notification are supported over `POST`:
 
-    | method                     | auth required | description                                     |
-    |----------------------------|----------------|--------------------------------------------------|
-    | `initialize`               | no             | MCP lifecycle handshake — protocol/capability negotiation. |
-    | `tools/list`               | no             | Returns the manifest of callable tools.          |
-    | `tools/call`               | yes (Bearer)   | Invokes a tool by name with arguments.            |
-    | `notifications/initialized` | n/a           | Client→server notification sent after `initialize`; any request omitting `id` is treated the same way (see below). |
+    | method                     | auth required | session required | description                                     |
+    |----------------------------|----------------|-------------------|--------------------------------------------------|
+    | `initialize`               | no             | no (issues one)   | MCP lifecycle handshake — protocol/capability negotiation. |
+    | `tools/list`               | no             | yes                | Returns the manifest of callable tools.          |
+    | `tools/call`               | yes (Bearer)   | yes                | Invokes a tool by name with arguments.            |
+    | `notifications/initialized` | n/a           | yes                | Client→server notification sent after `initialize`; any request omitting `id` is treated the same way (see below). |
 
     Any other `method` value, or an unrecognized tool `name` passed to
     `tools/call`, returns a JSON-RPC error with HTTP status `404`.
 
-    Calling `initialize` before `tools/list`/`tools/call` is not required by
-    this server — it's accepted for spec-compliant clients that perform the
-    full MCP lifecycle handshake, but clients that skip straight to
-    `tools/list`/`tools/call` continue to work exactly as before, since
-    authorization here is enforced per `tools/call` request (via bearer
-    token), not per session.
+    ## Session management
+
+    A successful `initialize` call issues an `Mcp-Session-Id` response
+    header. Every subsequent request on the MCP endpoint — `POST` (for any
+    method other than `initialize`), `GET`, and `DELETE` — must echo that
+    header back. A missing header returns `400`; a header the server doesn't
+    recognize (unknown or expired) returns `404`, and the client is expected
+    to `initialize` again to obtain a new session. Sessions idle-expire in
+    server-side storage (sliding TTL, refreshed on every valid request); this
+    governs how long a client can pause between calls, not how long any
+    connection is held open. `DELETE /` with a valid `Mcp-Session-Id`
+    terminates that session immediately (`204`). This session requirement is
+    layered on top of, not a replacement for, the existing bearer-token
+    authorization on `tools/call`.
+
+    ## POST response mode
+
+    For any `POST` carrying a JSON-RPC request, the server responds in one of
+    two content types, chosen per-request based on whether the client's
+    `Accept` header includes `text/event-stream`:
+
+    - **`application/json`** (default / no `text/event-stream` in `Accept`):
+      a single JSON-RPC response object, as shown in the examples below.
+    - **`text/event-stream`**: opens an SSE stream on the same response and
+      writes exactly one `message` event — whose `data` is the identical
+      JSON-RPC response object shown in the `application/json` examples —
+      then closes the stream. No tool in this deployment emits intermediate
+      progress notifications, so the two modes carry the same payload; SSE
+      mode exists for client libraries that always negotiate for
+      `text/event-stream`.
+
+    HTTP-level errors (`400`, `401`, `404`, `429`) are always plain
+    `application/json`, regardless of `Accept` — there's nothing to stream
+    for a rejected request.
+
+    ## GET — standalone SSE stream
+
+    `GET /` with `Accept: text/event-stream` and a valid `Mcp-Session-Id`
+    opens an SSE stream for server-initiated messages. No tool in this
+    deployment sends any today, so in practice this is a minimal
+    spec-compliant stream: periodic keep-alive `ping` events, self-closed
+    after roughly 60 seconds so a compliant client reconnects rather than the
+    connection being held open indefinitely. `GET` without
+    `Accept: text/event-stream` returns `405`.
+
+    Calling `initialize` before `tools/list`/`tools/call` is required as of
+    this transport version — both now require a valid `Mcp-Session-Id`,
+    which only `initialize` can issue.
 
     ## Notifications
 
@@ -45,6 +88,14 @@ info:
     obtained by registering at bancadia.com/developer/signup. Missing,
     malformed (no `Bearer` prefix), or revoked/unknown tokens all return
     HTTP `401` with JSON-RPC error code `-32001`.
+
+    ## Origin validation
+
+    Per the Streamable HTTP transport's DNS-rebinding guidance, requests
+    carrying an `Origin` header are only accepted if that origin is on a
+    server-side allowlist; requests with no `Origin` header (the normal case
+    for non-browser MCP clients — SDKs, CLIs, `curl`) are always accepted.
+    A disallowed `Origin` returns `403`.
 
     ## Rate limiting
 
@@ -148,6 +199,10 @@ paths:
       security:
         - bearerAuth: []
         - {}
+      parameters:
+        - $ref: "#/components/parameters/OriginHeader"
+        - $ref: "#/components/parameters/McpSessionIdHeader"
+        - $ref: "#/components/parameters/McpProtocolVersionHeader"
       requestBody:
         required: true
         content:
@@ -208,8 +263,14 @@ paths:
         "200":
           description: >-
             Success. Body shape depends on the request's `method` — see the
-            `oneOf` schema and per-method examples.
+            `oneOf` schema and per-method examples. Content type is
+            `application/json` or `text/event-stream` depending on the
+            request's `Accept` header (see "POST response mode" above); in
+            SSE mode the identical JSON-RPC object is delivered as the `data`
+            of a single `message` event.
           headers:
+            Mcp-Session-Id:
+              $ref: "#/components/headers/Mcp-Session-Id"
             X-RateLimit-Limit:
               $ref: "#/components/headers/X-RateLimit-Limit"
             X-RateLimit-Remaining:
@@ -293,11 +354,43 @@ paths:
                             Checking Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0}],"promotions":[{"bonus_amount":300,"condition_description":"Deposit
                             $2,500 within 30
                             days","minimum_deposit":2500,"expiry_date":null,"promo_url":"https://example.com/promo"}],"application_url":"https://example.com/apply","last_modified":"2026-01-01T00:00:00Z","is_verified":true}]
+            text/event-stream:
+              schema:
+                type: string
+                description: >-
+                  A single `message` event whose `data` is one of the
+                  JSON-RPC response objects shown under `application/json`
+                  above, e.g.:
+
+                  ```
+                  event: message
+                  data: {"jsonrpc":"2.0","id":1,"result":{"tools":[...]}}
+
+                  ```
         "202":
           description: >-
             The request was a JSON-RPC notification (no `id` field) — per
             JSON-RPC 2.0, notifications never receive a response body. Applies
             to `notifications/initialized` and any other id-less request.
+            Requires a valid `Mcp-Session-Id` the same as any other
+            non-`initialize` request; an invalid one on a notification
+            returns the corresponding `400`/`404` with no body instead.
+        "400":
+          description: >-
+            Missing `Mcp-Session-Id` header on a request other than
+            `initialize`, or an unsupported `MCP-Protocol-Version` header.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JsonRpcErrorResponse"
+              example:
+                jsonrpc: "2.0"
+                id: 1
+                error:
+                  code: -32600
+                  message: "Missing Mcp-Session-Id header."
+        "403":
+          description: The `Origin` header is present but not on the allowlist.
         "401":
           description: >-
             Unauthorized. Returned for `tools/call` when the `Authorization`
@@ -316,9 +409,11 @@ paths:
                     to obtain an API token.
         "404":
           description: >-
-            Returned in two cases, both using JSON-RPC error code `-32601`:
-            the top-level `method` is not `tools/list` or `tools/call`, or
-            `tools/call`'s `params.name` does not match a routed tool.
+            Three cases: the top-level `method` is not `tools/list` or
+            `tools/call` (`-32601`), `tools/call`'s `params.name` does not
+            match a routed tool (`-32601`), or the `Mcp-Session-Id` header
+            doesn't match a known, unexpired session (`-32600`) — in the
+            latter case the client should send a new `initialize` request.
           content:
             application/json:
               schema:
@@ -340,6 +435,14 @@ paths:
                     error:
                       code: -32601
                       message: "Method not found: notifications/foo"
+                unknownSession:
+                  summary: Unrecognized or expired Mcp-Session-Id
+                  value:
+                    jsonrpc: "2.0"
+                    id: 1
+                    error:
+                      code: -32600
+                      message: "Session not found or expired. Re-initialize."
         "429":
           description: Per-token rate limit exceeded.
           headers:
@@ -360,6 +463,61 @@ paths:
                   code: -32029
                   message: "Rate limit exceeded."
 
+    get:
+      tags: [MCP]
+      summary: Standalone SSE stream for server-initiated messages
+      description: >-
+        Opens an SSE stream for messages not tied to a specific `POST`
+        request (e.g. future sampling requests or notifications). No tool in
+        this deployment sends any today, so this is a minimal
+        spec-compliant stream: periodic keep-alive `ping` events, self-closed
+        after roughly 60 seconds so a compliant client reconnects.
+      operationId: getMcpStream
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/OriginHeader"
+        - $ref: "#/components/parameters/McpSessionIdHeader"
+      responses:
+        "200":
+          description: >-
+            SSE stream of keep-alive `ping` events. No JSON-RPC response is
+            ever sent on this stream — it never carries the reply to a
+            specific request.
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                example: |
+                  event: ping
+                  data:
+
+        "400":
+          description: Missing `Mcp-Session-Id` header.
+        "403":
+          description: The `Origin` header is present but not on the allowlist.
+        "404":
+          description: The `Mcp-Session-Id` doesn't match a known, unexpired session.
+        "405":
+          description: The request's `Accept` header does not include `text/event-stream`.
+
+    delete:
+      tags: [MCP]
+      summary: Terminate a session
+      operationId: deleteMcpSession
+      security: []
+      parameters:
+        - $ref: "#/components/parameters/OriginHeader"
+        - $ref: "#/components/parameters/McpSessionIdHeader"
+      responses:
+        "204":
+          description: The session was terminated.
+        "400":
+          description: Missing `Mcp-Session-Id` header.
+        "403":
+          description: The `Origin` header is present but not on the allowlist.
+        "404":
+          description: The `Mcp-Session-Id` doesn't match a known, unexpired session.
+
 components:
   securitySchemes:
     bearerAuth:
@@ -369,7 +527,48 @@ components:
         Required only for `tools/call`. Obtain a token at
         bancadia.com/developer/signup.
 
+  parameters:
+    McpSessionIdHeader:
+      name: Mcp-Session-Id
+      in: header
+      required: false
+      description: >-
+        Required on every MCP-endpoint request except `initialize` (which
+        issues one via the response header of the same name). Missing
+        returns `400`; a value the server doesn't recognize (unknown or
+        expired) returns `404`, and the client should `initialize` again.
+      schema:
+        type: string
+    McpProtocolVersionHeader:
+      name: MCP-Protocol-Version
+      in: header
+      required: false
+      description: >-
+        Optional. If present, must be one of this server's supported
+        protocol versions (`2025-06-18`, `2025-03-26`, `2024-11-05`) or the
+        request is rejected with `400`. If absent, the version negotiated at
+        `initialize` for this session is used.
+      schema:
+        type: string
+        example: "2025-06-18"
+    OriginHeader:
+      name: Origin
+      in: header
+      required: false
+      description: >-
+        If present, must be on the server-side allowlist or the request is
+        rejected with `403` (DNS-rebinding protection). Requests with no
+        `Origin` header — the normal case for non-browser MCP clients — are
+        always accepted.
+      schema:
+        type: string
+
   headers:
+    Mcp-Session-Id:
+      description: >-
+        Present on a successful `initialize` response. Echo this back on
+        every subsequent MCP-endpoint request.
+      schema: { type: string }
     X-RateLimit-Limit:
       description: Max requests allowed in the current sliding window.
       schema: { type: integer, example: 100 }
@@ -684,8 +883,9 @@ components:
           properties:
             code:
               type: integer
-              enum: [-32001, -32029, -32601]
+              enum: [-32600, -32001, -32029, -32601]
               description: |
+                -32600: invalid/missing Mcp-Session-Id or unsupported MCP-Protocol-Version (HTTP 400 or 404)
                 -32001: unauthorized (HTTP 401)
                 -32029: rate limit exceeded (HTTP 429)
                 -32601: unknown tool or unrecognized method (HTTP 404)

@@ -3,12 +3,7 @@ import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:
 
 // Mocks must be at the top level (hoisted by vitest).
 vi.mock('@upstash/redis', () => ({
-  Redis: vi.fn(function () {
-    return {
-      get: vi.fn().mockResolvedValue(null),
-      set: vi.fn().mockResolvedValue('OK'),
-    }
-  }),
+  Redis: vi.fn(),
 }))
 
 // Default: within limit. Individual tests override via mockImplementation.
@@ -32,13 +27,13 @@ vi.mock('../lib/supabase', () => ({
 }))
 
 import app from '../index'
-import * as RedisModule from '@upstash/redis'
 import { createSupabaseClient } from '../lib/supabase'
+import { mockRedis, withSession } from './helpers'
 
 function post(body: object, headers: Record<string, string> = {}) {
   return new Request('http://localhost/', {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...headers },
+    headers: { 'Content-Type': 'application/json', ...withSession(headers) },
     body: JSON.stringify(body),
   })
 }
@@ -63,24 +58,12 @@ function makeSupabaseChain(
   return chain
 }
 
-function makeRedisInstance(
-  overrides: { get?: ReturnType<typeof vi.fn>; set?: ReturnType<typeof vi.fn> } = {}
-) {
-  const get = overrides.get ?? vi.fn().mockResolvedValue(true) // cache hit: valid
-  const set = overrides.set ?? vi.fn().mockResolvedValue('OK')
-  const instance = { get, set }
-  vi.mocked(RedisModule.Redis).mockImplementation(function () {
-    return instance
-  } as unknown as typeof RedisModule.Redis)
-  return instance
-}
-
 describe('rate limiting', () => {
   beforeEach(() => {
     vi.clearAllMocks()
 
-    // Default: cache hit (token valid), supabase returns valid token, query returns empty results
-    makeRedisInstance({ get: vi.fn().mockResolvedValue(true) })
+    // Default: cache hit (token valid), session valid, supabase returns valid token
+    mockRedis()
 
     vi.mocked(createSupabaseClient).mockReturnValue({
       from: vi.fn().mockImplementation(() => makeSupabaseChain()),
@@ -132,7 +115,7 @@ describe('rate limiting', () => {
   })
 
   it('returns 401 without any X-RateLimit-* headers when unauthenticated', async () => {
-    // No Authorization header
+    // No Authorization header, but a valid session
     const request = post(toolsCallBody)
     const ctx = createExecutionContext()
     const response = await app.fetch(request, env, ctx)
@@ -145,8 +128,8 @@ describe('rate limiting', () => {
   })
 
   it('does not consume quota on 401 (rate limiter not called)', async () => {
-    // Invalid token: cache hit returns false
-    makeRedisInstance({ get: vi.fn().mockResolvedValue(false) })
+    // Invalid token: cache hit returns false; session remains valid
+    mockRedis({ tokenValid: false })
 
     const request = post(toolsCallBody, { Authorization: 'Bearer sk_invalid_token' })
     const ctx = createExecutionContext()

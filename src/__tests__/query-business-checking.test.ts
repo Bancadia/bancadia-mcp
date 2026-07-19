@@ -2,12 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
 
 vi.mock('@upstash/redis', () => ({
-  Redis: vi.fn(function () {
-    return {
-      get: vi.fn().mockResolvedValue(true), // always authenticated (cache hit)
-      set: vi.fn().mockResolvedValue('OK'),
-    }
-  }),
+  Redis: vi.fn(),
 }))
 
 vi.mock('@upstash/ratelimit', () => {
@@ -26,6 +21,7 @@ vi.mock('../lib/supabase', () => ({
 
 import app from '../index'
 import { createSupabaseClient } from '../lib/supabase'
+import { mockRedis, withSession } from './helpers'
 
 function post(body: object) {
   return new Request('http://localhost/', {
@@ -33,6 +29,7 @@ function post(body: object) {
     headers: {
       'Content-Type': 'application/json',
       Authorization: 'Bearer sk_test_token',
+      ...withSession(),
     },
     body: JSON.stringify(body),
   })
@@ -99,6 +96,7 @@ const sampleListing = {
 describe('query_business_checking handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mockRedis()
   })
 
   it('returns all active BC listings with no filters ordered by monthly_fee ASC', async () => {
