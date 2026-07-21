@@ -2,9 +2,16 @@ import { createSupabaseClient } from '../lib/supabase'
 import type { Env } from '../types'
 import type { Database } from '../lib/database.types'
 
-type BusinessCheckingQueryRow = Database['public']['Tables']['business_deposit_accounts']['Row'] & {
+export type BusinessCheckingQueryRow = Database['public']['Tables']['business_deposit_accounts']['Row'] & {
   business_checking_details: Database['public']['Tables']['business_checking_details']['Row'] | null
-  institutions: { name: string } | null
+  institutions: {
+    name: string
+    display_name: string | null
+    website_url: string | null
+    logo_url: string | null
+    institution_type: Database['public']['Enums']['institution_type_enum']
+    support_email: string | null
+  } | null
   business_deposit_plan_tiers: Database['public']['Tables']['business_deposit_plan_tiers']['Row'][]
   business_deposit_promotions: Database['public']['Tables']['business_deposit_promotions']['Row'][]
 }
@@ -18,7 +25,7 @@ export async function handleQueryBusinessChecking(
   let query = supabase
     .from('business_deposit_accounts')
     .select(
-      '*, business_checking_details(*), institutions(name), business_deposit_plan_tiers(*), business_deposit_promotions(*)'
+      '*, business_checking_details(*), institutions(name, display_name, website_url, logo_url, institution_type, support_email), business_deposit_plan_tiers(*), business_deposit_promotions(*)'
     )
     .eq('listing_status', 'active')
     .eq('product_type', 'checking')
@@ -105,49 +112,85 @@ export async function handleQueryBusinessChecking(
     })
   }
 
-  return results.map((row) => {
-    const details = row.business_checking_details
-    return {
-      institution_name: row.institutions?.name ?? null,
-      product_name: row.product_name,
-      monthly_fee: row.monthly_fee,
-      monthly_fee_waiver_condition: row.monthly_fee_waiver_condition,
-      minimum_opening_deposit: row.minimum_opening_deposit,
-      entity_types_accepted: row.entity_types_accepted,
-      available_states: row.available_states,
-      insurance_type: row.insurance_type,
-      free_transactions_per_month: details?.free_transactions_per_month ?? null,
-      cash_deposit_available: details?.cash_deposit_available ?? null,
-      sub_accounts_supported: details?.sub_accounts_supported ?? null,
-      rtp_supported: details?.rtp_supported ?? null,
-      rtp_network: details?.rtp_network ?? null,
-      accounting_integration_available: details?.accounting_integration_available ?? null,
-      tax_integration_available: details?.tax_integration_available ?? null,
-      expense_integration_available: details?.expense_integration_available ?? null,
-      interest_bearing: details?.interest_bearing ?? null,
-      apy: details?.apy ?? null,
-      apy_tiers: details?.apy_tiers ?? null,
-      outgoing_domestic_wire_fee: details?.outgoing_domestic_wire_fee ?? null,
-      plan_tiers: (row.business_deposit_plan_tiers ?? []).map((t) => ({
-        plan_name: t.plan_name,
-        monthly_fee: t.monthly_fee,
-        monthly_fee_waiver_condition: t.monthly_fee_waiver_condition,
-        apy: t.apy,
-        apy_max_balance_eligible: t.apy_max_balance_eligible,
-        apy_condition: t.apy_condition,
-        is_default: t.is_default,
-        sort_order: t.sort_order,
-      })),
-      promotions: (row.business_deposit_promotions ?? []).map((p) => ({
-        bonus_amount: p.bonus_amount,
-        condition_description: p.condition_description,
-        minimum_deposit: p.minimum_deposit,
-        expiry_date: p.expiry_date,
-        promo_url: p.promo_url,
-      })),
-      application_url: row.application_url,
-      last_modified: row.last_modified,
-      is_verified: row.is_verified,
-    }
-  })
+  return results.map(mapBusinessCheckingRow)
+}
+
+// Shared with get-business-checking-listing.ts, which reuses this base shape
+// and layers on additional_fees/features for the single-listing detail view.
+export function mapBusinessCheckingRow(row: BusinessCheckingQueryRow) {
+  const details = row.business_checking_details
+  return {
+    listing_slug: row.listing_slug,
+    institution_name: row.institutions?.name ?? null,
+    institution: row.institutions
+      ? {
+          display_name: row.institutions.display_name,
+          website_url: row.institutions.website_url,
+          logo_url: row.institutions.logo_url,
+          institution_type: row.institutions.institution_type,
+          support_email: row.institutions.support_email,
+        }
+      : null,
+    product_name: row.product_name,
+    monthly_fee: row.monthly_fee,
+    monthly_fee_waiver_condition: row.monthly_fee_waiver_condition,
+    minimum_opening_deposit: row.minimum_opening_deposit,
+    entity_types_accepted: row.entity_types_accepted,
+    available_states: row.available_states,
+    insurance_type: row.insurance_type,
+    free_transactions_per_month: details?.free_transactions_per_month ?? null,
+    cash_deposit_available: details?.cash_deposit_available ?? null,
+    cash_deposit_fee_per_100: details?.cash_deposit_fee_per_100 ?? null,
+    monthly_cash_deposit_limit: details?.monthly_cash_deposit_limit ?? null,
+    sub_accounts_supported: details?.sub_accounts_supported ?? null,
+    rtp_supported: details?.rtp_supported ?? null,
+    rtp_network: details?.rtp_network ?? null,
+    accounting_integration_available: details?.accounting_integration_available ?? null,
+    tax_integration_available: details?.tax_integration_available ?? null,
+    expense_integration_available: details?.expense_integration_available ?? null,
+    interest_bearing: details?.interest_bearing ?? null,
+    apy: details?.apy ?? null,
+    apy_tiers: details?.apy_tiers ?? null,
+    outgoing_domestic_wire_fee: details?.outgoing_domestic_wire_fee ?? null,
+    incoming_domestic_wire_fee: details?.incoming_domestic_wire_fee ?? null,
+    outgoing_international_wire_fee: details?.outgoing_international_wire_fee ?? null,
+    incoming_international_wire_fee: details?.incoming_international_wire_fee ?? null,
+    multicurrency_support: details?.multicurrency_support ?? null,
+    free_domestic_wires_per_month: details?.free_domestic_wires_per_month ?? null,
+    per_transaction_fee_after_limit: details?.per_transaction_fee_after_limit ?? null,
+    atm_fee_reimbursement: details?.atm_fee_reimbursement ?? null,
+    atm_fee_reimbursement_limit: details?.atm_fee_reimbursement_limit ?? null,
+    atm_network: details?.atm_network ?? null,
+    overdraft_protection_available: details?.overdraft_protection_available ?? null,
+    overdraft_line_of_credit_available: details?.overdraft_line_of_credit_available ?? null,
+    daily_debit_limit: details?.daily_debit_limit ?? null,
+    ach_debit_block_available: details?.ach_debit_block_available ?? null,
+    positive_pay_available: details?.positive_pay_available ?? null,
+    remote_deposit_capture: details?.remote_deposit_capture ?? null,
+    bill_pay_available: details?.bill_pay_available ?? null,
+    check_writing_available: details?.check_writing_available ?? null,
+    corporate_card_available: details?.corporate_card_available ?? null,
+    virtual_cards_available: details?.virtual_cards_available ?? null,
+    physical_debit_card_available: details?.physical_debit_card_available ?? null,
+    plan_tiers: (row.business_deposit_plan_tiers ?? []).map((t) => ({
+      plan_name: t.plan_name,
+      monthly_fee: t.monthly_fee,
+      monthly_fee_waiver_condition: t.monthly_fee_waiver_condition,
+      apy: t.apy,
+      apy_max_balance_eligible: t.apy_max_balance_eligible,
+      apy_condition: t.apy_condition,
+      is_default: t.is_default,
+      sort_order: t.sort_order,
+    })),
+    promotions: (row.business_deposit_promotions ?? []).map((p) => ({
+      bonus_amount: p.bonus_amount,
+      condition_description: p.condition_description,
+      minimum_deposit: p.minimum_deposit,
+      expiry_date: p.expiry_date,
+      promo_url: p.promo_url,
+    })),
+    application_url: row.application_url,
+    last_modified: row.last_modified,
+    is_verified: row.is_verified,
+  }
 }
