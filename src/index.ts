@@ -8,6 +8,7 @@ import { authenticate } from './lib/auth'
 import { validateOrigin } from './lib/origin'
 import { createSession, validateSession, deleteSession, SESSION_HEADER } from './lib/session'
 import { handleQueryBusinessChecking } from './handlers/query-business-checking'
+import { handleGetBusinessCheckingListing } from './handlers/get-business-checking-listing'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -193,6 +194,7 @@ app.post('/', async (c) => {
 
     const toolHandlers: Record<string, ToolHandler> = {
       query_business_checking: handleQueryBusinessChecking,
+      get_business_checking_listing: handleGetBusinessCheckingListing,
     }
 
     const handler = toolHandlers[name]

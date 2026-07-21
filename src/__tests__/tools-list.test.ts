@@ -33,7 +33,7 @@ describe('tools/list', () => {
     expect(Array.isArray(body.result.tools)).toBe(true)
   })
 
-  it('tools array contains only query_business_checking', async () => {
+  it('tools array contains only the routed business checking tools', async () => {
     const request = post({ jsonrpc: '2.0', id: 1, method: 'tools/list' })
     const ctx = createExecutionContext()
     const response = await app.fetch(request, env, ctx)
@@ -41,7 +41,7 @@ describe('tools/list', () => {
 
     const body = await response.json<{ result: { tools: Array<{ name: string }> } }>()
     const names = body.result.tools.map((t) => t.name)
-    expect(names).toEqual(['query_business_checking'])
+    expect(names).toEqual(['query_business_checking', 'get_business_checking_listing'])
   })
 
   it('each tool has name, description, and inputSchema', async () => {

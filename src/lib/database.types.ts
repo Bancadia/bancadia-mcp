@@ -277,6 +277,7 @@ export type Database = {
           is_verified: boolean
           last_modified: string
           last_verified: string | null
+          listing_slug: string
           listing_status: Database["public"]["Enums"]["listing_status_enum"]
           minimum_annual_revenue: number | null
           minimum_balance_to_waive_fee: number | null
@@ -320,6 +321,7 @@ export type Database = {
           is_verified?: boolean
           last_modified?: string
           last_verified?: string | null
+          listing_slug: string
           listing_status?: Database["public"]["Enums"]["listing_status_enum"]
           minimum_annual_revenue?: number | null
           minimum_balance_to_waive_fee?: number | null
@@ -363,6 +365,7 @@ export type Database = {
           is_verified?: boolean
           last_modified?: string
           last_verified?: string | null
+          listing_slug?: string
           listing_status?: Database["public"]["Enums"]["listing_status_enum"]
           minimum_annual_revenue?: number | null
           minimum_balance_to_waive_fee?: number | null

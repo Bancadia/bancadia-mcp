@@ -116,13 +116,26 @@ info:
 
     ## Available tools
 
-    Only `query_business_checking` is currently routed. Several other tool
-    names (`query_hysa`, `query_personal_savings`, `query_personal_checking`,
-    `query_personal_cd`, `query_business_savings`, `query_business_cd`) existed
-    historically and are retained in `bancadia-mcp`'s source for a future
-    cleanup pass, but are not reachable — calling any of them returns the
-    `-32601 Unknown tool` error, and none appear in `tools/list` or
-    `/.well-known/mcp`.
+    Two tools are currently routed:
+
+    - **`query_business_checking`** — broad, filterable list query over active
+      business checking listings. Returns every matching listing at a
+      moderate level of detail (see `BusinessCheckingResult`) — deliberately
+      excludes the two potentially-unbounded one-to-many fee/feature tables to
+      keep a multi-listing response bounded in size.
+    - **`get_business_checking_listing`** — point lookup for one listing by
+      its `listing_slug` (as returned by `query_business_checking`), for
+      follow-up questions that need more depth than the list tool provides.
+      Returns the same fields as `BusinessCheckingResult` plus
+      `additional_fees` and `features` (see `BusinessCheckingDetailResult`).
+      Empty array (not an error) if the slug doesn't match an active listing.
+
+    Several other tool names (`query_hysa`, `query_personal_savings`,
+    `query_personal_checking`, `query_personal_cd`, `query_business_savings`,
+    `query_business_cd`) existed historically and are retained in
+    `bancadia-mcp`'s source for a future cleanup pass, but are not reachable —
+    calling any of them returns the `-32601 Unknown tool` error, and none
+    appear in `tools/list` or `/.well-known/mcp`.
 
 servers:
   - url: https://mcp.bancadia.com
@@ -190,6 +203,16 @@ paths:
                       account products using compound filter criteria.
                       Returns active, verified listings from financial
                       institutions.
+                  - name: get_business_checking_listing
+                    description: >-
+                      Get full detail on one specific business checking
+                      listing, including gotcha fees (business_deposit_fees,
+                      e.g. overdraft, NSF, dormancy) and feature narrative
+                      (business_deposit_account_features) not returned by
+                      query_business_checking's broad list results. Use this
+                      as a follow-up after query_business_checking to dig
+                      deeper on one listing the caller already identified by
+                      its listing_slug.
 
   /:
     post:
@@ -259,6 +282,16 @@ paths:
                       accounting_integration_available: true
                       entity_types_accepted: [llc, s_corp]
                       available_states: [CA, NY]
+              toolsCallDetail:
+                summary: tools/call — get_business_checking_listing
+                value:
+                  jsonrpc: "2.0"
+                  id: 1
+                  method: tools/call
+                  params:
+                    name: get_business_checking_listing
+                    arguments:
+                      listing_slug: found-business-checking
       responses:
         "200":
           description: >-
@@ -341,8 +374,32 @@ paths:
                               interest_bearing: { type: boolean, description: "Whether the account earns interest" }
                               apy_min: { type: number, description: "Minimum APY (inclusive), for interest-bearing accounts" }
                             additionalProperties: false
+                        - name: get_business_checking_listing
+                          description: >-
+                            Get full detail on one specific business checking
+                            listing, including gotcha fees
+                            (business_deposit_fees, e.g. overdraft, NSF,
+                            dormancy) and feature narrative
+                            (business_deposit_account_features) not returned
+                            by query_business_checking's broad list results.
+                            Use this as a follow-up after
+                            query_business_checking to dig deeper on one
+                            listing the caller already identified by its
+                            listing_slug.
+                          inputSchema:
+                            type: object
+                            properties:
+                              listing_slug:
+                                type: string
+                                description: >-
+                                  The listing's stable public identifier, as
+                                  returned in query_business_checking results
+                                  (e.g. 'found-business-checking'). Do not use
+                                  an internal database id.
+                            required: [listing_slug]
+                            additionalProperties: false
                 toolsCall:
-                  summary: tools/call response — content[0].text is a JSON-encoded string
+                  summary: tools/call response (query_business_checking) — content[0].text is a JSON-encoded string
                   value:
                     jsonrpc: "2.0"
                     id: 1
@@ -350,10 +407,30 @@ paths:
                       content:
                         - type: text
                           text: >-
-                            [{"institution_name":"Example Bank","product_name":"Business
-                            Checking Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0}],"promotions":[{"bonus_amount":300,"condition_description":"Deposit
+                            [{"listing_slug":"example-bank-business-checking-pro","institution_name":"Example
+                            Bank","institution":{"display_name":"Example
+                            Bank","website_url":"https://examplebank.com","logo_url":"https://examplebank.com/logo.png","institution_type":"regional_bank","support_email":"support@examplebank.com"},"product_name":"Business
+                            Checking Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"cash_deposit_fee_per_100":2.5,"monthly_cash_deposit_limit":5000,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"incoming_domestic_wire_fee":0,"outgoing_international_wire_fee":45,"incoming_international_wire_fee":15,"multicurrency_support":false,"free_domestic_wires_per_month":2,"per_transaction_fee_after_limit":0.5,"atm_fee_reimbursement":true,"atm_fee_reimbursement_limit":10,"atm_network":"Allpoint","overdraft_protection_available":true,"overdraft_line_of_credit_available":false,"daily_debit_limit":5000,"ach_debit_block_available":true,"positive_pay_available":true,"remote_deposit_capture":true,"bill_pay_available":true,"check_writing_available":true,"corporate_card_available":true,"virtual_cards_available":true,"physical_debit_card_available":true,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0}],"promotions":[{"bonus_amount":300,"condition_description":"Deposit
                             $2,500 within 30
                             days","minimum_deposit":2500,"expiry_date":null,"promo_url":"https://example.com/promo"}],"application_url":"https://example.com/apply","last_modified":"2026-01-01T00:00:00Z","is_verified":true}]
+                toolsCallDetail:
+                  summary: tools/call response (get_business_checking_listing) — adds additional_fees and features
+                  value:
+                    jsonrpc: "2.0"
+                    id: 1
+                    result:
+                      content:
+                        - type: text
+                          text: >-
+                            [{"listing_slug":"example-bank-business-checking-pro","institution_name":"Example
+                            Bank","institution":{"display_name":"Example
+                            Bank","website_url":"https://examplebank.com","logo_url":"https://examplebank.com/logo.png","institution_type":"regional_bank","support_email":"support@examplebank.com"},"product_name":"Business
+                            Checking
+                            Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"cash_deposit_fee_per_100":2.5,"monthly_cash_deposit_limit":5000,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"incoming_domestic_wire_fee":0,"outgoing_international_wire_fee":45,"incoming_international_wire_fee":15,"multicurrency_support":false,"free_domestic_wires_per_month":2,"per_transaction_fee_after_limit":0.5,"atm_fee_reimbursement":true,"atm_fee_reimbursement_limit":10,"atm_network":"Allpoint","overdraft_protection_available":true,"overdraft_line_of_credit_available":false,"daily_debit_limit":5000,"ach_debit_block_available":true,"positive_pay_available":true,"remote_deposit_capture":true,"bill_pay_available":true,"check_writing_available":true,"corporate_card_available":true,"virtual_cards_available":true,"physical_debit_card_available":true,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0}],"promotions":[{"bonus_amount":300,"condition_description":"Deposit
+                            $2,500 within 30
+                            days","minimum_deposit":2500,"expiry_date":null,"promo_url":"https://example.com/promo"}],"application_url":"https://example.com/apply","last_modified":"2026-01-01T00:00:00Z","is_verified":true,"additional_fees":[{"fee_type":"overdraft","amount":35,"amount_description":null,"eligibility_criteria":null,"tiers":null,"waivable":false,"waiver_condition":null}],"features":[{"category":"cash_handling","description":"Free
+                            cash deposits up to $2,000/mo","value":2000},{"category":"fraud_protection","description":"Instant
+                            card freeze","value":null}]}]
             text/event-stream:
               schema:
                 type: string
@@ -677,11 +754,20 @@ components:
         name:
           type: string
           description: >-
-            Only `query_business_checking` is currently routed; any other
-            value returns the `-32601 Unknown tool` error.
-          enum: [query_business_checking]
+            Only these two tools are currently routed; any other value
+            returns the `-32601 Unknown tool` error.
+          enum: [query_business_checking, get_business_checking_listing]
         arguments:
-          $ref: "#/components/schemas/BusinessCheckingQueryArguments"
+          description: >-
+            Shape depends on `name` — `BusinessCheckingQueryArguments` for
+            `query_business_checking`, `GetBusinessCheckingListingArguments`
+            for `get_business_checking_listing`. Not expressed as a
+            discriminated `oneOf` here since both branches key off the
+            sibling `name` field rather than a property on `arguments`
+            itself.
+          oneOf:
+            - $ref: "#/components/schemas/BusinessCheckingQueryArguments"
+            - $ref: "#/components/schemas/GetBusinessCheckingListingArguments"
 
     BusinessCheckingQueryArguments:
       type: object
@@ -752,6 +838,19 @@ components:
         apy_min:
           type: number
           description: Minimum APY (inclusive), for interest-bearing accounts.
+
+    GetBusinessCheckingListingArguments:
+      type: object
+      additionalProperties: false
+      required: [listing_slug]
+      properties:
+        listing_slug:
+          type: string
+          description: >-
+            The listing's stable public identifier, as returned in
+            `query_business_checking` results (e.g.
+            `found-business-checking`). Not the internal database `id` — that
+            is deliberately never exposed in tool responses.
 
     Tool:
       type: object
@@ -862,14 +961,20 @@ components:
                     type: string
                     description: >-
                       JSON-encoded string. `JSON.parse(text)` yields an array
-                      of `BusinessCheckingResult` (empty array if nothing
-                      matched, or if the underlying query errored — errors
-                      are not surfaced to the caller).
+                      — of `BusinessCheckingResult` for
+                      `query_business_checking`, or of
+                      `BusinessCheckingDetailResult` (one element, or zero if
+                      the slug didn't match) for
+                      `get_business_checking_listing`. Empty array if nothing
+                      matched, or if the underlying query errored — errors are
+                      not surfaced to the caller.
                     contentMediaType: application/json
                     contentSchema:
                       type: array
                       items:
-                        $ref: "#/components/schemas/BusinessCheckingResult"
+                        oneOf:
+                          - $ref: "#/components/schemas/BusinessCheckingResult"
+                          - $ref: "#/components/schemas/BusinessCheckingDetailResult"
 
     JsonRpcErrorResponse:
       type: object
@@ -1004,10 +1109,134 @@ components:
             - "null"
           format: uri
 
+    Institution:
+      type:
+        - object
+        - "null"
+      description: >-
+        Null only if the row's institution join unexpectedly failed to
+        resolve; every published listing has an institution. `institution_name`
+        (a sibling field on the result, not on this object) is kept as a
+        top-level flat field for backward compatibility with existing
+        clients — this object holds the rest of the institution's public
+        profile.
+      properties:
+        display_name:
+          type:
+            - string
+            - "null"
+        website_url:
+          type:
+            - string
+            - "null"
+          format: uri
+        logo_url:
+          type:
+            - string
+            - "null"
+          format: uri
+        institution_type:
+          type: string
+          enum: [national_bank, regional_bank, community_bank, credit_union, neobank, fintech]
+        support_email:
+          type:
+            - string
+            - "null"
+          format: email
+
+    AdditionalFee:
+      type: object
+      description: >-
+        One row from `business_deposit_fees`, only for `fee_type` values that
+        have no dedicated flat column on `BusinessCheckingResult` (e.g.
+        `overdraft`, `non_sufficient_funds`, `dormancy` — not
+        `wire_domestic_outgoing` etc., which are covered by
+        `outgoing_domestic_wire_fee` and friends). This split avoids the same
+        fee ever being represented twice by two sources that could disagree.
+        Only returned by `get_business_checking_listing`.
+      required: [fee_type, waivable]
+      properties:
+        fee_type:
+          type: string
+          enum:
+            - monthly_maintenance
+            - overdraft
+            - non_sufficient_funds
+            - account_opening
+            - account_closing
+            - minimum_balance
+            - excess_transaction
+            - atm_foreign
+            - paper_statement
+            - dormancy
+            - returned_item
+            - stop_payment
+            - card_replacement
+            - foreign_transaction
+            - other
+        amount:
+          type:
+            - number
+            - "null"
+          description: Flat dollar amount, or null if the fee varies (see amount_description/tiers).
+        amount_description:
+          type:
+            - string
+            - "null"
+          description: Free-text description for fees that aren't a flat number.
+        eligibility_criteria:
+          type:
+            - string
+            - "null"
+        tiers:
+          description: Tiered fee structure, shape varies by fee_type. Null if the fee is flat.
+          type:
+            - object
+            - array
+            - "null"
+        waivable:
+          type: boolean
+        waiver_condition:
+          type:
+            - string
+            - "null"
+
+    Feature:
+      type: object
+      description: >-
+        One row from `business_deposit_account_features` — narrative/marketing
+        feature callouts, richer than the raw booleans on
+        `BusinessCheckingResult`. Sorted by `sort_order` ascending. Only
+        returned by `get_business_checking_listing`.
+      required: [category, description]
+      properties:
+        category:
+          type: string
+          enum:
+            - payment_rails
+            - cash_handling
+            - cards_and_atm
+            - online_banking
+            - fraud_protection
+            - account_management
+            - platform_integrations
+            - other
+        description:
+          type: string
+        value:
+          type:
+            - number
+            - "null"
+          description: Quantified value for this feature (e.g. a limit or count), if applicable.
+
     BusinessCheckingResult:
       type: object
-      description: One item of the array encoded in `ToolsCallResponse.result.content[0].text`.
+      description: >-
+        One item of the array encoded in `ToolsCallResponse.result.content[0].text`
+        for `query_business_checking`. `get_business_checking_listing` returns
+        the same shape plus two more fields — see `BusinessCheckingDetailResult`.
       required:
+        - listing_slug
         - institution_name
         - product_name
         - monthly_fee
@@ -1021,10 +1250,18 @@ components:
         - last_modified
         - is_verified
       properties:
+        listing_slug:
+          type: string
+          description: >-
+            Stable public identifier for this listing. Pass this to
+            get_business_checking_listing for full detail on this one
+            listing. Not the internal database id.
         institution_name:
           type:
             - string
             - "null"
+        institution:
+          $ref: "#/components/schemas/Institution"
         product_name:
           type: string
         monthly_fee:
@@ -1056,6 +1293,16 @@ components:
           type:
             - boolean
             - "null"
+        cash_deposit_fee_per_100:
+          type:
+            - number
+            - "null"
+          description: Fee charged per $100 deposited in cash, above monthly_cash_deposit_limit (if any).
+        monthly_cash_deposit_limit:
+          type:
+            - number
+            - "null"
+          description: Amount of cash deposits per month before cash_deposit_fee_per_100 applies. Null = no limit.
         sub_accounts_supported:
           type:
             - boolean
@@ -1100,6 +1347,88 @@ components:
           type:
             - number
             - "null"
+        incoming_domestic_wire_fee:
+          type:
+            - number
+            - "null"
+        outgoing_international_wire_fee:
+          type:
+            - number
+            - "null"
+        incoming_international_wire_fee:
+          type:
+            - number
+            - "null"
+        multicurrency_support:
+          type:
+            - boolean
+            - "null"
+        free_domestic_wires_per_month:
+          type:
+            - number
+            - "null"
+        per_transaction_fee_after_limit:
+          type:
+            - number
+            - "null"
+          description: Fee per transaction once free_transactions_per_month is exceeded.
+        atm_fee_reimbursement:
+          type:
+            - boolean
+            - "null"
+        atm_fee_reimbursement_limit:
+          type:
+            - number
+            - "null"
+          description: Cap on reimbursed ATM fees. Null = unlimited (when atm_fee_reimbursement is true) or not applicable.
+        atm_network:
+          type:
+            - string
+            - "null"
+        overdraft_protection_available:
+          type:
+            - boolean
+            - "null"
+        overdraft_line_of_credit_available:
+          type:
+            - boolean
+            - "null"
+        daily_debit_limit:
+          type:
+            - number
+            - "null"
+        ach_debit_block_available:
+          type:
+            - boolean
+            - "null"
+        positive_pay_available:
+          type:
+            - boolean
+            - "null"
+        remote_deposit_capture:
+          type:
+            - boolean
+            - "null"
+        bill_pay_available:
+          type:
+            - boolean
+            - "null"
+        check_writing_available:
+          type:
+            - boolean
+            - "null"
+        corporate_card_available:
+          type:
+            - boolean
+            - "null"
+        virtual_cards_available:
+          type:
+            - boolean
+            - "null"
+        physical_debit_card_available:
+          type:
+            - boolean
+            - "null"
         plan_tiers:
           type: array
           items:
@@ -1116,3 +1445,24 @@ components:
           format: date-time
         is_verified:
           type: boolean
+
+    BusinessCheckingDetailResult:
+      description: >-
+        The single-element (or empty) array item returned by
+        get_business_checking_listing. Same shape as BusinessCheckingResult
+        plus additional_fees and features — the two one-to-many tables
+        deliberately excluded from the broad query_business_checking list
+        response to keep multi-listing payloads bounded.
+      allOf:
+        - $ref: "#/components/schemas/BusinessCheckingResult"
+        - type: object
+          required: [additional_fees, features]
+          properties:
+            additional_fees:
+              type: array
+              items:
+                $ref: "#/components/schemas/AdditionalFee"
+            features:
+              type: array
+              items:
+                $ref: "#/components/schemas/Feature"

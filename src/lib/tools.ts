@@ -74,6 +74,23 @@ export const TOOLS = [
       additionalProperties: false,
     },
   },
+  {
+    name: 'get_business_checking_listing',
+    description:
+      "Get full detail on one specific business checking listing, including gotcha fees (business_deposit_fees, e.g. overdraft, NSF, dormancy) and feature narrative (business_deposit_account_features) not returned by query_business_checking's broad list results. Use this as a follow-up after query_business_checking to dig deeper on one listing the caller already identified by its listing_slug.",
+    inputSchema: {
+      type: 'object',
+      properties: {
+        listing_slug: {
+          type: 'string',
+          description:
+            "The listing's stable public identifier, as returned in query_business_checking results (e.g. 'found-business-checking'). Do not use an internal database id.",
+        },
+      },
+      required: ['listing_slug'],
+      additionalProperties: false,
+    },
+  },
 ]
 
 export function getToolManifest() {

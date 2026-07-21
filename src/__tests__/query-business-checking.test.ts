@@ -44,6 +44,7 @@ function mockQueryChain(result: { data: unknown; error: unknown }) {
 }
 
 const sampleListing = {
+  listing_slug: 'example-bank-business-checking-pro',
   product_name: 'Business Checking Pro',
   monthly_fee: 0,
   monthly_fee_waiver_condition: null,
@@ -55,10 +56,19 @@ const sampleListing = {
   last_modified: '2026-01-01',
   is_verified: true,
   listing_status: 'active',
-  institutions: { name: 'Example Bank' },
+  institutions: {
+    name: 'Example Bank',
+    display_name: 'Example Bank',
+    website_url: 'https://examplebank.com',
+    logo_url: 'https://examplebank.com/logo.png',
+    institution_type: 'regional_bank',
+    support_email: 'support@examplebank.com',
+  },
   business_checking_details: {
     free_transactions_per_month: 100,
     cash_deposit_available: true,
+    cash_deposit_fee_per_100: 2.5,
+    monthly_cash_deposit_limit: 5000,
     sub_accounts_supported: true,
     rtp_supported: true,
     rtp_network: 'both',
@@ -69,6 +79,26 @@ const sampleListing = {
     apy: 1.25,
     apy_tiers: null,
     outgoing_domestic_wire_fee: 15,
+    incoming_domestic_wire_fee: 0,
+    outgoing_international_wire_fee: 45,
+    incoming_international_wire_fee: 15,
+    multicurrency_support: false,
+    free_domestic_wires_per_month: 2,
+    per_transaction_fee_after_limit: 0.5,
+    atm_fee_reimbursement: true,
+    atm_fee_reimbursement_limit: 10,
+    atm_network: 'Allpoint',
+    overdraft_protection_available: true,
+    overdraft_line_of_credit_available: false,
+    daily_debit_limit: 5000,
+    ach_debit_block_available: true,
+    positive_pay_available: true,
+    remote_deposit_capture: true,
+    bill_pay_available: true,
+    check_writing_available: true,
+    corporate_card_available: true,
+    virtual_cards_available: true,
+    physical_debit_card_available: true,
   },
   business_deposit_plan_tiers: [
     {
@@ -237,7 +267,9 @@ describe('query_business_checking handler', () => {
     const results = JSON.parse(body.result.content[0].text)
     const item = results[0]
 
+    expect(item).toHaveProperty('listing_slug')
     expect(item).toHaveProperty('institution_name')
+    expect(item).toHaveProperty('institution')
     expect(item).toHaveProperty('product_name')
     expect(item).toHaveProperty('monthly_fee')
     expect(item).toHaveProperty('monthly_fee_waiver_condition')
@@ -247,6 +279,8 @@ describe('query_business_checking handler', () => {
     expect(item).toHaveProperty('insurance_type')
     expect(item).toHaveProperty('free_transactions_per_month')
     expect(item).toHaveProperty('cash_deposit_available')
+    expect(item).toHaveProperty('cash_deposit_fee_per_100')
+    expect(item).toHaveProperty('monthly_cash_deposit_limit')
     expect(item).toHaveProperty('sub_accounts_supported')
     expect(item).toHaveProperty('rtp_supported')
     expect(item).toHaveProperty('rtp_network')
@@ -257,12 +291,35 @@ describe('query_business_checking handler', () => {
     expect(item).toHaveProperty('apy')
     expect(item).toHaveProperty('apy_tiers')
     expect(item).toHaveProperty('outgoing_domestic_wire_fee')
+    expect(item).toHaveProperty('incoming_domestic_wire_fee')
+    expect(item).toHaveProperty('outgoing_international_wire_fee')
+    expect(item).toHaveProperty('incoming_international_wire_fee')
+    expect(item).toHaveProperty('multicurrency_support')
+    expect(item).toHaveProperty('free_domestic_wires_per_month')
+    expect(item).toHaveProperty('per_transaction_fee_after_limit')
+    expect(item).toHaveProperty('atm_fee_reimbursement')
+    expect(item).toHaveProperty('atm_fee_reimbursement_limit')
+    expect(item).toHaveProperty('atm_network')
+    expect(item).toHaveProperty('overdraft_protection_available')
+    expect(item).toHaveProperty('overdraft_line_of_credit_available')
+    expect(item).toHaveProperty('daily_debit_limit')
+    expect(item).toHaveProperty('ach_debit_block_available')
+    expect(item).toHaveProperty('positive_pay_available')
+    expect(item).toHaveProperty('remote_deposit_capture')
+    expect(item).toHaveProperty('bill_pay_available')
+    expect(item).toHaveProperty('check_writing_available')
+    expect(item).toHaveProperty('corporate_card_available')
+    expect(item).toHaveProperty('virtual_cards_available')
+    expect(item).toHaveProperty('physical_debit_card_available')
     expect(item).toHaveProperty('plan_tiers')
     expect(item).toHaveProperty('promotions')
     expect(item).toHaveProperty('application_url')
     expect(item).toHaveProperty('last_modified')
     expect(item).toHaveProperty('is_verified')
     expect(item.institution_name).toBe('Example Bank')
+    expect(item.institution.institution_type).toBe('regional_bank')
+    expect(item.incoming_international_wire_fee).toBe(15)
+    expect(item.multicurrency_support).toBe(false)
     expect(item.plan_tiers[0].plan_name).toBe('Standard')
     expect(item.promotions[0].bonus_amount).toBe(300)
   })
