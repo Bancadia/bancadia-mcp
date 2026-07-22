@@ -48,28 +48,55 @@ export async function handleGetBusinessCheckingListing(
 
   const row = data[0] as unknown as BusinessCheckingDetailRow
 
+  const fees = (row.business_deposit_fees ?? []).filter(
+    (f) => !FEE_TYPES_COVERED_BY_FLAT_COLUMNS.has(f.fee_type)
+  )
+  const features = (row.business_deposit_account_features ?? [])
+    .slice()
+    .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+
+  const planTiers = (row.business_deposit_plan_tiers ?? [])
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((tier) => ({
+      plan_name: tier.plan_name,
+      monthly_fee: tier.monthly_fee,
+      monthly_fee_waiver_condition: tier.monthly_fee_waiver_condition,
+      apy: tier.apy,
+      apy_max_balance_eligible: tier.apy_max_balance_eligible,
+      apy_condition: tier.apy_condition,
+      is_default: tier.is_default,
+      sort_order: tier.sort_order,
+      features: features.filter((f) => f.plan_tier_id === tier.id).map(mapFeature),
+      fees: fees.filter((f) => f.plan_tier_id === tier.id).map(mapFee),
+    }))
+
   return [
     {
       ...mapBusinessCheckingRow(row),
-      additional_fees: (row.business_deposit_fees ?? [])
-        .filter((f) => !FEE_TYPES_COVERED_BY_FLAT_COLUMNS.has(f.fee_type))
-        .map((f) => ({
-          fee_type: f.fee_type,
-          amount: f.amount,
-          amount_description: f.amount_description,
-          eligibility_criteria: f.eligibility_criteria,
-          tiers: f.tiers,
-          waivable: f.waivable,
-          waiver_condition: f.waiver_condition,
-        })),
-      features: (row.business_deposit_account_features ?? [])
-        .slice()
-        .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
-        .map((f) => ({
-          category: f.category,
-          description: f.description,
-          value: f.value,
-        })),
+      plan_tiers: planTiers,
+      general_fees: fees.filter((f) => f.plan_tier_id === null).map(mapFee),
+      general_features: features.filter((f) => f.plan_tier_id === null).map(mapFeature),
     },
   ]
+}
+
+function mapFee(f: Database['public']['Tables']['business_deposit_fees']['Row']) {
+  return {
+    fee_type: f.fee_type,
+    amount: f.amount,
+    amount_description: f.amount_description,
+    eligibility_criteria: f.eligibility_criteria,
+    tiers: f.tiers,
+    waivable: f.waivable,
+    waiver_condition: f.waiver_condition,
+  }
+}
+
+function mapFeature(f: Database['public']['Tables']['business_deposit_account_features']['Row']) {
+  return {
+    category: f.category,
+    description: f.description,
+    value: f.value,
+  }
 }
