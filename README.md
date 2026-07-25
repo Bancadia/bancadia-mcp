@@ -1,6 +1,6 @@
 # Bancadia MCP
 
-A [Model Context Protocol](https://modelcontextprotocol.io) server that lets MCP clients (Claude, other LLM agents, etc.) query Bancadia's registry of deposit account products — savings, checking, and CDs, both personal and business — with structured filters.
+A [Model Context Protocol](https://modelcontextprotocol.io) server that lets MCP clients (Claude, other LLM agents, etc.) query Bancadia's registry of business deposit account products (US only) — with structured filters.
 
 Runs as a [Cloudflare Worker](https://workers.cloudflare.com/) on [Hono](https://hono.dev/), exposing MCP over JSON-RPC 2.0 (Streamable HTTP transport), backed by [Supabase](https://supabase.com/) (Postgres) with an [Upstash Redis](https://upstash.com/) caching/rate-limiting layer.
 
@@ -21,6 +21,8 @@ Runs as a [Cloudflare Worker](https://workers.cloudflare.com/) on [Hono](https:/
 3. `POST /` with `method: "tools/call"` — session **and** `Authorization: Bearer <token>` required. Per-token sliding-window rate limiting applies (`X-RateLimit-*` response headers on both success and 429).
 
 Responses are plain JSON by default, or Server-Sent Events if the request's `Accept` header includes `text/event-stream`.
+
+For production use, obtain a bearer token from the [Bancadia developer portal](https://bancadia.com/developer/signup) — see [bancadia.com/docs](https://bancadia.com/docs) for full API documentation.
 
 ## Available tools
 
