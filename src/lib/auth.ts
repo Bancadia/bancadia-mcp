@@ -15,11 +15,13 @@ export async function authenticate(
   ctx: ExecutionContext
 ): Promise<{ valid: boolean; tokenHash: string | null }> {
   const authHeader = request.headers.get('Authorization')
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
+  if (!authHeader) {
     return { valid: false, tokenHash: null }
   }
 
-  const token = authHeader.slice('Bearer '.length).trim()
+  const token = authHeader.startsWith('Bearer ')
+    ? authHeader.slice('Bearer '.length).trim()
+    : authHeader.trim()
   if (!token) {
     return { valid: false, tokenHash: null }
   }
