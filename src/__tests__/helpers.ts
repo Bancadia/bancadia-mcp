@@ -9,8 +9,10 @@ export function withSession(headers: Record<string, string> = {}) {
 }
 
 interface MockRedisOptions {
-  /** What `token:*` keys resolve to (auth cache). Default `true` (valid, cache hit). */
+  /** What `token:*` keys resolve to (auth cache). Default `true` (valid, cache hit). `null` is a cache miss. */
   tokenValid?: boolean | null
+  /** developerId carried in the cached token payload when `tokenValid` is true. */
+  tokenDeveloperId?: string | null
   /** Whether `session:*` keys resolve to a valid record. Default `true`. */
   sessionValid?: boolean
   set?: ReturnType<typeof vi.fn>
@@ -24,9 +26,12 @@ interface MockRedisOptions {
 // the auth-cache lookup (`token:<hash>`, src/lib/auth.ts) and the session
 // lookup (`session:<id>`, src/lib/session.ts) from one instance, since both
 // modules share the same Redis client.
+export const TEST_DEVELOPER_ID = 'test-developer-id'
+
 export function mockRedis(options: MockRedisOptions = {}) {
   const {
     tokenValid = true,
+    tokenDeveloperId = TEST_DEVELOPER_ID,
     sessionValid = true,
     set = vi.fn().mockResolvedValue('OK'),
     expire = vi.fn().mockResolvedValue(1),
@@ -35,7 +40,10 @@ export function mockRedis(options: MockRedisOptions = {}) {
 
   const get = vi.fn().mockImplementation((key: string) => {
     if (key.startsWith('session:')) return Promise.resolve(sessionValid ? TEST_SESSION_RECORD : null)
-    if (key.startsWith('token:')) return Promise.resolve(tokenValid)
+    if (key.startsWith('token:')) {
+      if (tokenValid === null) return Promise.resolve(null)
+      return Promise.resolve({ valid: tokenValid, developerId: tokenValid ? tokenDeveloperId : null })
+    }
     return Promise.resolve(null)
   })
 

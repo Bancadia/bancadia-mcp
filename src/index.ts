@@ -9,6 +9,7 @@ import { validateOrigin } from './lib/origin'
 import { createSession, validateSession, deleteSession, SESSION_HEADER } from './lib/session'
 import { handleQueryBusinessChecking } from './handlers/query-business-checking'
 import { handleGetBusinessCheckingListing } from './handlers/get-business-checking-listing'
+import type { QueryMeta } from './lib/analytics'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -83,6 +84,8 @@ app.post('/', async (c) => {
   const isNotification = id === undefined
 
   // Every method except `initialize` requires a previously-issued session.
+  // Hoisted so `tools/call` below can attach it to query_match_events rows.
+  let sessionId: string | undefined
   if (method !== 'initialize') {
     const session = await validateSession(c.req.raw, c.env, c.executionCtx)
     if (!session.ok) {
@@ -104,6 +107,7 @@ app.post('/', async (c) => {
         session.status
       )
     }
+    sessionId = session.sessionId
 
     const protocolHeader = c.req.header(PROTOCOL_VERSION_HEADER)
     if (protocolHeader && !SUPPORTED_PROTOCOL_VERSIONS.includes(protocolHeader)) {
@@ -152,7 +156,7 @@ app.post('/', async (c) => {
 
   // tools/call — session required (checked above), plus bearer auth
   if (method === 'tools/call') {
-    const { valid, tokenHash } = await authenticate(c.req.raw, c.env, c.executionCtx)
+    const { valid, tokenHash, developerId } = await authenticate(c.req.raw, c.env, c.executionCtx)
     if (!valid) {
       return sendJsonRpc(
         c,
@@ -190,7 +194,12 @@ app.post('/', async (c) => {
       arguments?: Record<string, unknown>
     }
 
-    type ToolHandler = (args: Record<string, unknown>, env: Env) => Promise<object[]>
+    type ToolHandler = (
+      args: Record<string, unknown>,
+      env: Env,
+      ctx: ExecutionContext,
+      meta: QueryMeta
+    ) => Promise<object[]>
 
     const toolHandlers: Record<string, ToolHandler> = {
       query_business_checking: handleQueryBusinessChecking,
@@ -199,7 +208,11 @@ app.post('/', async (c) => {
 
     const handler = toolHandlers[name]
     if (handler) {
-      const results = await handler(args, c.env)
+      // `sessionId` is always set here: `tools/call` only runs after the
+      // `method !== 'initialize'` block above validated the session (or
+      // returned early), which is the only place that assigns it.
+      const meta: QueryMeta = { toolName: name, developerId, sessionId: sessionId as string }
+      const results = await handler(args, c.env, c.executionCtx, meta)
       return sendJsonRpc(c, id, {
         result: {
           content: [{ type: 'text', text: JSON.stringify(results) }],

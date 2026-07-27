@@ -43,7 +43,7 @@ const toolsCallBody = {
 // - auth token lookup (.select().eq().is().single())
 // - query handler chaining (.select().eq().order().gte()/.lte() then thenable)
 function makeSupabaseChain(
-  singleResult = { data: { token_hash: 'valid' }, error: null },
+  singleResult = { data: { token_hash: 'valid', developer_id: 'test-developer-id' }, error: null },
   queryData: unknown[] = []
 ) {
   const chain: Record<string, unknown> = {}
@@ -123,7 +123,7 @@ describe('auth middleware', () => {
     expect(response.status).toBe(200)
     expect(setMock).toHaveBeenCalledWith(
       expect.stringMatching(/^token:/),
-      true,
+      { valid: true, developerId: 'test-developer-id' },
       { ex: 60 }
     )
   })

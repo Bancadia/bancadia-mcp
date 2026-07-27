@@ -1260,31 +1260,61 @@ export type Database = {
         Row: {
           developer_id: string | null
           id: string
-          institution_id: string
+          institution_id: string | null
           listing_id: string
+          listing_slug: string | null
           matched_at: string
-          product_type: string
           query_filters: Json | null
+          request_id: string
+          result_count: number
+          result_rank: number
+          session_id: string
+          tool_name: string
         }
         Insert: {
           developer_id?: string | null
           id?: string
-          institution_id: string
+          institution_id?: string | null
           listing_id: string
+          listing_slug?: string | null
           matched_at?: string
-          product_type: string
           query_filters?: Json | null
+          request_id: string
+          result_count: number
+          result_rank: number
+          session_id: string
+          tool_name: string
         }
         Update: {
           developer_id?: string | null
           id?: string
-          institution_id?: string
+          institution_id?: string | null
           listing_id?: string
+          listing_slug?: string | null
           matched_at?: string
-          product_type?: string
           query_filters?: Json | null
+          request_id?: string
+          result_count?: number
+          result_rank?: number
+          session_id?: string
+          tool_name?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "query_match_events_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "developer_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "query_match_events_institution_id_fkey"
+            columns: ["institution_id"]
+            isOneToOne: false
+            referencedRelation: "institutions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -1353,6 +1383,7 @@ export type Database = {
         | "social"
         | "search"
         | "referral"
+        | "ai_assistant"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1546,6 +1577,7 @@ export const Constants = {
         "social",
         "search",
         "referral",
+        "ai_assistant",
       ],
     },
   },
