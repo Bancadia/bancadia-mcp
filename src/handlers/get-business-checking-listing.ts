@@ -1,4 +1,5 @@
 import { createSupabaseClient } from '../lib/supabase'
+import { recordMatchEvents, type QueryMeta } from '../lib/analytics'
 import type { Env } from '../types'
 import type { Database } from '../lib/database.types'
 import { mapBusinessCheckingRow, type BusinessCheckingQueryRow } from './query-business-checking'
@@ -23,7 +24,9 @@ type BusinessCheckingDetailRow = BusinessCheckingQueryRow & {
 
 export async function handleGetBusinessCheckingListing(
   args: Record<string, unknown>,
-  env: Env
+  env: Env,
+  ctx: ExecutionContext,
+  meta: QueryMeta
 ): Promise<object[]> {
   const listingSlug = args.listing_slug
   if (typeof listingSlug !== 'string' || listingSlug.length === 0) {
@@ -47,6 +50,12 @@ export async function handleGetBusinessCheckingListing(
   }
 
   const row = data[0] as unknown as BusinessCheckingDetailRow
+
+  ctx.waitUntil(
+    recordMatchEvents(env, meta, args, [
+      { listingId: row.id, institutionId: row.institution_id, listingSlug: row.listing_slug ?? null },
+    ])
+  )
 
   const fees = (row.business_deposit_fees ?? []).filter(
     (f) => !FEE_TYPES_COVERED_BY_FLAT_COLUMNS.has(f.fee_type)

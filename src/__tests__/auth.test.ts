@@ -43,7 +43,7 @@ const toolsCallBody = {
 // - auth token lookup (.select().eq().is().single())
 // - query handler chaining (.select().eq().order().gte()/.lte() then thenable)
 function makeSupabaseChain(
-  singleResult = { data: { token_hash: 'valid' }, error: null },
+  singleResult = { data: { token_hash: 'valid', developer_id: 'test-developer-id' }, error: null },
   queryData: unknown[] = []
 ) {
   const chain: Record<string, unknown> = {}
@@ -78,15 +78,15 @@ describe('auth middleware', () => {
     expect(body.error.code).toBe(-32001)
   })
 
-  it('returns 401 when Authorization is malformed (no Bearer prefix)', async () => {
-    const request = post(toolsCallBody, { Authorization: 'Token abc123' })
+  it('returns 200 when Authorization has no Bearer prefix (raw token accepted)', async () => {
+    mockRedis({ tokenValid: true })
+
+    const request = post(toolsCallBody, { Authorization: 'sk_valid_token' })
     const ctx = createExecutionContext()
     const response = await app.fetch(request, env, ctx)
     await waitOnExecutionContext(ctx)
 
-    expect(response.status).toBe(401)
-    const body = await response.json<{ error: { code: number } }>()
-    expect(body.error.code).toBe(-32001)
+    expect(response.status).toBe(200)
   })
 
   it('returns 200 when token is valid (cache hit true)', async () => {
@@ -123,7 +123,7 @@ describe('auth middleware', () => {
     expect(response.status).toBe(200)
     expect(setMock).toHaveBeenCalledWith(
       expect.stringMatching(/^token:/),
-      true,
+      { valid: true, developerId: 'test-developer-id' },
       { ex: 60 }
     )
   })

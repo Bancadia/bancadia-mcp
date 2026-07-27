@@ -21,7 +21,7 @@ vi.mock('../lib/supabase', () => ({
 
 import app from '../index'
 import { createSupabaseClient } from '../lib/supabase'
-import { mockRedis, withSession } from './helpers'
+import { mockRedis, withSession, TEST_SESSION_ID, TEST_DEVELOPER_ID } from './helpers'
 
 function post(body: object) {
   return new Request('http://localhost/', {
@@ -44,6 +44,8 @@ function mockQueryChain(result: { data: unknown; error: unknown }) {
 }
 
 const sampleListing = {
+  id: 'listing-uuid-1',
+  institution_id: 'institution-uuid-1',
   listing_slug: 'example-bank-business-checking-pro',
   product_name: 'Business Checking Pro',
   monthly_fee: 0,
@@ -322,5 +324,47 @@ describe('query_business_checking handler', () => {
     expect(item.multicurrency_support).toBe(false)
     expect(item.plan_tiers[0].plan_name).toBe('Standard')
     expect(item.promotions[0].bonus_amount).toBe(300)
+  })
+
+  it('fire-and-forget records a query_match_events row per listing without affecting the response', async () => {
+    const queryChain = mockQueryChain({ data: [sampleListing], error: null })
+    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
+    const from = vi.fn().mockImplementation((table: string) =>
+      table === 'query_match_events' ? { insert: insertMock } : queryChain
+    )
+    vi.mocked(createSupabaseClient).mockReturnValue({
+      from,
+    } as unknown as ReturnType<typeof createSupabaseClient>)
+
+    const request = post({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'query_business_checking', arguments: { monthly_fee_max: 10 } },
+    })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    expect(response.status).toBe(200)
+    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
+    const results = JSON.parse(body.result.content[0].text)
+    // The client-facing shape is unaffected by analytics recording.
+    expect(results[0]).not.toHaveProperty('id')
+    expect(results[0]).not.toHaveProperty('institution_id')
+
+    expect(insertMock).toHaveBeenCalledWith([
+      expect.objectContaining({
+        listing_id: 'listing-uuid-1',
+        institution_id: 'institution-uuid-1',
+        listing_slug: 'example-bank-business-checking-pro',
+        tool_name: 'query_business_checking',
+        developer_id: TEST_DEVELOPER_ID,
+        session_id: TEST_SESSION_ID,
+        result_rank: 1,
+        result_count: 1,
+        query_filters: { monthly_fee_max: 10 },
+      }),
+    ])
   })
 })
