@@ -1,4 +1,5 @@
 import { createSupabaseClient } from '../lib/supabase'
+import { recordMatchEvents, type QueryMeta } from '../lib/analytics'
 import type { Env } from '../types'
 import type { Database } from '../lib/database.types'
 
@@ -18,7 +19,9 @@ export type BusinessCheckingQueryRow = Database['public']['Tables']['business_de
 
 export async function handleQueryBusinessChecking(
   args: Record<string, unknown>,
-  env: Env
+  env: Env,
+  ctx: ExecutionContext,
+  meta: QueryMeta
 ): Promise<object[]> {
   const supabase = createSupabaseClient(env)
 
@@ -111,6 +114,19 @@ export async function handleQueryBusinessChecking(
       return requestedStates.every((s) => rowStates.includes(s))
     })
   }
+
+  ctx.waitUntil(
+    recordMatchEvents(
+      env,
+      meta,
+      args,
+      results.map((row) => ({
+        listingId: row.id,
+        institutionId: row.institution_id,
+        listingSlug: row.listing_slug ?? null,
+      }))
+    )
+  )
 
   return results.map(mapBusinessCheckingRow)
 }
