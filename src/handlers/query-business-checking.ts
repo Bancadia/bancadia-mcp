@@ -17,6 +17,27 @@ export type BusinessCheckingQueryRow = Database['public']['Tables']['business_de
   business_deposit_promotions: Database['public']['Tables']['business_deposit_promotions']['Row'][]
 }
 
+// Filters below that read a business_checking_details column via a dot-path
+// (e.g. 'business_checking_details.accounting_integration_available') only
+// restrict which parent rows come back when the embed uses the `!inner` join
+// hint — without it, PostgREST applies the filter to shape the embedded
+// object only, not to exclude the row. We add `!inner` conditionally (only
+// when one of these filters is actually requested) so that a query with no
+// details-table filter still surfaces listings that don't yet have a
+// business_checking_details row.
+const DETAILS_FILTER_KEYS = [
+  'cash_deposit_available',
+  'sub_accounts_supported',
+  'rtp_supported',
+  'rtp_network',
+  'accounting_integration_available',
+  'tax_integration_available',
+  'expense_integration_available',
+  'interest_bearing',
+  'free_transactions_min',
+  'apy_min',
+] as const
+
 export async function handleQueryBusinessChecking(
   args: Record<string, unknown>,
   env: Env,
@@ -25,10 +46,12 @@ export async function handleQueryBusinessChecking(
 ): Promise<object[]> {
   const supabase = createSupabaseClient(env)
 
+  const needsDetailsInner = DETAILS_FILTER_KEYS.some((key) => args[key] !== undefined)
+
   let query = supabase
     .from('business_deposit_accounts')
     .select(
-      '*, business_checking_details(*), institutions(name, display_name, website_url, logo_url, institution_type, support_email), business_deposit_plan_tiers(*), business_deposit_promotions(*)'
+      `*, business_checking_details${needsDetailsInner ? '!inner' : ''}(*), institutions(name, display_name, website_url, logo_url, institution_type, support_email), business_deposit_plan_tiers(*), business_deposit_promotions(*)`
     )
     .eq('listing_status', 'active')
     .eq('product_type', 'checking')

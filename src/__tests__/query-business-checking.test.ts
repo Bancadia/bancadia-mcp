@@ -368,3 +368,430 @@ describe('query_business_checking handler', () => {
     ])
   })
 })
+
+// ---------------------------------------------------------------------------
+// Regression coverage for: dot-path filters against joined `*_details` tables
+// (e.g. business_checking_details.accounting_integration_available) are only
+// row-restricting when the embed uses the `!inner` join hint. Without it,
+// PostgREST silently ignores the filter for row exclusion, so a listing that
+// fails the filter still comes back in both the response and
+// query_match_events. `mockQueryChain` above can't catch this class of bug
+// because it's an unconditional passthrough regardless of filter arguments.
+// `mockRealisticQueryChain` below actually simulates that PostgREST
+// semantics so these tests go red against the unfixed handler and green only
+// once the handler conditionally adds `!inner`.
+// ---------------------------------------------------------------------------
+
+type FilterCall = { method: 'eq' | 'gte' | 'lte'; column: string; value: unknown }
+type OrderSpec = { column: string; ascending: boolean; foreignTable?: string }
+
+function mockRealisticQueryChain(fixtureRows: Array<Record<string, unknown>>) {
+  const filters: FilterCall[] = []
+  let selectString = ''
+  let orderSpec: OrderSpec | null = null
+  const chain: Record<string, unknown> = {}
+
+  chain.select = vi.fn().mockImplementation((s: string) => {
+    selectString = s
+    return chain
+  })
+  chain.order = vi.fn().mockImplementation((column: string, opts?: { ascending?: boolean; foreignTable?: string }) => {
+    orderSpec = { column, ascending: opts?.ascending !== false, foreignTable: opts?.foreignTable }
+    return chain
+  })
+  chain.is = vi.fn().mockReturnValue(chain)
+  chain.neq = vi.fn().mockReturnValue(chain)
+  for (const method of ['eq', 'gte', 'lte'] as const) {
+    chain[method] = vi.fn().mockImplementation((column: string, value: unknown) => {
+      filters.push({ method, column, value })
+      return chain
+    })
+  }
+
+  const compare = (method: FilterCall['method'], actual: unknown, expected: unknown): boolean => {
+    if (actual === null || actual === undefined) return false
+    if (method === 'eq') return actual === expected
+    if (method === 'gte') return (actual as number) >= (expected as number)
+    return (actual as number) <= (expected as number)
+  }
+
+  chain.then = (resolve: (v: unknown) => unknown) => {
+    const innerTables = new Set(Array.from(selectString.matchAll(/(\w+)!inner/g)).map((m) => m[1]))
+
+    let rows = fixtureRows.filter((row) =>
+      filters.every(({ method, column, value }) => {
+        if (column.includes('.')) {
+          const [table, field] = column.split('.')
+          // Without !inner, PostgREST treats a dot-path filter as shaping the
+          // embedded resource only — it never excludes the parent row.
+          if (!innerTables.has(table)) return true
+          const nested = row[table] as Record<string, unknown> | null | undefined
+          if (!nested) return false
+          return compare(method, nested[field], value)
+        }
+        return compare(method, row[column], value)
+      })
+    )
+
+    if (orderSpec) {
+      const { column, ascending, foreignTable } = orderSpec
+      rows = [...rows].sort((a, b) => {
+        const av = (foreignTable ? (a[foreignTable] as Record<string, unknown> | null)?.[column] : a[column]) as number
+        const bv = (foreignTable ? (b[foreignTable] as Record<string, unknown> | null)?.[column] : b[column]) as number
+        return ascending ? av - bv : bv - av
+      })
+    }
+
+    return Promise.resolve({ data: rows, error: null }).then(resolve)
+  }
+
+  return { chain, getSelectString: () => selectString }
+}
+
+const baseListing = { ...sampleListing, product_type: 'checking' }
+
+const matchAll = {
+  ...baseListing,
+  id: 'listing-match-all',
+  listing_slug: 'match-all',
+  insurance_type: 'fdic',
+  available_states: ['IL'],
+  entity_types_accepted: ['llc', 'c_corp', 's_corp'],
+  monthly_fee: 0,
+  business_checking_details: {
+    ...baseListing.business_checking_details,
+    accounting_integration_available: true,
+    tax_integration_available: true,
+    expense_integration_available: true,
+    rtp_supported: true,
+    rtp_network: 'both',
+    cash_deposit_available: true,
+    sub_accounts_supported: true,
+    interest_bearing: true,
+    apy: 2.0,
+    free_transactions_per_month: 100,
+  },
+}
+
+const matchAllHigherFee = {
+  ...matchAll,
+  id: 'listing-match-all-higher-fee',
+  listing_slug: 'match-all-higher-fee',
+  monthly_fee: 5,
+}
+
+const wrongAccounting = {
+  ...matchAll,
+  id: 'listing-wrong-accounting',
+  listing_slug: 'wrong-accounting',
+  business_checking_details: { ...matchAll.business_checking_details, accounting_integration_available: false },
+}
+
+const wrongTax = {
+  ...matchAll,
+  id: 'listing-wrong-tax',
+  listing_slug: 'wrong-tax',
+  business_checking_details: { ...matchAll.business_checking_details, tax_integration_available: false },
+}
+
+const wrongInsurance = {
+  ...matchAll,
+  id: 'listing-wrong-insurance',
+  listing_slug: 'wrong-insurance',
+  insurance_type: 'ncua',
+}
+
+const wrongState = {
+  ...matchAll,
+  id: 'listing-wrong-state',
+  listing_slug: 'wrong-state',
+  available_states: ['NY'],
+}
+
+const wildcardState = {
+  ...matchAll,
+  id: 'listing-wildcard-state',
+  listing_slug: 'wildcard-state',
+  available_states: ['ALL'],
+}
+
+const partialEntityTypes = {
+  ...matchAll,
+  id: 'listing-partial-entity-types',
+  listing_slug: 'partial-entity-types',
+  entity_types_accepted: ['llc'],
+}
+
+const wrongRtpNetwork = {
+  ...matchAll,
+  id: 'listing-wrong-rtp-network',
+  listing_slug: 'wrong-rtp-network',
+  business_checking_details: { ...matchAll.business_checking_details, rtp_network: 'outgoing' },
+}
+
+const belowApyMin = {
+  ...matchAll,
+  id: 'listing-below-apy-min',
+  listing_slug: 'below-apy-min',
+  business_checking_details: { ...matchAll.business_checking_details, apy: 1.0 },
+}
+
+const atApyMin = {
+  ...matchAll,
+  id: 'listing-at-apy-min',
+  listing_slug: 'at-apy-min',
+  business_checking_details: { ...matchAll.business_checking_details, apy: 1.5 },
+}
+
+const belowFreeTransactionsMin = {
+  ...matchAll,
+  id: 'listing-below-free-tx-min',
+  listing_slug: 'below-free-tx-min',
+  business_checking_details: { ...matchAll.business_checking_details, free_transactions_per_month: 10 },
+}
+
+const atFreeTransactionsMin = {
+  ...matchAll,
+  id: 'listing-at-free-tx-min',
+  listing_slug: 'at-free-tx-min',
+  business_checking_details: { ...matchAll.business_checking_details, free_transactions_per_month: 25 },
+}
+
+const noDetails = {
+  ...matchAll,
+  id: 'listing-no-details',
+  listing_slug: 'no-details',
+  business_checking_details: null,
+}
+
+function setSupabaseChain(chain: unknown) {
+  vi.mocked(createSupabaseClient).mockReturnValue({
+    from: vi.fn().mockReturnValue(chain),
+  } as unknown as ReturnType<typeof createSupabaseClient>)
+}
+
+async function runQuery(args: Record<string, unknown>) {
+  const request = post({
+    jsonrpc: '2.0',
+    id: 1,
+    method: 'tools/call',
+    params: { name: 'query_business_checking', arguments: args },
+  })
+  const ctx = createExecutionContext()
+  const response = await app.fetch(request, env, ctx)
+  await waitOnExecutionContext(ctx)
+  const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
+  return JSON.parse(body.result.content[0].text) as Array<{ listing_slug: string }>
+}
+
+describe('advanced filter combinations — details-table restriction', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRedis()
+  })
+
+  it('reported-bug repro: excludes a listing whose accounting_integration_available is false even though every other filter matches', async () => {
+    const { chain } = mockRealisticQueryChain([
+      matchAll,
+      wrongAccounting,
+      wrongState,
+      wrongInsurance,
+      partialEntityTypes,
+    ])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({
+      insurance_type: 'fdic',
+      available_states: ['IL'],
+      entity_types_accepted: ['llc', 'c_corp'],
+      accounting_integration_available: true,
+    })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['match-all'])
+  })
+
+  it.each([
+    ['accounting_integration_available', true],
+    ['tax_integration_available', true],
+    ['expense_integration_available', true],
+    ['rtp_supported', true],
+    ['cash_deposit_available', true],
+    ['sub_accounts_supported', true],
+    ['interest_bearing', true],
+  ] as const)('excludes listings where %s does not match the requested value', async (key, value) => {
+    const wrongVariant = {
+      ...matchAll,
+      id: `listing-wrong-${key}`,
+      listing_slug: `wrong-${key}`,
+      business_checking_details: { ...matchAll.business_checking_details, [key]: !value },
+    }
+    const { chain } = mockRealisticQueryChain([matchAll, wrongVariant])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({ [key]: value })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['match-all'])
+  })
+
+  it('excludes listings where rtp_network does not match the requested value', async () => {
+    const { chain } = mockRealisticQueryChain([matchAll, wrongRtpNetwork])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({ rtp_network: 'both' })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['match-all'])
+  })
+
+  it('combines multiple details-table filters with AND semantics, not OR', async () => {
+    const { chain } = mockRealisticQueryChain([matchAll, wrongTax])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({
+      accounting_integration_available: true,
+      tax_integration_available: true,
+    })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['match-all'])
+  })
+
+  it('excludes a row satisfying only ONE of two requested boolean details filters (rtp_supported true, accounting_integration_available false)', async () => {
+    const rtpButNotAccounting = {
+      ...matchAll,
+      id: 'listing-rtp-not-accounting',
+      listing_slug: 'rtp-not-accounting',
+      business_checking_details: {
+        ...matchAll.business_checking_details,
+        rtp_supported: true,
+        accounting_integration_available: false,
+      },
+    }
+    const { chain } = mockRealisticQueryChain([matchAll, rtpButNotAccounting])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({
+      rtp_supported: true,
+      accounting_integration_available: true,
+    })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['match-all'])
+  })
+
+  it('excludes a row satisfying only the OTHER of two requested boolean details filters (accounting_integration_available true, rtp_supported false)', async () => {
+    const accountingButNotRtp = {
+      ...matchAll,
+      id: 'listing-accounting-not-rtp',
+      listing_slug: 'accounting-not-rtp',
+      business_checking_details: {
+        ...matchAll.business_checking_details,
+        accounting_integration_available: true,
+        rtp_supported: false,
+      },
+    }
+    const { chain } = mockRealisticQueryChain([matchAll, accountingButNotRtp])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({
+      rtp_supported: true,
+      accounting_integration_available: true,
+    })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['match-all'])
+  })
+
+  it('requires ALL of three combined details filters (boolean + enum + numeric) to match — AND across every filter, not just pairs', async () => {
+    const missingOne = {
+      ...matchAll,
+      id: 'listing-missing-one-of-three',
+      listing_slug: 'missing-one-of-three',
+      business_checking_details: {
+        ...matchAll.business_checking_details,
+        rtp_supported: true,
+        rtp_network: 'both',
+        accounting_integration_available: true,
+        apy: 1.0, // below the apy_min threshold requested below
+      },
+    }
+    const { chain } = mockRealisticQueryChain([matchAll, missingOne])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({
+      rtp_supported: true,
+      accounting_integration_available: true,
+      apy_min: 1.5,
+    })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['match-all'])
+  })
+
+  it('apy_min is an inclusive lower bound (gte) on the joined apy column', async () => {
+    const { chain } = mockRealisticQueryChain([belowApyMin, atApyMin])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({ apy_min: 1.5 })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['at-apy-min'])
+  })
+
+  it('free_transactions_min is an inclusive lower bound (gte) on the joined column', async () => {
+    const { chain } = mockRealisticQueryChain([belowFreeTransactionsMin, atFreeTransactionsMin])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({ free_transactions_min: 25 })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['at-free-tx-min'])
+  })
+
+  it('includes a listing with no details row when no details-filter is requested', async () => {
+    const { chain } = mockRealisticQueryChain([matchAll, noDetails])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({})
+
+    expect(results.map((r) => r.listing_slug).sort()).toEqual(['match-all', 'no-details'])
+  })
+
+  it('excludes a listing with no details row once a details-filter is requested', async () => {
+    const { chain } = mockRealisticQueryChain([matchAll, noDetails])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({ accounting_integration_available: true })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['match-all'])
+  })
+
+  it('adds the !inner join hint to business_checking_details only when a details-table filter is present', async () => {
+    const filtered = mockRealisticQueryChain([matchAll])
+    setSupabaseChain(filtered.chain)
+    await runQuery({ accounting_integration_available: true })
+    expect(filtered.getSelectString()).toMatch(/business_checking_details!inner/)
+
+    const unfiltered = mockRealisticQueryChain([matchAll])
+    setSupabaseChain(unfiltered.chain)
+    await runQuery({})
+    expect(unfiltered.getSelectString()).not.toMatch(/business_checking_details!inner/)
+    expect(unfiltered.getSelectString()).toMatch(/business_checking_details\(/)
+  })
+
+  it('query_match_events mirrors the filtered response exactly — same listings, correct rank/count, no leaked non-matches', async () => {
+    const { chain } = mockRealisticQueryChain([matchAllHigherFee, matchAll, wrongAccounting])
+    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
+    const from = vi.fn().mockImplementation((table: string) => (table === 'query_match_events' ? { insert: insertMock } : chain))
+    vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
+
+    const results = await runQuery({ accounting_integration_available: true })
+
+    // monthly_fee ASC: matchAll (0) before matchAllHigherFee (5); wrongAccounting/wrongState excluded.
+    expect(results.map((r) => r.listing_slug)).toEqual(['match-all', 'match-all-higher-fee'])
+
+    expect(insertMock).toHaveBeenCalledTimes(1)
+    const insertedRows = insertMock.mock.calls[0][0] as Array<{
+      listing_id: string
+      result_rank: number
+      result_count: number
+    }>
+    expect(insertedRows).toHaveLength(2)
+    expect(insertedRows.map((r) => r.listing_id)).toEqual([matchAll.id, matchAllHigherFee.id])
+    expect(insertedRows.map((r) => r.result_rank)).toEqual([1, 2])
+    expect(insertedRows.every((r) => r.result_count === 2)).toBe(true)
+  })
+})
