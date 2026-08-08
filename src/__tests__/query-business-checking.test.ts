@@ -54,7 +54,7 @@ const sampleListing = {
   entity_types_accepted: ['llc', 'sole_prop', 's_corp'],
   available_states: ['ALL'],
   insurance_type: 'fdic',
-  application_url: 'https://example.com/apply',
+  application_url: '/go/example-bank/business-checking-pro',
   last_modified: '2026-01-01',
   is_verified: true,
   listing_status: 'active',
@@ -315,7 +315,7 @@ describe('query_business_checking handler', () => {
     expect(item).toHaveProperty('physical_debit_card_available')
     expect(item).toHaveProperty('plan_tiers')
     expect(item).toHaveProperty('promotions')
-    expect(item).toHaveProperty('application_url')
+    expect(item.application_url).toBe('https://bancadia.com/go/example-bank/business-checking-pro')
     expect(item).toHaveProperty('last_modified')
     expect(item).toHaveProperty('is_verified')
     expect(item.institution_name).toBe('Example Bank')
