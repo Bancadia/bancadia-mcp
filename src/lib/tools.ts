@@ -1,8 +1,10 @@
+import { TARGET_INDUSTRY_SCHEMA, TARGET_BUSINESS_PROFILE_SCHEMA } from './target-segments'
+
 export const TOOLS = [
   {
     name: 'query_business_checking',
     description:
-      'Query the Bancadia registry for business checking account products using compound filter criteria. Returns active, verified listings from financial institutions.',
+      'Query the Bancadia registry for business checking account products using compound filter criteria. Returns active, verified listings from financial institutions. Optionally accepts target_industries/target_business_profiles to soft-rank results toward listings built for a given business type or stage — non-matching but eligible listings are still returned, just ranked lower.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -23,6 +25,18 @@ export const TOOLS = [
           type: 'array',
           items: { type: 'string' },
           description: 'Returns listings available in all specified states',
+        },
+        target_industries: {
+          type: 'array',
+          items: { type: 'string', ...TARGET_INDUSTRY_SCHEMA },
+          description:
+            'Soft-ranks results toward listings built for these business types. Does not exclude non-matching but otherwise-eligible listings.',
+        },
+        target_business_profiles: {
+          type: 'array',
+          items: { type: 'string', ...TARGET_BUSINESS_PROFILE_SCHEMA },
+          description:
+            'Soft-ranks results toward listings built for this business stage/shape. Does not exclude non-matching but otherwise-eligible listings.',
         },
         insurance_type: {
           type: 'string',

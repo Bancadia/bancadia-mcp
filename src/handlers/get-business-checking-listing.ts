@@ -1,5 +1,6 @@
 import { createSupabaseClient } from '../lib/supabase'
 import { recordMatchEvents, type QueryMeta } from '../lib/analytics'
+import { TARGET_SEGMENTS_EMBED } from '../lib/target-segments'
 import type { Env } from '../types'
 import type { Database } from '../lib/database.types'
 import { mapBusinessCheckingRow, type BusinessCheckingQueryRow } from './query-business-checking'
@@ -38,7 +39,7 @@ export async function handleGetBusinessCheckingListing(
   const { data, error } = await supabase
     .from('business_deposit_accounts')
     .select(
-      '*, business_checking_details(*), institutions(name, display_name, website_url, logo_url, institution_type, support_email), business_deposit_plan_tiers(*), business_deposit_promotions(*), business_deposit_fees(*), business_deposit_account_features(*)'
+      `*, business_checking_details(*), institutions(name, display_name, website_url, logo_url, institution_type, support_email), business_deposit_plan_tiers(*), business_deposit_promotions(*), business_deposit_fees(*), business_deposit_account_features(*), ${TARGET_SEGMENTS_EMBED}`
     )
     .eq('listing_slug', listingSlug)
     .eq('listing_status', 'active')

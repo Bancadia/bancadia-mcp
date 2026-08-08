@@ -564,6 +564,56 @@ const noDetails = {
   business_checking_details: null,
 }
 
+// ---------------------------------------------------------------------------
+// Fixtures for target-segment soft-ranking (§ Target Customer Segments spec).
+// monthly_fee values are deliberately chosen so that fee-ascending order and
+// match-count-descending order disagree, proving the sort actually reorders
+// rather than just happening to already be in the right order.
+// ---------------------------------------------------------------------------
+
+const taggedTwoMatches = {
+  ...matchAll,
+  id: 'listing-tagged-two-matches',
+  listing_slug: 'tagged-two-matches',
+  monthly_fee: 10,
+  business_deposit_account_target_segments: [
+    { category: 'industry_vertical', segment: 'saas_tech' },
+    { category: 'business_profile', segment: 'early_stage_startup' },
+  ],
+}
+
+const taggedOneMatch = {
+  ...matchAll,
+  id: 'listing-tagged-one-match',
+  listing_slug: 'tagged-one-match',
+  monthly_fee: 5,
+  business_deposit_account_target_segments: [{ category: 'industry_vertical', segment: 'saas_tech' }],
+}
+
+const untaggedZeroMatch = {
+  ...matchAll,
+  id: 'listing-untagged-zero-match',
+  listing_slug: 'untagged-zero-match',
+  monthly_fee: 0,
+  business_deposit_account_target_segments: [],
+}
+
+const tiedCheap = {
+  ...matchAll,
+  id: 'listing-tied-cheap',
+  listing_slug: 'tied-cheap',
+  monthly_fee: 0,
+  business_deposit_account_target_segments: [{ category: 'industry_vertical', segment: 'saas_tech' }],
+}
+
+const tiedExpensive = {
+  ...matchAll,
+  id: 'listing-tied-expensive',
+  listing_slug: 'tied-expensive',
+  monthly_fee: 5,
+  business_deposit_account_target_segments: [{ category: 'industry_vertical', segment: 'saas_tech' }],
+}
+
 function setSupabaseChain(chain: unknown) {
   vi.mocked(createSupabaseClient).mockReturnValue({
     from: vi.fn().mockReturnValue(chain),
@@ -793,5 +843,124 @@ describe('advanced filter combinations — details-table restriction', () => {
     expect(insertedRows.map((r) => r.listing_id)).toEqual([matchAll.id, matchAllHigherFee.id])
     expect(insertedRows.map((r) => r.result_rank)).toEqual([1, 2])
     expect(insertedRows.every((r) => r.result_count === 2)).toBe(true)
+  })
+})
+
+describe('target segments — soft-ranking, never a hard filter', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    mockRedis()
+  })
+
+  it('ranks matching listings ahead of non-matching without excluding them', async () => {
+    const { chain } = mockRealisticQueryChain([untaggedZeroMatch, taggedOneMatch, taggedTwoMatches])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({
+      target_industries: ['saas_tech'],
+      target_business_profiles: ['early_stage_startup'],
+    })
+
+    expect(results.map((r) => r.listing_slug)).toEqual([
+      'tagged-two-matches',
+      'tagged-one-match',
+      'untagged-zero-match',
+    ])
+  })
+
+  it('preserves monthly_fee-ascending order within an equal match-count tier', async () => {
+    const { chain } = mockRealisticQueryChain([tiedExpensive, tiedCheap])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({ target_industries: ['saas_tech'] })
+
+    expect(results.map((r) => r.listing_slug)).toEqual(['tied-cheap', 'tied-expensive'])
+  })
+
+  it('leaves order unchanged (monthly_fee ascending) when no target-segment params are provided', async () => {
+    const { chain } = mockRealisticQueryChain([taggedTwoMatches, taggedOneMatch, untaggedZeroMatch])
+    setSupabaseChain(chain)
+
+    const results = await runQuery({})
+
+    expect(results.map((r) => r.listing_slug)).toEqual([
+      'untagged-zero-match',
+      'tagged-one-match',
+      'tagged-two-matches',
+    ])
+  })
+
+  it('mapper returns [] not null for untagged listings, and correctly splits tagged segments by category', async () => {
+    const { chain } = mockRealisticQueryChain([taggedTwoMatches, untaggedZeroMatch])
+    setSupabaseChain(chain)
+
+    const request = post({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'query_business_checking', arguments: {} },
+    })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
+    const results = JSON.parse(body.result.content[0].text) as Array<{
+      listing_slug: string
+      target_industries: string[]
+      target_business_profiles: string[]
+    }>
+
+    const tagged = results.find((r) => r.listing_slug === 'tagged-two-matches')
+    expect(tagged?.target_industries).toEqual(['saas_tech'])
+    expect(tagged?.target_business_profiles).toEqual(['early_stage_startup'])
+
+    const untagged = results.find((r) => r.listing_slug === 'untagged-zero-match')
+    expect(untagged?.target_industries).toEqual([])
+    expect(untagged?.target_business_profiles).toEqual([])
+  })
+
+  it('query_match_events result_rank reflects post-sort order, not pre-sort monthly_fee order', async () => {
+    const { chain } = mockRealisticQueryChain([untaggedZeroMatch, taggedOneMatch, taggedTwoMatches])
+    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
+    const from = vi
+      .fn()
+      .mockImplementation((table: string) => (table === 'query_match_events' ? { insert: insertMock } : chain))
+    vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
+
+    const results = await runQuery({
+      target_industries: ['saas_tech'],
+      target_business_profiles: ['early_stage_startup'],
+    })
+
+    // Pre-sort (monthly_fee ASC) order would be untagged, one-match, two-matches.
+    // Post-sort (match count DESC) order must be two-matches, one-match, untagged.
+    expect(results.map((r) => r.listing_slug)).toEqual([
+      'tagged-two-matches',
+      'tagged-one-match',
+      'untagged-zero-match',
+    ])
+
+    expect(insertMock).toHaveBeenCalledTimes(1)
+    const insertedRows = insertMock.mock.calls[0][0] as Array<{ listing_id: string; result_rank: number }>
+    expect(insertedRows.map((r) => r.listing_id)).toEqual([
+      taggedTwoMatches.id,
+      taggedOneMatch.id,
+      untaggedZeroMatch.id,
+    ])
+    expect(insertedRows.map((r) => r.result_rank)).toEqual([1, 2, 3])
+  })
+
+  it('embeds business_deposit_account_target_segments without !inner, with or without target-segment params', async () => {
+    const withParams = mockRealisticQueryChain([matchAll])
+    setSupabaseChain(withParams.chain)
+    await runQuery({ target_industries: ['saas_tech'] })
+    expect(withParams.getSelectString()).toMatch(/business_deposit_account_target_segments\(/)
+    expect(withParams.getSelectString()).not.toMatch(/business_deposit_account_target_segments!inner/)
+
+    const withoutParams = mockRealisticQueryChain([matchAll])
+    setSupabaseChain(withoutParams.chain)
+    await runQuery({})
+    expect(withoutParams.getSelectString()).toMatch(/business_deposit_account_target_segments\(/)
+    expect(withoutParams.getSelectString()).not.toMatch(/business_deposit_account_target_segments!inner/)
   })
 })
