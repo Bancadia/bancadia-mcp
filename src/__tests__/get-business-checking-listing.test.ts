@@ -54,7 +54,7 @@ const sampleListing = {
   entity_types_accepted: ['llc', 'sole_prop'],
   available_states: ['ALL'],
   insurance_type: 'fdic',
-  application_url: 'https://example.com/apply',
+  application_url: '/go/found/business-checking',
   last_modified: '2026-01-01',
   is_verified: true,
   listing_status: 'active',
@@ -229,6 +229,7 @@ describe('get_business_checking_listing handler', () => {
     const item = results[0]
     expect(item.listing_slug).toBe('found-business-checking')
     expect(item.institution_name).toBe('Found')
+    expect(item.application_url).toBe('https://bancadia.com/go/found/business-checking')
 
     // wire_domestic_outgoing is covered by the flat outgoing_domestic_wire_fee
     // column and must not also appear in general_fees (Decision 3).

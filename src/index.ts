@@ -10,6 +10,7 @@ import { createSession, validateSession, deleteSession, SESSION_HEADER } from '.
 import { handleQueryBusinessChecking } from './handlers/query-business-checking'
 import { handleGetBusinessCheckingListing } from './handlers/get-business-checking-listing'
 import type { QueryMeta } from './lib/analytics'
+import { applyApplicationUrlHost } from './lib/urls'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -215,7 +216,7 @@ app.post('/', async (c) => {
       const results = await handler(args, c.env, c.executionCtx, meta)
       return sendJsonRpc(c, id, {
         result: {
-          content: [{ type: 'text', text: JSON.stringify(results) }],
+          content: [{ type: 'text', text: JSON.stringify(applyApplicationUrlHost(results)) }],
         },
       })
     }
