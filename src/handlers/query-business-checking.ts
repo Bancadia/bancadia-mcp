@@ -1,5 +1,6 @@
 import { createSupabaseClient } from '../lib/supabase'
 import { recordMatchEvents, type QueryMeta } from '../lib/analytics'
+import { TARGET_SEGMENTS_EMBED, bucketTargetSegments, rankByTargetSegments } from '../lib/target-segments'
 import type { Env } from '../types'
 import type { Database } from '../lib/database.types'
 
@@ -15,6 +16,7 @@ export type BusinessCheckingQueryRow = Database['public']['Tables']['business_de
   } | null
   business_deposit_plan_tiers: Database['public']['Tables']['business_deposit_plan_tiers']['Row'][]
   business_deposit_promotions: Database['public']['Tables']['business_deposit_promotions']['Row'][]
+  business_deposit_account_target_segments: Database['public']['Tables']['business_deposit_account_target_segments']['Row'][]
 }
 
 // Filters below that read a business_checking_details column via a dot-path
@@ -51,7 +53,7 @@ export async function handleQueryBusinessChecking(
   let query = supabase
     .from('business_deposit_accounts')
     .select(
-      `*, business_checking_details${needsDetailsInner ? '!inner' : ''}(*), institutions(name, display_name, website_url, logo_url, institution_type, support_email), business_deposit_plan_tiers(*), business_deposit_promotions(*)`
+      `*, business_checking_details${needsDetailsInner ? '!inner' : ''}(*), institutions(name, display_name, website_url, logo_url, institution_type, support_email), business_deposit_plan_tiers(*), business_deposit_promotions(*), ${TARGET_SEGMENTS_EMBED}`
     )
     .eq('listing_status', 'active')
     .eq('product_type', 'checking')
@@ -138,6 +140,19 @@ export async function handleQueryBusinessChecking(
     })
   }
 
+  // Soft-ranking on target segments: reorder (never exclude) rows so that
+  // any overlap between their tagged segments and the requested ones ranks
+  // ahead of non-matching rows. Stable sort preserves the existing
+  // monthly_fee-ascending order within each match-count tier. This also
+  // changes what recordMatchEvents below records as result_rank, since that
+  // reflects `results`' array order at the point it runs — intentional, so
+  // the analytics reflect what the caller actually saw post-sort.
+  results = rankByTargetSegments(
+    results,
+    Array.isArray(args.target_industries) ? (args.target_industries as string[]) : [],
+    Array.isArray(args.target_business_profiles) ? (args.target_business_profiles as string[]) : []
+  )
+
   ctx.waitUntil(
     recordMatchEvents(
       env,
@@ -158,6 +173,9 @@ export async function handleQueryBusinessChecking(
 // and layers on additional_fees/features for the single-listing detail view.
 export function mapBusinessCheckingRow(row: BusinessCheckingQueryRow) {
   const details = row.business_checking_details
+  const { target_industries, target_business_profiles } = bucketTargetSegments(
+    row.business_deposit_account_target_segments
+  )
   return {
     listing_slug: row.listing_slug,
     institution_name: row.institutions?.name ?? null,
@@ -176,6 +194,8 @@ export function mapBusinessCheckingRow(row: BusinessCheckingQueryRow) {
     minimum_opening_deposit: row.minimum_opening_deposit,
     entity_types_accepted: row.entity_types_accepted,
     available_states: row.available_states,
+    target_industries,
+    target_business_profiles,
     insurance_type: row.insurance_type,
     free_transactions_per_month: details?.free_transactions_per_month ?? null,
     cash_deposit_available: details?.cash_deposit_available ?? null,

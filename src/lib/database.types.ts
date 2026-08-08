@@ -251,6 +251,38 @@ export type Database = {
           },
         ]
       }
+      business_deposit_account_target_segments: {
+        Row: {
+          category: Database["public"]["Enums"]["target_segment_category_enum"]
+          created_at: string
+          id: string
+          listing_id: string
+          segment: Database["public"]["Enums"]["target_segment_enum"]
+        }
+        Insert: {
+          category: Database["public"]["Enums"]["target_segment_category_enum"]
+          created_at?: string
+          id?: string
+          listing_id: string
+          segment: Database["public"]["Enums"]["target_segment_enum"]
+        }
+        Update: {
+          category?: Database["public"]["Enums"]["target_segment_category_enum"]
+          created_at?: string
+          id?: string
+          listing_id?: string
+          segment?: Database["public"]["Enums"]["target_segment_enum"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_deposit_account_target_segments_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "business_deposit_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       business_deposit_accounts: {
         Row: {
           affiliate_disclosure: string | null
@@ -1376,6 +1408,27 @@ export type Database = {
       insurance_type_enum: "fdic" | "ncua" | "uninsured"
       listing_status_enum: "draft" | "active" | "paused" | "scheduled"
       rtp_network_enum: "fednow" | "rtp_network" | "both" | "none"
+      target_segment_category_enum: "industry_vertical" | "business_profile"
+      target_segment_enum:
+        | "ecommerce"
+        | "retail_storefront"
+        | "restaurant_food_service"
+        | "content_creator_solopreneur"
+        | "professional_services"
+        | "real_estate"
+        | "healthcare_practice"
+        | "construction_trades"
+        | "trucking_logistics"
+        | "agriculture"
+        | "saas_tech"
+        | "nonprofit"
+        | "small_business_digital_first"
+        | "early_stage_startup"
+        | "vc_backed"
+        | "bootstrapped_solopreneur"
+        | "established_smb"
+        | "high_growth"
+        | "side_hustle"
       traffic_source_enum:
         | "organic"
         | "llm"
@@ -1570,6 +1623,28 @@ export const Constants = {
       insurance_type_enum: ["fdic", "ncua", "uninsured"],
       listing_status_enum: ["draft", "active", "paused", "scheduled"],
       rtp_network_enum: ["fednow", "rtp_network", "both", "none"],
+      target_segment_category_enum: ["industry_vertical", "business_profile"],
+      target_segment_enum: [
+        "ecommerce",
+        "retail_storefront",
+        "restaurant_food_service",
+        "content_creator_solopreneur",
+        "professional_services",
+        "real_estate",
+        "healthcare_practice",
+        "construction_trades",
+        "trucking_logistics",
+        "agriculture",
+        "saas_tech",
+        "nonprofit",
+        "small_business_digital_first",
+        "early_stage_startup",
+        "vc_backed",
+        "bootstrapped_solopreneur",
+        "established_smb",
+        "high_growth",
+        "side_hustle",
+      ],
       traffic_source_enum: [
         "organic",
         "llm",
