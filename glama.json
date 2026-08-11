@@ -1,0 +1,7 @@
+{
+  "name": "Bancadia MCP",
+  "description": "Bancadia MCP enables access to Bancadia's underlying business checking data. Plug into Bancadia to provide highly targeted banking product recommendations to your end users.",
+  "category": "Developer Tools",
+  "homepage": "https://bancadia.com/docs",
+  "transport": "streamable-http"
+}
