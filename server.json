@@ -1,0 +1,25 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.macphe22/bancadia-mcp",
+  "title": "Bancadia MCP",
+  "description": "Query Bancadia's registry of US business checking account products with structured filters.",
+  "repository": {
+    "url": "https://github.com/Bancadia/bancadia-mcp",
+    "source": "github"
+  },
+  "version": "2.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://mcp.bancadia.com/",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer token required for tools/call (e.g. 'Bearer <token>'). Not required for initialize or tools/list. Obtain a token at https://bancadia.com/developer/signup.",
+          "isRequired": false,
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
