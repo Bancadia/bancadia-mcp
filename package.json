@@ -8,7 +8,11 @@
     "deploy:staging": "wrangler deploy --env staging",
     "deploy:production": "wrangler deploy --env production",
     "test": "vitest run",
-    "lint": "tsc --noEmit"
+    "test:integration": "node scripts/db/run-integration.mjs",
+    "lint": "tsc --noEmit",
+    "db:start": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" start",
+    "db:reset": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" db reset --local && node scripts/db/apply-grants.mjs && node scripts/db/seed-test-fixtures.mjs",
+    "db:stop": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" stop"
   },
   "repository": {
     "type": "git",
@@ -30,6 +34,7 @@
   "devDependencies": {
     "@cloudflare/vitest-pool-workers": "^0.16.9",
     "@cloudflare/workers-types": "^4.20260525.1",
+    "supabase": "2.114.0",
     "typescript": "^6.0.3",
     "vitest": "^4.1.7",
     "wrangler": "^4.94.0"

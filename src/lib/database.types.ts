@@ -85,7 +85,8 @@ export type Database = {
         Row: {
           accounting_integration_available: boolean
           ach_debit_block_available: boolean
-          apy: number | null
+          apy_default: number | null
+          apy_max: number | null
           apy_tiers: Json | null
           atm_fee_reimbursement: boolean
           atm_fee_reimbursement_limit: number | null
@@ -122,7 +123,8 @@ export type Database = {
         Insert: {
           accounting_integration_available?: boolean
           ach_debit_block_available?: boolean
-          apy?: number | null
+          apy_default?: number | null
+          apy_max?: number | null
           apy_tiers?: Json | null
           atm_fee_reimbursement?: boolean
           atm_fee_reimbursement_limit?: number | null
@@ -159,7 +161,8 @@ export type Database = {
         Update: {
           accounting_integration_available?: boolean
           ach_debit_block_available?: boolean
-          apy?: number | null
+          apy_default?: number | null
+          apy_max?: number | null
           apy_tiers?: Json | null
           atm_fee_reimbursement?: boolean
           atm_fee_reimbursement_limit?: number | null

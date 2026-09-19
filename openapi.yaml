@@ -379,7 +379,7 @@ paths:
                               tax_integration_available: { type: boolean, description: "Whether the account connects to any tax-prep or tax-filing software/service" }
                               expense_integration_available: { type: boolean, description: "Whether the account connects to any expense/spend-management software" }
                               interest_bearing: { type: boolean, description: "Whether the account earns interest" }
-                              apy_min: { type: number, description: "Minimum APY (inclusive), for interest-bearing accounts" }
+                              apy_min: { type: number, description: "Only return accounts whose best available rate (apy_max) is at least this value, as a decimal (e.g. 0.02 = 2%). This is the best rate the account can pay, not what a typical customer gets — many accounts pay less by default. Check apy_default in the results for the standard rate." }
                             additionalProperties: false
                         - name: get_business_checking_listing
                           description: >-
@@ -417,7 +417,7 @@ paths:
                             [{"listing_slug":"example-bank-business-checking-pro","institution_name":"Example
                             Bank","institution":{"display_name":"Example
                             Bank","website_url":"https://examplebank.com","logo_url":"https://examplebank.com/logo.png","institution_type":"regional_bank","support_email":"support@examplebank.com"},"product_name":"Business
-                            Checking Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"cash_deposit_fee_per_100":2.5,"monthly_cash_deposit_limit":5000,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"incoming_domestic_wire_fee":0,"outgoing_international_wire_fee":45,"incoming_international_wire_fee":15,"multicurrency_support":false,"free_domestic_wires_per_month":2,"per_transaction_fee_after_limit":0.5,"atm_fee_reimbursement":true,"atm_fee_reimbursement_limit":10,"atm_network":"Allpoint","overdraft_protection_available":true,"overdraft_line_of_credit_available":false,"daily_debit_limit":5000,"ach_debit_block_available":true,"positive_pay_available":true,"remote_deposit_capture":true,"bill_pay_available":true,"check_writing_available":true,"corporate_card_available":true,"virtual_cards_available":true,"physical_debit_card_available":true,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0}],"promotions":[{"bonus_amount":300,"condition_description":"Deposit
+                            Checking Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"cash_deposit_fee_per_100":2.5,"monthly_cash_deposit_limit":5000,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy_max":1.25,"apy_default":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"incoming_domestic_wire_fee":0,"outgoing_international_wire_fee":45,"incoming_international_wire_fee":15,"multicurrency_support":false,"free_domestic_wires_per_month":2,"per_transaction_fee_after_limit":0.5,"atm_fee_reimbursement":true,"atm_fee_reimbursement_limit":10,"atm_network":"Allpoint","overdraft_protection_available":true,"overdraft_line_of_credit_available":false,"daily_debit_limit":5000,"ach_debit_block_available":true,"positive_pay_available":true,"remote_deposit_capture":true,"bill_pay_available":true,"check_writing_available":true,"corporate_card_available":true,"virtual_cards_available":true,"physical_debit_card_available":true,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0}],"promotions":[{"bonus_amount":300,"condition_description":"Deposit
                             $2,500 within 30
                             days","minimum_deposit":2500,"expiry_date":null,"promo_url":"https://example.com/promo"}],"application_url":"https://example.com/apply","last_modified":"2026-01-01T00:00:00Z","is_verified":true}]
                 toolsCallDetail:
@@ -433,7 +433,7 @@ paths:
                             Bank","institution":{"display_name":"Example
                             Bank","website_url":"https://examplebank.com","logo_url":"https://examplebank.com/logo.png","institution_type":"regional_bank","support_email":"support@examplebank.com"},"product_name":"Business
                             Checking
-                            Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"cash_deposit_fee_per_100":2.5,"monthly_cash_deposit_limit":5000,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"incoming_domestic_wire_fee":0,"outgoing_international_wire_fee":45,"incoming_international_wire_fee":15,"multicurrency_support":false,"free_domestic_wires_per_month":2,"per_transaction_fee_after_limit":0.5,"atm_fee_reimbursement":true,"atm_fee_reimbursement_limit":10,"atm_network":"Allpoint","overdraft_protection_available":true,"overdraft_line_of_credit_available":false,"daily_debit_limit":5000,"ach_debit_block_available":true,"positive_pay_available":true,"remote_deposit_capture":true,"bill_pay_available":true,"check_writing_available":true,"corporate_card_available":true,"virtual_cards_available":true,"physical_debit_card_available":true,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0,"features":[],"fees":[]},{"plan_name":"Plus","monthly_fee":15,"monthly_fee_waiver_condition":"Waived
+                            Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"cash_deposit_fee_per_100":2.5,"monthly_cash_deposit_limit":5000,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy_max":1.75,"apy_default":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"incoming_domestic_wire_fee":0,"outgoing_international_wire_fee":45,"incoming_international_wire_fee":15,"multicurrency_support":false,"free_domestic_wires_per_month":2,"per_transaction_fee_after_limit":0.5,"atm_fee_reimbursement":true,"atm_fee_reimbursement_limit":10,"atm_network":"Allpoint","overdraft_protection_available":true,"overdraft_line_of_credit_available":false,"daily_debit_limit":5000,"ach_debit_block_available":true,"positive_pay_available":true,"remote_deposit_capture":true,"bill_pay_available":true,"check_writing_available":true,"corporate_card_available":true,"virtual_cards_available":true,"physical_debit_card_available":true,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0,"features":[],"fees":[]},{"plan_name":"Plus","monthly_fee":15,"monthly_fee_waiver_condition":"Waived
                             with $10,000 average daily
                             balance","apy":1.75,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":false,"sort_order":1,"features":[{"category":"account_management","description":"Maximum
                             number of sub-accounts included with this
@@ -848,7 +848,12 @@ components:
           description: Whether the account earns interest.
         apy_min:
           type: number
-          description: Minimum APY (inclusive), for interest-bearing accounts.
+          description: >-
+            Only return accounts whose best available rate (apy_max) is at
+            least this value, as a decimal (e.g. 0.02 = 2%). This is the
+            best rate the account can pay, not what a typical customer gets —
+            many accounts pay less by default. Check apy_default in the
+            results for the standard rate.
 
     GetBusinessCheckingListingArguments:
       type: object
@@ -1022,9 +1027,10 @@ components:
       description: >-
         Canonical balance-tiered rate schema (bancadia-db migration 037).
         Only populated when `interest_bearing` is true and the rate varies by
-        balance; null for flat-rate or non-interest accounts. The flat `apy`
-        field always holds the best available rate for indexing, independent
-        of this structure.
+        balance; null for flat-rate or non-interest accounts. The flat
+        `apy_max` field always holds the best available rate for indexing,
+        independent of this structure; `apy_default` holds the bottom tier's
+        rate (the rate with no minimum balance beyond account opening).
       properties:
         effective_date:
           type: string
@@ -1091,7 +1097,7 @@ components:
           type: boolean
           description: >-
             Marks the plan whose values seed the listing's flat `monthly_fee`
-            / `apy` fields. At most one true per listing.
+            / `apy_default` fields. At most one true per listing.
         sort_order:
           type: integer
           description: Display order, cheapest to priciest (0 = cheapest).
@@ -1369,14 +1375,24 @@ components:
           type:
             - boolean
             - "null"
-        apy:
+        apy_max:
           type:
             - number
             - "null"
           description: >-
-            Best available APY for indexing/search — if the product has
-            multiple plan tiers, this mirrors the highest APY across
-            `plan_tiers`, not necessarily the default plan's APY.
+            Best available APY for indexing/search — mirrors the highest APY
+            across `plan_tiers` or `apy_tiers` if the product has multiple,
+            not necessarily what a customer gets by default.
+        apy_default:
+          type:
+            - number
+            - "null"
+          description: >-
+            APY earned under this account's default configuration: no
+            paid-plan upgrade, no minimum balance beyond account opening.
+            Independent of `apy_max`. A value of 0 or null here is compatible
+            with `interest_bearing` being true — real interest exists on this
+            product, just not without qualifying for it.
         apy_tiers:
           $ref: "#/components/schemas/ApyTiers"
         outgoing_domestic_wire_fee:
