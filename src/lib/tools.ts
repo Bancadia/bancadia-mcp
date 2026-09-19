@@ -82,7 +82,8 @@ export const TOOLS = [
         },
         apy_min: {
           type: 'number',
-          description: 'Minimum APY (inclusive), for interest-bearing accounts',
+          description:
+            "Only return accounts whose best available rate (apy_max) is at least this value, as a decimal (e.g. 0.02 = 2%). This is the best rate the account can pay, not what a typical customer gets — many accounts pay less by default. Check apy_default in the results for the standard rate.",
         },
       },
       additionalProperties: false,

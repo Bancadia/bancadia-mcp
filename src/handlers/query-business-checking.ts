@@ -58,6 +58,11 @@ export async function handleQueryBusinessChecking(
     .eq('listing_status', 'active')
     .eq('product_type', 'checking')
     .order('monthly_fee', { ascending: true })
+    // Secondary tiebreaker — Postgres does not guarantee row order for ties
+    // on monthly_fee alone, and rankByTargetSegments below relies on a
+    // stable input order to preserve monthly_fee-ascending order within a
+    // match-count tier.
+    .order('id', { ascending: true })
 
   if (args.monthly_fee_max !== undefined) {
     query = query.lte('monthly_fee', args.monthly_fee_max)
@@ -108,7 +113,7 @@ export async function handleQueryBusinessChecking(
     query = query.gte('business_checking_details.free_transactions_per_month', args.free_transactions_min)
   }
   if (args.apy_min !== undefined) {
-    query = query.gte('business_checking_details.apy', args.apy_min)
+    query = query.gte('business_checking_details.apy_max', args.apy_min)
   }
 
   const { data, error } = await query
@@ -208,7 +213,8 @@ export function mapBusinessCheckingRow(row: BusinessCheckingQueryRow) {
     tax_integration_available: details?.tax_integration_available ?? null,
     expense_integration_available: details?.expense_integration_available ?? null,
     interest_bearing: details?.interest_bearing ?? null,
-    apy: details?.apy ?? null,
+    apy_max: details?.apy_max ?? null,
+    apy_default: details?.apy_default ?? null,
     apy_tiers: details?.apy_tiers ?? null,
     outgoing_domestic_wire_fee: details?.outgoing_domestic_wire_fee ?? null,
     incoming_domestic_wire_fee: details?.incoming_domestic_wire_fee ?? null,

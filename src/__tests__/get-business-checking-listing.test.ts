@@ -78,7 +78,8 @@ const sampleListing = {
     tax_integration_available: true,
     expense_integration_available: false,
     interest_bearing: false,
-    apy: null,
+    apy_max: null,
+    apy_default: null,
     apy_tiers: null,
     outgoing_domestic_wire_fee: 20,
     incoming_domestic_wire_fee: 0,
@@ -199,6 +200,17 @@ const sampleListing = {
   ],
 }
 
+// Real-DB coverage for "does the handler talk to Supabase correctly" now
+// lives in
+// src/__tests__/integration/get-business-checking-listing.integration.test.ts
+// (slug lookup, unknown-slug empty array, listing_id as a real FK target,
+// target-segment embed presence, query_match_events). What stays mocked
+// here is the plan-tier-scoped fees/features splitting logic
+// (general_fees/general_features vs. per-tier, sort_order, the flat-column
+// fee-type exclusion) — genuine handler transformation logic, not Supabase
+// call fidelity, and more precisely verifiable with a fully-controlled
+// fixture than by asserting against whichever real institutions happen to
+// have multi-tier plans in the seeded onboarding-script data.
 describe('get_business_checking_listing handler', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -268,27 +280,9 @@ describe('get_business_checking_listing handler', () => {
     )
   })
 
-  it('returns an empty array when no listing matches the slug', async () => {
-    const chain = mockQueryChain({ data: [], error: null })
-    vi.mocked(createSupabaseClient).mockReturnValue({
-      from: vi.fn().mockReturnValue(chain),
-    } as unknown as ReturnType<typeof createSupabaseClient>)
-
-    const request = post({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/call',
-      params: { name: 'get_business_checking_listing', arguments: { listing_slug: 'does-not-exist' } },
-    })
-    const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
-    await waitOnExecutionContext(ctx)
-
-    expect(response.status).toBe(200)
-    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
-    const results = JSON.parse(body.result.content[0].text)
-    expect(results).toEqual([])
-  })
+  // "returns [] for an unknown slug" is now covered against a real local
+  // Supabase instance by
+  // src/__tests__/integration/get-business-checking-listing.integration.test.ts.
 
   it('returns an empty array when listing_slug is missing', async () => {
     const chain = mockQueryChain({ data: [sampleListing], error: null })

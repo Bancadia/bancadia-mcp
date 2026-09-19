@@ -21,6 +21,7 @@ vi.mock('../lib/supabase', () => ({
 
 import app from '../index'
 import { createSupabaseClient } from '../lib/supabase'
+import { mapBusinessCheckingRow, type BusinessCheckingQueryRow } from '../handlers/query-business-checking'
 import { mockRedis, withSession, TEST_SESSION_ID, TEST_DEVELOPER_ID } from './helpers'
 
 function post(body: object) {
@@ -35,13 +36,16 @@ function post(body: object) {
   })
 }
 
-function mockQueryChain(result: { data: unknown; error: unknown }) {
-  const chain: Record<string, unknown> = {}
-  const methods = ['select', 'eq', 'neq', 'gte', 'lte', 'order', 'is']
-  for (const m of methods) chain[m] = vi.fn().mockReturnValue(chain)
-  chain['then'] = (resolve: (v: unknown) => unknown) => Promise.resolve(result).then(resolve)
-  return chain
-}
+// Real-DB coverage for "does the handler talk to Supabase correctly" now
+// lives in src/__tests__/integration/query-business-checking.integration.test.ts
+// (base response shape, monthly_fee_max, entity_types_accepted, the
+// !inner join hint, ordering stability, query_match_events — all against a
+// real local Supabase instance). What remains here is genuinely
+// mock-appropriate: pure JS logic (the mapper), fire-and-forget control
+// flow independent of whether Postgres accepts the insert, and
+// available_states — the real onboarding-script dataset has zero diversity
+// on that field (every seeded listing is `['ALL']`), so the 'ALL'-wildcard
+// exclusion path can't be exercised against real data at all.
 
 const sampleListing = {
   id: 'listing-uuid-1',
@@ -78,7 +82,8 @@ const sampleListing = {
     tax_integration_available: false,
     expense_integration_available: true,
     interest_bearing: true,
-    apy: 1.25,
+    apy_max: 1.25,
+    apy_default: 1.25,
     apy_tiers: null,
     outgoing_domestic_wire_fee: 15,
     incoming_domestic_wire_fee: 0,
@@ -123,69 +128,90 @@ const sampleListing = {
       promo_url: 'https://example.com/promo',
     },
   ],
+  business_deposit_account_target_segments: [],
 }
 
-describe('query_business_checking handler', () => {
+function mockQueryChain(result: { data: unknown; error: unknown }) {
+  const chain: Record<string, unknown> = {}
+  const methods = ['select', 'eq', 'neq', 'gte', 'lte', 'order', 'is']
+  for (const m of methods) chain[m] = vi.fn().mockReturnValue(chain)
+  chain['then'] = (resolve: (v: unknown) => unknown) => Promise.resolve(result).then(resolve)
+  return chain
+}
+
+describe('mapBusinessCheckingRow — pure mapper shape, no DB involved', () => {
+  it('produces every field the client-facing response contract requires', () => {
+    const item = mapBusinessCheckingRow(sampleListing as unknown as BusinessCheckingQueryRow)
+
+    expect(item).toHaveProperty('listing_slug')
+    expect(item).toHaveProperty('institution_name')
+    expect(item).toHaveProperty('institution')
+    expect(item).toHaveProperty('product_name')
+    expect(item).toHaveProperty('monthly_fee')
+    expect(item).toHaveProperty('monthly_fee_waiver_condition')
+    expect(item).toHaveProperty('minimum_opening_deposit')
+    expect(item).toHaveProperty('entity_types_accepted')
+    expect(item).toHaveProperty('available_states')
+    expect(item).toHaveProperty('insurance_type')
+    expect(item).toHaveProperty('free_transactions_per_month')
+    expect(item).toHaveProperty('cash_deposit_available')
+    expect(item).toHaveProperty('cash_deposit_fee_per_100')
+    expect(item).toHaveProperty('monthly_cash_deposit_limit')
+    expect(item).toHaveProperty('sub_accounts_supported')
+    expect(item).toHaveProperty('rtp_supported')
+    expect(item).toHaveProperty('rtp_network')
+    expect(item).toHaveProperty('accounting_integration_available')
+    expect(item).toHaveProperty('tax_integration_available')
+    expect(item).toHaveProperty('expense_integration_available')
+    expect(item).toHaveProperty('interest_bearing')
+    expect(item).toHaveProperty('apy_max')
+    expect(item).toHaveProperty('apy_default')
+    expect(item).toHaveProperty('apy_tiers')
+    expect(item).toHaveProperty('outgoing_domestic_wire_fee')
+    expect(item).toHaveProperty('incoming_domestic_wire_fee')
+    expect(item).toHaveProperty('outgoing_international_wire_fee')
+    expect(item).toHaveProperty('incoming_international_wire_fee')
+    expect(item).toHaveProperty('multicurrency_support')
+    expect(item).toHaveProperty('free_domestic_wires_per_month')
+    expect(item).toHaveProperty('per_transaction_fee_after_limit')
+    expect(item).toHaveProperty('atm_fee_reimbursement')
+    expect(item).toHaveProperty('atm_fee_reimbursement_limit')
+    expect(item).toHaveProperty('atm_network')
+    expect(item).toHaveProperty('overdraft_protection_available')
+    expect(item).toHaveProperty('overdraft_line_of_credit_available')
+    expect(item).toHaveProperty('daily_debit_limit')
+    expect(item).toHaveProperty('ach_debit_block_available')
+    expect(item).toHaveProperty('positive_pay_available')
+    expect(item).toHaveProperty('remote_deposit_capture')
+    expect(item).toHaveProperty('bill_pay_available')
+    expect(item).toHaveProperty('check_writing_available')
+    expect(item).toHaveProperty('corporate_card_available')
+    expect(item).toHaveProperty('virtual_cards_available')
+    expect(item).toHaveProperty('physical_debit_card_available')
+    expect(item).toHaveProperty('plan_tiers')
+    expect(item).toHaveProperty('promotions')
+    // application_url is host-prefixed by a layer above the mapper
+    // (src/lib/urls.ts, applied in index.ts) — this unit test calls
+    // mapBusinessCheckingRow directly, so the raw stored path is expected.
+    expect(item.application_url).toBe('/go/example-bank/business-checking-pro')
+    expect(item).toHaveProperty('last_modified')
+    expect(item).toHaveProperty('is_verified')
+    expect(item.institution_name).toBe('Example Bank')
+    expect(item.institution?.institution_type).toBe('regional_bank')
+    expect(item.incoming_international_wire_fee).toBe(15)
+    expect(item.multicurrency_support).toBe(false)
+    expect(item.plan_tiers[0].plan_name).toBe('Standard')
+    expect(item.promotions[0].bonus_amount).toBe(300)
+    // id/institution_id are never surfaced to the client.
+    expect(item).not.toHaveProperty('id')
+    expect(item).not.toHaveProperty('institution_id')
+  })
+})
+
+describe('query_business_checking handler — mock-appropriate coverage only', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     mockRedis()
-  })
-
-  it('returns all active BC listings with no filters ordered by monthly_fee ASC', async () => {
-    const chain = mockQueryChain({ data: [sampleListing], error: null })
-    vi.mocked(createSupabaseClient).mockReturnValue({
-      from: vi.fn().mockReturnValue(chain),
-    } as unknown as ReturnType<typeof createSupabaseClient>)
-
-    const request = post({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/call',
-      params: { name: 'query_business_checking', arguments: {} },
-    })
-    const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
-    await waitOnExecutionContext(ctx)
-
-    expect(response.status).toBe(200)
-    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
-    const results = JSON.parse(body.result.content[0].text)
-    expect(Array.isArray(results)).toBe(true)
-    expect(results.length).toBe(1)
-  })
-
-  it('JS-side entity_types_accepted filter: only listings containing all requested types', async () => {
-    const fullTypes = {
-      ...sampleListing,
-      entity_types_accepted: ['llc', 'sole_prop', 's_corp'],
-    }
-    const partialTypes = { ...sampleListing, entity_types_accepted: ['llc'] }
-    const chain = mockQueryChain({ data: [fullTypes, partialTypes], error: null })
-    vi.mocked(createSupabaseClient).mockReturnValue({
-      from: vi.fn().mockReturnValue(chain),
-    } as unknown as ReturnType<typeof createSupabaseClient>)
-
-    const request = post({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/call',
-      params: {
-        name: 'query_business_checking',
-        arguments: { entity_types_accepted: ['llc', 'sole_prop'] },
-      },
-    })
-    const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
-    await waitOnExecutionContext(ctx)
-
-    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
-    const results = JSON.parse(body.result.content[0].text) as Array<{
-      entity_types_accepted: string[]
-    }>
-    // Only fullTypes matches both llc and sole_prop
-    expect(results.length).toBe(1)
-    expect(results[0].entity_types_accepted).toContain('llc')
-    expect(results[0].entity_types_accepted).toContain('sole_prop')
   })
 
   it('JS-side available_states filter: ALL listings included, non-matching excluded', async () => {
@@ -220,110 +246,6 @@ describe('query_business_checking handler', () => {
     expect(
       results.some((r) => r.available_states.includes('TX') && !r.available_states.includes('CA'))
     ).toBe(false)
-  })
-
-  it('accounting_integration_available server-side filter is passed through in output', async () => {
-    const chain = mockQueryChain({ data: [sampleListing], error: null })
-    vi.mocked(createSupabaseClient).mockReturnValue({
-      from: vi.fn().mockReturnValue(chain),
-    } as unknown as ReturnType<typeof createSupabaseClient>)
-
-    const request = post({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/call',
-      params: {
-        name: 'query_business_checking',
-        arguments: { accounting_integration_available: true },
-      },
-    })
-    const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
-    await waitOnExecutionContext(ctx)
-
-    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
-    const results = JSON.parse(body.result.content[0].text) as Array<{
-      accounting_integration_available: boolean
-    }>
-    expect(results.length).toBe(1)
-    expect(results[0].accounting_integration_available).toBe(true)
-  })
-
-  it('result objects contain all required fields', async () => {
-    const chain = mockQueryChain({ data: [sampleListing], error: null })
-    vi.mocked(createSupabaseClient).mockReturnValue({
-      from: vi.fn().mockReturnValue(chain),
-    } as unknown as ReturnType<typeof createSupabaseClient>)
-
-    const request = post({
-      jsonrpc: '2.0',
-      id: 1,
-      method: 'tools/call',
-      params: { name: 'query_business_checking', arguments: {} },
-    })
-    const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
-    await waitOnExecutionContext(ctx)
-
-    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
-    const results = JSON.parse(body.result.content[0].text)
-    const item = results[0]
-
-    expect(item).toHaveProperty('listing_slug')
-    expect(item).toHaveProperty('institution_name')
-    expect(item).toHaveProperty('institution')
-    expect(item).toHaveProperty('product_name')
-    expect(item).toHaveProperty('monthly_fee')
-    expect(item).toHaveProperty('monthly_fee_waiver_condition')
-    expect(item).toHaveProperty('minimum_opening_deposit')
-    expect(item).toHaveProperty('entity_types_accepted')
-    expect(item).toHaveProperty('available_states')
-    expect(item).toHaveProperty('insurance_type')
-    expect(item).toHaveProperty('free_transactions_per_month')
-    expect(item).toHaveProperty('cash_deposit_available')
-    expect(item).toHaveProperty('cash_deposit_fee_per_100')
-    expect(item).toHaveProperty('monthly_cash_deposit_limit')
-    expect(item).toHaveProperty('sub_accounts_supported')
-    expect(item).toHaveProperty('rtp_supported')
-    expect(item).toHaveProperty('rtp_network')
-    expect(item).toHaveProperty('accounting_integration_available')
-    expect(item).toHaveProperty('tax_integration_available')
-    expect(item).toHaveProperty('expense_integration_available')
-    expect(item).toHaveProperty('interest_bearing')
-    expect(item).toHaveProperty('apy')
-    expect(item).toHaveProperty('apy_tiers')
-    expect(item).toHaveProperty('outgoing_domestic_wire_fee')
-    expect(item).toHaveProperty('incoming_domestic_wire_fee')
-    expect(item).toHaveProperty('outgoing_international_wire_fee')
-    expect(item).toHaveProperty('incoming_international_wire_fee')
-    expect(item).toHaveProperty('multicurrency_support')
-    expect(item).toHaveProperty('free_domestic_wires_per_month')
-    expect(item).toHaveProperty('per_transaction_fee_after_limit')
-    expect(item).toHaveProperty('atm_fee_reimbursement')
-    expect(item).toHaveProperty('atm_fee_reimbursement_limit')
-    expect(item).toHaveProperty('atm_network')
-    expect(item).toHaveProperty('overdraft_protection_available')
-    expect(item).toHaveProperty('overdraft_line_of_credit_available')
-    expect(item).toHaveProperty('daily_debit_limit')
-    expect(item).toHaveProperty('ach_debit_block_available')
-    expect(item).toHaveProperty('positive_pay_available')
-    expect(item).toHaveProperty('remote_deposit_capture')
-    expect(item).toHaveProperty('bill_pay_available')
-    expect(item).toHaveProperty('check_writing_available')
-    expect(item).toHaveProperty('corporate_card_available')
-    expect(item).toHaveProperty('virtual_cards_available')
-    expect(item).toHaveProperty('physical_debit_card_available')
-    expect(item).toHaveProperty('plan_tiers')
-    expect(item).toHaveProperty('promotions')
-    expect(item.application_url).toBe('https://bancadia.com/go/example-bank/business-checking-pro')
-    expect(item).toHaveProperty('last_modified')
-    expect(item).toHaveProperty('is_verified')
-    expect(item.institution_name).toBe('Example Bank')
-    expect(item.institution.institution_type).toBe('regional_bank')
-    expect(item.incoming_international_wire_fee).toBe(15)
-    expect(item.multicurrency_support).toBe(false)
-    expect(item.plan_tiers[0].plan_name).toBe('Standard')
-    expect(item.promotions[0].bonus_amount).toBe(300)
   })
 
   it('fire-and-forget records a query_match_events row per listing without affecting the response', async () => {
@@ -388,7 +310,9 @@ type OrderSpec = { column: string; ascending: boolean; foreignTable?: string }
 function mockRealisticQueryChain(fixtureRows: Array<Record<string, unknown>>) {
   const filters: FilterCall[] = []
   let selectString = ''
-  let orderSpec: OrderSpec | null = null
+  // Compound ORDER BY — supports the handler's monthly_fee-then-id
+  // secondary sort key, applied in call order like real Postgres.
+  const orderSpecs: OrderSpec[] = []
   const chain: Record<string, unknown> = {}
 
   chain.select = vi.fn().mockImplementation((s: string) => {
@@ -396,7 +320,7 @@ function mockRealisticQueryChain(fixtureRows: Array<Record<string, unknown>>) {
     return chain
   })
   chain.order = vi.fn().mockImplementation((column: string, opts?: { ascending?: boolean; foreignTable?: string }) => {
-    orderSpec = { column, ascending: opts?.ascending !== false, foreignTable: opts?.foreignTable }
+    orderSpecs.push({ column, ascending: opts?.ascending !== false, foreignTable: opts?.foreignTable })
     return chain
   })
   chain.is = vi.fn().mockReturnValue(chain)
@@ -433,12 +357,20 @@ function mockRealisticQueryChain(fixtureRows: Array<Record<string, unknown>>) {
       })
     )
 
-    if (orderSpec) {
-      const { column, ascending, foreignTable } = orderSpec
+    if (orderSpecs.length > 0) {
       rows = [...rows].sort((a, b) => {
-        const av = (foreignTable ? (a[foreignTable] as Record<string, unknown> | null)?.[column] : a[column]) as number
-        const bv = (foreignTable ? (b[foreignTable] as Record<string, unknown> | null)?.[column] : b[column]) as number
-        return ascending ? av - bv : bv - av
+        for (const { column, ascending, foreignTable } of orderSpecs) {
+          const av = (foreignTable ? (a[foreignTable] as Record<string, unknown> | null)?.[column] : a[column]) as
+            | number
+            | string
+          const bv = (foreignTable ? (b[foreignTable] as Record<string, unknown> | null)?.[column] : b[column]) as
+            | number
+            | string
+          if (av === bv) continue
+          const cmp = av < bv ? -1 : 1
+          return ascending ? cmp : -cmp
+        }
+        return 0
       })
     }
 
@@ -468,7 +400,7 @@ const matchAll = {
     cash_deposit_available: true,
     sub_accounts_supported: true,
     interest_bearing: true,
-    apy: 2.0,
+    apy_max: 2.0,
     free_transactions_per_month: 100,
   },
 }
@@ -533,14 +465,14 @@ const belowApyMin = {
   ...matchAll,
   id: 'listing-below-apy-min',
   listing_slug: 'below-apy-min',
-  business_checking_details: { ...matchAll.business_checking_details, apy: 1.0 },
+  business_checking_details: { ...matchAll.business_checking_details, apy_max: 1.0 },
 }
 
 const atApyMin = {
   ...matchAll,
   id: 'listing-at-apy-min',
   listing_slug: 'at-apy-min',
-  business_checking_details: { ...matchAll.business_checking_details, apy: 1.5 },
+  business_checking_details: { ...matchAll.business_checking_details, apy_max: 1.5 },
 }
 
 const belowFreeTransactionsMin = {
@@ -758,7 +690,7 @@ describe('advanced filter combinations — details-table restriction', () => {
         rtp_supported: true,
         rtp_network: 'both',
         accounting_integration_available: true,
-        apy: 1.0, // below the apy_min threshold requested below
+        apy_max: 1.0, // below the apy_min threshold requested below
       },
     }
     const { chain } = mockRealisticQueryChain([matchAll, missingOne])
@@ -773,7 +705,7 @@ describe('advanced filter combinations — details-table restriction', () => {
     expect(results.map((r) => r.listing_slug)).toEqual(['match-all'])
   })
 
-  it('apy_min is an inclusive lower bound (gte) on the joined apy column', async () => {
+  it('apy_min is an inclusive lower bound (gte) on the joined apy_max column', async () => {
     const { chain } = mockRealisticQueryChain([belowApyMin, atApyMin])
     setSupabaseChain(chain)
 
