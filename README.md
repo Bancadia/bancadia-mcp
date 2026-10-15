@@ -22,8 +22,6 @@ Runs as a [Cloudflare Worker](https://workers.cloudflare.com/) on [Hono](https:/
 
 Responses are plain JSON by default, or Server-Sent Events if the request's `Accept` header includes `text/event-stream`.
 
-For production use, obtain a bearer token from the [Bancadia developer portal](https://bancadia.com/developer/signup) — see [bancadia.com/docs](https://bancadia.com/docs) for full API documentation.
-
 ## Available tools
 
 | Tool                          | Purpose                                                                 |
@@ -33,7 +31,66 @@ For production use, obtain a bearer token from the [Bancadia developer portal](h
 
 See `src/lib/tools.ts` for the full JSON Schema of each tool's arguments, or query `GET /.well-known/mcp` / `tools/list` directly.
 
-## Getting started
+## Using the hosted server
+
+This server is already running in production at `https://mcp.bancadia.com` — you don't need to clone or run anything to use it. `tools/call` requires a bearer token; get one from the [Bancadia developer portal](https://bancadia.com/developer/signup) (`initialize` and `tools/list` need no auth). Full API docs: [bancadia.com/docs](https://bancadia.com/docs).
+
+### Claude Code
+
+```bash
+claude mcp add --transport http bancadia https://mcp.bancadia.com \
+  --header "Authorization: Bearer YOUR_TOKEN"
+```
+
+### Claude Desktop
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "bancadia": {
+      "url": "https://mcp.bancadia.com",
+      "headers": {
+        "Authorization": "Bearer YOUR_TOKEN"
+      }
+    }
+  }
+}
+```
+
+### Raw JSON-RPC (curl)
+
+Any MCP client library handles session negotiation for you, but here's the underlying flow. First, `initialize` (no auth needed) — the session id comes back in the `Mcp-Session-Id` response header:
+
+```bash
+curl -s -D - https://mcp.bancadia.com/ \
+  -H 'Content-Type: application/json' \
+  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}'
+```
+
+Then list tools, passing that session id back (still no auth needed):
+
+```bash
+curl -s https://mcp.bancadia.com/ \
+  -H 'Content-Type: application/json' \
+  -H "Mcp-Session-Id: $SESSION_ID" \
+  -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}'
+```
+
+And call a tool, which additionally requires the bearer token:
+
+```bash
+curl -s https://mcp.bancadia.com/ \
+  -H 'Content-Type: application/json' \
+  -H "Mcp-Session-Id: $SESSION_ID" \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"query_business_checking","arguments":{"monthly_fee_max":0}}}'
+```
+
+## Local development
+
+Only needed if you're contributing to this repo — you don't need your own Supabase/Upstash credentials to use the hosted server above.
 
 ```bash
 npm install
