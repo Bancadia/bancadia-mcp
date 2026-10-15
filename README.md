@@ -33,6 +33,12 @@ For production use, obtain a bearer token from the [Bancadia developer portal](h
 
 See `src/lib/tools.ts` for the full JSON Schema of each tool's arguments, or query `GET /.well-known/mcp` / `tools/list` directly.
 
+### `application_url` attribution tags
+
+Every `application_url` returned by `tools/call` is an absolute `https://bancadia.com/go/...` link with attribution params appended: `src=mcp` and `qr=<request_id>`, where `request_id` is a UUID generated once per `tools/call` and also written to every `query_match_events` row for that call (so a `/go` click can be joined back to the tool call that surfaced it). Params already present on the stored URL are never overwritten. `qr` is added for every tool; a tool that records no `query_match_events` rows (or returns no listings) has nothing for it to join to. Host-prefixing and tagging both happen in one layer, `applyApplicationUrlHost` in `src/lib/urls.ts`, applied in `src/index.ts`.
+
+**Clients and agents should pass `application_url` through unmodified, including its query string.** Stripping the params loses attribution for that click.
+
 ## Getting started
 
 ```bash

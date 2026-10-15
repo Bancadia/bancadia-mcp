@@ -4,7 +4,7 @@ export const TOOLS = [
   {
     name: 'query_business_checking',
     description:
-      'Query the Bancadia registry for business checking account products using compound filter criteria. Returns active, verified listings from financial institutions. Optionally accepts target_industries/target_business_profiles to soft-rank results toward listings built for a given business type or stage — non-matching but eligible listings are still returned, just ranked lower.',
+      'Query the Bancadia registry for business checking account products using compound filter criteria. Returns active, verified listings from financial institutions. Optionally accepts target_industries/target_business_profiles to soft-rank results toward listings built for a given business type or stage — non-matching but eligible listings are still returned, just ranked lower. Each result\'s application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -92,7 +92,7 @@ export const TOOLS = [
   {
     name: 'get_business_checking_listing',
     description:
-      "Get full detail on one specific business checking listing, including gotcha fees (business_deposit_fees, e.g. overdraft, NSF, dormancy) and feature narrative (business_deposit_account_features) not returned by query_business_checking's broad list results. Fees/features that apply to only one plan tier (e.g. a Standard/Plus/Premier ladder) are nested under that tier in plan_tiers[].fees / plan_tiers[].features; tier-agnostic ones are in the top-level general_fees / general_features. Use this as a follow-up after query_business_checking to dig deeper on one listing the caller already identified by its listing_slug.",
+      "Get full detail on one specific business checking listing, including gotcha fees (business_deposit_fees, e.g. overdraft, NSF, dormancy) and feature narrative (business_deposit_account_features) not returned by query_business_checking's broad list results. Fees/features that apply to only one plan tier (e.g. a Standard/Plus/Premier ladder) are nested under that tier in plan_tiers[].fees / plan_tiers[].features; tier-agnostic ones are in the top-level general_fees / general_features. Use this as a follow-up after query_business_checking to dig deeper on one listing the caller already identified by its listing_slug. Each result's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
     inputSchema: {
       type: 'object',
       properties: {

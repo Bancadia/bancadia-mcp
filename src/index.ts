@@ -212,11 +212,19 @@ app.post('/', async (c) => {
       // `sessionId` is always set here: `tools/call` only runs after the
       // `method !== 'initialize'` block above validated the session (or
       // returned early), which is the only place that assigns it.
-      const meta: QueryMeta = { toolName: name, developerId, sessionId: sessionId as string }
+      //
+      // `requestId` is generated here, once per tools/call, so the same id is
+      // both logged as query_match_events.request_id (via meta) and appended
+      // as `qr` to every returned application_url (below). `qr` is added for
+      // every tool, whether or not that tool records match events; for one
+      // that doesn't, the id simply has no query_match_events row to join to.
+      const requestId = crypto.randomUUID()
+      const meta: QueryMeta = { toolName: name, developerId, sessionId: sessionId as string, requestId }
       const results = await handler(args, c.env, c.executionCtx, meta)
+      const tagged = applyApplicationUrlHost(results, { src: 'mcp', qr: requestId })
       return sendJsonRpc(c, id, {
         result: {
-          content: [{ type: 'text', text: JSON.stringify(applyApplicationUrlHost(results)) }],
+          content: [{ type: 'text', text: JSON.stringify(tagged) }],
         },
       })
     }
