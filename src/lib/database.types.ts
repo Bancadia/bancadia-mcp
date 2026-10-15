@@ -718,37 +718,97 @@ export type Database = {
       }
       go_clicks: {
         Row: {
+          attributed_channel:
+            | Database["public"]["Enums"]["attribution_channel_enum"]
+            | null
+          attributed_source: string | null
+          attribution_method: string | null
+          bot_reasons: string[]
+          click_id: string | null
+          click_id_type: string | null
           clicked_at: string
+          country: string | null
           destination_url: string | null
           id: string
+          is_suspected_bot: boolean
           listing_id: string | null
+          mcp_request_id: string | null
           product_source: string | null
+          query_params: Json | null
+          query_string: string | null
           referrer: string | null
+          request_meta: Json | null
           slug: string
+          src: string | null
           traffic_source: Database["public"]["Enums"]["traffic_source_enum"]
           user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
         }
         Insert: {
+          attributed_channel?:
+            | Database["public"]["Enums"]["attribution_channel_enum"]
+            | null
+          attributed_source?: string | null
+          attribution_method?: string | null
+          bot_reasons?: string[]
+          click_id?: string | null
+          click_id_type?: string | null
           clicked_at?: string
+          country?: string | null
           destination_url?: string | null
           id?: string
+          is_suspected_bot?: boolean
           listing_id?: string | null
+          mcp_request_id?: string | null
           product_source?: string | null
+          query_params?: Json | null
+          query_string?: string | null
           referrer?: string | null
+          request_meta?: Json | null
           slug: string
+          src?: string | null
           traffic_source: Database["public"]["Enums"]["traffic_source_enum"]
           user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Update: {
+          attributed_channel?:
+            | Database["public"]["Enums"]["attribution_channel_enum"]
+            | null
+          attributed_source?: string | null
+          attribution_method?: string | null
+          bot_reasons?: string[]
+          click_id?: string | null
+          click_id_type?: string | null
           clicked_at?: string
+          country?: string | null
           destination_url?: string | null
           id?: string
+          is_suspected_bot?: boolean
           listing_id?: string | null
+          mcp_request_id?: string | null
           product_source?: string | null
+          query_params?: Json | null
+          query_string?: string | null
           referrer?: string | null
+          request_meta?: Json | null
           slug?: string
+          src?: string | null
           traffic_source?: Database["public"]["Enums"]["traffic_source_enum"]
           user_agent?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_medium?: string | null
+          utm_source?: string | null
+          utm_term?: string | null
         }
         Relationships: []
       }
@@ -1353,7 +1413,53 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      go_clicks_attributed: {
+        Row: {
+          attributed_channel:
+            | Database["public"]["Enums"]["attribution_channel_enum"]
+            | null
+          attributed_source: string | null
+          attribution_method: string | null
+          bot_reasons: string[] | null
+          click_id: string | null
+          click_id_type: string | null
+          clicked_at: string | null
+          country: string | null
+          destination_url: string | null
+          developer_id: string | null
+          id: string | null
+          is_suspected_bot: boolean | null
+          listing_id: string | null
+          mcp_request_id: string | null
+          product_source: string | null
+          query_params: Json | null
+          query_string: string | null
+          referrer: string | null
+          request_meta: Json | null
+          result_rank: number | null
+          slug: string | null
+          src: string | null
+          tool_name: string | null
+          traffic_source:
+            | Database["public"]["Enums"]["traffic_source_enum"]
+            | null
+          user_agent: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_medium: string | null
+          utm_source: string | null
+          utm_term: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "query_match_events_developer_id_fkey"
+            columns: ["developer_id"]
+            isOneToOne: false
+            referencedRelation: "developer_users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       [_ in never]: never
@@ -1362,6 +1468,18 @@ export type Database = {
       app_method_enum: "online" | "branch" | "phone"
       apy_balance_variation_enum: "none" | "tiered" | "blended" | "stepped"
       apy_rate_variability_enum: "fixed" | "variable"
+      attribution_channel_enum:
+        | "ai_chat"
+        | "ai_fetch"
+        | "ai_agent"
+        | "search"
+        | "social"
+        | "paid"
+        | "email"
+        | "referral"
+        | "internal"
+        | "direct"
+        | "unknown"
       compounding_frequency_enum: "daily" | "monthly" | "quarterly" | "annually"
       deposit_product_type_enum: "hysa" | "money_market" | "checking" | "cd"
       entity_type_enum:
@@ -1455,12 +1573,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1484,11 +1602,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1509,11 +1627,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1534,11 +1652,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1551,11 +1669,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1573,6 +1691,19 @@ export const Constants = {
       app_method_enum: ["online", "branch", "phone"],
       apy_balance_variation_enum: ["none", "tiered", "blended", "stepped"],
       apy_rate_variability_enum: ["fixed", "variable"],
+      attribution_channel_enum: [
+        "ai_chat",
+        "ai_fetch",
+        "ai_agent",
+        "search",
+        "social",
+        "paid",
+        "email",
+        "referral",
+        "internal",
+        "direct",
+        "unknown",
+      ],
       compounding_frequency_enum: ["daily", "monthly", "quarterly", "annually"],
       deposit_product_type_enum: ["hysa", "money_market", "checking", "cd"],
       entity_type_enum: [
