@@ -288,6 +288,54 @@ describe('query_business_checking handler — mock-appropriate coverage only', (
         query_filters: { monthly_fee_max: 10 },
       }),
     ])
+
+    // application_url is host-prefixed and tagged with src=mcp&qr=<request_id>,
+    // where qr is the same id logged on the query_match_events rows.
+    const requestId = insertMock.mock.calls[0][0][0].request_id as string
+    expect(requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
+    expect(results[0].application_url).toBe(
+      `https://bancadia.com/go/example-bank/business-checking-pro?src=mcp&qr=${requestId}`
+    )
+  })
+
+  it('uses one request_id per tools/call, shared by every logged row and every returned application_url', async () => {
+    const second = { ...sampleListing, id: 'listing-uuid-1b', listing_slug: 'second', application_url: '/go/second/checking' }
+    const queryChain = mockQueryChain({ data: [sampleListing, second], error: null })
+    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
+    const from = vi.fn().mockImplementation((table: string) =>
+      table === 'query_match_events' ? { insert: insertMock } : queryChain
+    )
+    vi.mocked(createSupabaseClient).mockReturnValue({
+      from,
+    } as unknown as ReturnType<typeof createSupabaseClient>)
+
+    const call = async () => {
+      const ctx = createExecutionContext()
+      const response = await app.fetch(
+        post({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name: 'query_business_checking', arguments: {} } }),
+        env,
+        ctx
+      )
+      await waitOnExecutionContext(ctx)
+      const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
+      return JSON.parse(body.result.content[0].text) as Array<{ application_url: string }>
+    }
+
+    const first = await call()
+    const again = await call()
+
+    const rowsA = insertMock.mock.calls[0][0] as Array<{ request_id: string }>
+    const rowsB = insertMock.mock.calls[1][0] as Array<{ request_id: string }>
+    expect(new Set(rowsA.map((r) => r.request_id)).size).toBe(1)
+    expect(rowsA[0].request_id).not.toBe(rowsB[0].request_id)
+
+    for (const [results, rows] of [[first, rowsA], [again, rowsB]] as const) {
+      for (const r of results) {
+        const url = new URL(r.application_url)
+        expect(url.searchParams.get('src')).toBe('mcp')
+        expect(url.searchParams.get('qr')).toBe(rows[0].request_id)
+      }
+    }
   })
 })
 

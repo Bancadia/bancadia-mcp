@@ -206,6 +206,9 @@ paths:
                       account products using compound filter criteria.
                       Returns active, verified listings from financial
                       institutions.
+                      Each result's application_url is a tracked Bancadia
+                      link: give it to the user exactly as returned, including
+                      its query string.
                   - name: get_business_checking_listing
                     description: >-
                       Get full detail on one specific business checking
@@ -220,6 +223,9 @@ paths:
                       general_features. Use this as a follow-up after
                       query_business_checking to dig deeper on one listing the
                       caller already identified by its listing_slug.
+                      Each result's application_url is a tracked Bancadia
+                      link: give it to the user exactly as returned, including
+                      its query string.
 
   /:
     post:
@@ -419,7 +425,7 @@ paths:
                             Bank","website_url":"https://examplebank.com","logo_url":"https://examplebank.com/logo.png","institution_type":"regional_bank","support_email":"support@examplebank.com"},"product_name":"Business
                             Checking Pro","monthly_fee":0,"monthly_fee_waiver_condition":null,"minimum_opening_deposit":0,"entity_types_accepted":["llc","s_corp"],"available_states":["ALL"],"insurance_type":"fdic","free_transactions_per_month":100,"cash_deposit_available":true,"cash_deposit_fee_per_100":2.5,"monthly_cash_deposit_limit":5000,"sub_accounts_supported":true,"rtp_supported":true,"rtp_network":"both","accounting_integration_available":true,"tax_integration_available":false,"expense_integration_available":true,"interest_bearing":true,"apy_max":1.25,"apy_default":1.25,"apy_tiers":null,"outgoing_domestic_wire_fee":15,"incoming_domestic_wire_fee":0,"outgoing_international_wire_fee":45,"incoming_international_wire_fee":15,"multicurrency_support":false,"free_domestic_wires_per_month":2,"per_transaction_fee_after_limit":0.5,"atm_fee_reimbursement":true,"atm_fee_reimbursement_limit":10,"atm_network":"Allpoint","overdraft_protection_available":true,"overdraft_line_of_credit_available":false,"daily_debit_limit":5000,"ach_debit_block_available":true,"positive_pay_available":true,"remote_deposit_capture":true,"bill_pay_available":true,"check_writing_available":true,"corporate_card_available":true,"virtual_cards_available":true,"physical_debit_card_available":true,"plan_tiers":[{"plan_name":"Standard","monthly_fee":0,"monthly_fee_waiver_condition":null,"apy":1.25,"apy_max_balance_eligible":null,"apy_condition":null,"is_default":true,"sort_order":0}],"promotions":[{"bonus_amount":300,"condition_description":"Deposit
                             $2,500 within 30
-                            days","minimum_deposit":2500,"expiry_date":null,"promo_url":"https://example.com/promo"}],"application_url":"https://example.com/apply","last_modified":"2026-01-01T00:00:00Z","is_verified":true}]
+                            days","minimum_deposit":2500,"expiry_date":null,"promo_url":"https://example.com/promo"}],"application_url":"https://bancadia.com/go/example-bank/business-checking-pro?src=mcp&qr=3f2b8c1e-6d4a-4f7e-9a51-2c8e0b7d9f13","last_modified":"2026-01-01T00:00:00Z","is_verified":true}]
                 toolsCallDetail:
                   summary: tools/call response (get_business_checking_listing) — adds general_fees, general_features, and per-tier plan_tiers[].fees/features
                   value:
@@ -439,7 +445,7 @@ paths:
                             number of sub-accounts included with this
                             plan.","value":10}],"fees":[]}],"promotions":[{"bonus_amount":300,"condition_description":"Deposit
                             $2,500 within 30
-                            days","minimum_deposit":2500,"expiry_date":null,"promo_url":"https://example.com/promo"}],"application_url":"https://example.com/apply","last_modified":"2026-01-01T00:00:00Z","is_verified":true,"general_fees":[{"fee_type":"overdraft","amount":35,"amount_description":null,"eligibility_criteria":null,"tiers":null,"waivable":false,"waiver_condition":null}],"general_features":[{"category":"cash_handling","description":"Free
+                            days","minimum_deposit":2500,"expiry_date":null,"promo_url":"https://example.com/promo"}],"application_url":"https://bancadia.com/go/example-bank/business-checking-pro?src=mcp&qr=3f2b8c1e-6d4a-4f7e-9a51-2c8e0b7d9f13","last_modified":"2026-01-01T00:00:00Z","is_verified":true,"general_fees":[{"fee_type":"overdraft","amount":35,"amount_description":null,"eligibility_criteria":null,"tiers":null,"waivable":false,"waiver_condition":null}],"general_features":[{"category":"cash_handling","description":"Free
                             cash deposits up to $2,000/mo","value":2000},{"category":"fraud_protection","description":"Instant
                             card freeze","value":null}]}]
             text/event-stream:
@@ -1492,6 +1498,14 @@ components:
         application_url:
           type: string
           format: uri
+          description: >-
+            Absolute Bancadia redirect link (`https://bancadia.com/go/...`) carrying
+            attribution query params `src=mcp` and `qr=<request_id>`, where
+            `request_id` is a UUID generated once per `tools/call` and shared by
+            every listing in that response. Existing params on the stored URL are
+            never overwritten. Pass `application_url` through to the end user
+            unmodified, including its query string.
+          example: https://bancadia.com/go/example-bank/business-checking-pro?src=mcp&qr=3f2b8c1e-6d4a-4f7e-9a51-2c8e0b7d9f13
         last_modified:
           type: string
           format: date-time

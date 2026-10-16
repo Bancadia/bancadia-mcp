@@ -191,12 +191,30 @@ function expectedRow(raw: Raw, a: Row, segments: Row[] = []): Row {
 }
 
 // The router (index.ts) rewrites stored relative paths like '/go/x' into
-// absolute URLs on the public host. Hard-coded here on purpose so changing the
-// host is a deliberate, test-visible act.
+// absolute URLs on the public host, then appends attribution tags
+// `src=mcp&qr=<request_id>` (src/lib/urls.ts). Hard-coded here on purpose so
+// changing the host or tags is a deliberate, test-visible act. `qr` is a fresh
+// UUID per tools/call, so expected values carry the QR_PLACEHOLDER and
+// normalizeQueryRow swaps the real (UUID-validated) value for it.
+const QR_PLACEHOLDER = 'REQUEST_ID'
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+
 function expectedApplicationUrl(stored: string | null): string | null {
   if (!stored) return stored
-  if (/^https?:\/\//i.test(stored)) return stored
-  return `https://bancadia.com${stored.startsWith('/') ? '' : '/'}${stored}`
+  const absolute = /^https?:\/\//i.test(stored) ? stored : `https://bancadia.com${stored.startsWith('/') ? '' : '/'}${stored}`
+  const url = new URL(absolute)
+  if (!url.searchParams.has('src')) url.searchParams.append('src', 'mcp')
+  if (!url.searchParams.has('qr')) url.searchParams.append('qr', QR_PLACEHOLDER)
+  return url.toString()
+}
+
+function normalizeApplicationUrl(value: unknown): unknown {
+  if (typeof value !== 'string') return value
+  const url = new URL(value)
+  const qr = url.searchParams.get('qr')
+  if (qr === null || qr === QR_PLACEHOLDER) return value
+  expect(qr).toMatch(UUID_RE)
+  return value.replace(`qr=${qr}`, `qr=${QR_PLACEHOLDER}`)
 }
 
 function expectedTier(t: Row): Row {
@@ -260,6 +278,7 @@ const bySortOrder = (a: Row, b: Row) => a.sort_order - b.sort_order
 function normalizeQueryRow(row: Row): Row {
   return {
     ...row,
+    application_url: normalizeApplicationUrl(row.application_url),
     plan_tiers: (row.plan_tiers as Row[]).slice().sort(bySortOrder),
     promotions: sortCanon(row.promotions as Row[]),
   }
@@ -490,7 +509,7 @@ describe('query_business_checking: Bluevine golden record', () => {
         },
       ],
       promotions: [],
-      application_url: 'https://bancadia.com/go/bluevine/business-checking',
+      application_url: 'https://bancadia.com/go/bluevine/business-checking?src=mcp&qr=REQUEST_ID',
       is_verified: true,
     })
   })

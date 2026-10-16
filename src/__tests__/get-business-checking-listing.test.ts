@@ -241,7 +241,9 @@ describe('get_business_checking_listing handler', () => {
     const item = results[0]
     expect(item.listing_slug).toBe('found-business-checking')
     expect(item.institution_name).toBe('Found')
-    expect(item.application_url).toBe('https://bancadia.com/go/found/business-checking')
+    expect(item.application_url).toMatch(
+      /^https:\/\/bancadia\.com\/go\/found\/business-checking\?src=mcp&qr=[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
+    )
 
     // wire_domestic_outgoing is covered by the flat outgoing_domestic_wire_fee
     // column and must not also appear in general_fees (Decision 3).
@@ -344,6 +346,10 @@ describe('get_business_checking_listing handler', () => {
         query_filters: { listing_slug: 'found-business-checking' },
       }),
     ])
+
+    // qr on the returned application_url is the logged request_id.
+    const requestId = insertMock.mock.calls[0][0][0].request_id as string
+    expect(results[0].application_url).toBe(`https://bancadia.com/go/found/business-checking?src=mcp&qr=${requestId}`)
   })
 
   it('does not attempt an insert when no listing matches (matchEvents empty)', async () => {

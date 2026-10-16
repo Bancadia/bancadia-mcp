@@ -6,6 +6,11 @@ export type QueryMeta = {
   toolName: string
   developerId: string | null
   sessionId: string
+  // Generated once per tools/call in index.ts. Written to every
+  // query_match_events row for that call AND appended as `qr` to each
+  // returned application_url, so a /go click can be joined back to the exact
+  // tool call that surfaced the link.
+  requestId: string
 }
 
 export type MatchedListing = {
@@ -27,7 +32,6 @@ export async function recordMatchEvents(
   if (matches.length === 0) return
 
   try {
-    const requestId = crypto.randomUUID()
     const rows = matches.map((match, index) => ({
       listing_id: match.listingId,
       institution_id: match.institutionId,
@@ -35,7 +39,7 @@ export async function recordMatchEvents(
       tool_name: meta.toolName,
       developer_id: meta.developerId,
       session_id: meta.sessionId,
-      request_id: requestId,
+      request_id: meta.requestId,
       result_rank: index + 1,
       result_count: matches.length,
       query_filters: args as Json,
