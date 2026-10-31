@@ -13,13 +13,14 @@ npm run dev               # wrangler dev — local server against wrangler.toml 
 npm test                  # vitest run (uses @cloudflare/vitest-pool-workers, runs in workerd)
 npx vitest run src/__tests__/query-business-checking.test.ts   # run a single test file
 npm run lint              # tsc --noEmit (type-check only, no separate linter configured)
+npm run test:integration  # real-Postgres suite; target from SUPABASE_URL/SUPABASE_SECRET_KEY in env, else .dev.vars (host allowlist: local or the dev project)
 npm run deploy:staging    # wrangler deploy --env staging
 npm run deploy:production # wrangler deploy --env production
 ```
 
 Tests run inside the actual Workers runtime (workerd) via `@cloudflare/vitest-pool-workers`, not Node/jsdom — `cloudflare:test` provides `env`, `createExecutionContext`, `waitOnExecutionContext`. Local dev vars come from `.dev.vars` (git-ignored, see `.dev.vars.example`); `wrangler.toml [vars]` holds non-secret test-friendly defaults used by both `dev` and the test pool.
 
-CI (`.github/workflows/ci.yml`) on push/PR to `main`: install → lint → test → deploy to staging automatically. There is no separate CI gate for production; `deploy:production` is run manually.
+CI (`.github/workflows/ci.yml`) on push/PR to `main`: `ci` job (install → lint → test → deploy to staging) and an `integration` job (seeds fixtures and runs `test:integration` against the hosted dev Supabase project via the `dev-supabase` environment secret `DEV_SUPABASE_SECRET_KEY`; skipped on fork PRs). On push to `main`, `deploy-production` runs after both pass, with no approval gate: it deploys with `deploy:production` and smoke-tests `initialize` on `mcp.bancadia.com`. Rollback is manual via `wrangler rollback --env production`.
 
 ## Architecture
 
