@@ -743,9 +743,11 @@ describe('get_business_checking_listing: response contract', () => {
 describe('query_business_checking: target segment ranking (inserts and removes only its own rows)', () => {
   const db = () => realSupabase()
   type Seg = { listing_id: string; category: string; segment: string }
+  // Fixed synthetic ids: a crashed run's leftovers are recognizable and swept by the next run's pre-clean.
+  const SEG_IDS = ['00000000-0000-4000-8000-00000000a001', '00000000-0000-4000-8000-00000000a002', '00000000-0000-4000-8000-00000000a003']
   let karatId: string
   let rampId: string
-  let inserted: Seg[] = []
+  let inserted: unknown[] = []
   let segsBySlug: Map<string, Seg[]>
 
   const loadSegs = async () => {
@@ -762,25 +764,25 @@ describe('query_business_checking: target segment ranking (inserts and removes o
     (segsBySlug.get(slug) ?? []).filter((s) => !category || s.category === category).map((s) => s.segment).sort()
 
   const removeInserted = async () => {
-    for (const s of inserted) {
-      await db().from('business_deposit_account_target_segments').delete().eq('listing_id', s.listing_id).eq('segment', s.segment)
-    }
+    if (inserted.length) await db().from('business_deposit_account_target_segments').delete().in('id', SEG_IDS)
     inserted = []
   }
 
   beforeAll(async () => {
     karatId = raw.accounts.find((a) => a.listing_slug === 'karat-business-checking')!.id
     rampId = raw.accounts.find((a) => a.listing_slug === KNOWN_SLUGS.ramp)!.id
+    const { error: cleanErr } = await db().from('business_deposit_account_target_segments').delete().in('id', SEG_IDS)
+    if (cleanErr) throw cleanErr
     // Only tags absent from the DB are inserted (UNIQUE (listing_id, segment)); real tags are never touched.
     const { data: existing } = await db()
       .from('business_deposit_account_target_segments')
       .select('listing_id, segment')
       .in('listing_id', [karatId, rampId])
     const has = new Set((existing ?? []).map((e) => `${e.listing_id}:${e.segment}`))
-    const wanted: Seg[] = [
-      { listing_id: karatId, category: 'industry_vertical', segment: 'ecommerce' },
-      { listing_id: karatId, category: 'business_profile', segment: 'early_stage_startup' },
-      { listing_id: rampId, category: 'industry_vertical', segment: 'ecommerce' },
+    const wanted = [
+      { id: SEG_IDS[0], listing_id: karatId, category: 'industry_vertical', segment: 'ecommerce' },
+      { id: SEG_IDS[1], listing_id: karatId, category: 'business_profile', segment: 'early_stage_startup' },
+      { id: SEG_IDS[2], listing_id: rampId, category: 'industry_vertical', segment: 'ecommerce' },
     ]
     const toInsert = wanted.filter((w) => !has.has(`${w.listing_id}:${w.segment}`))
     if (toInsert.length) {
