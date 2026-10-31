@@ -17,7 +17,7 @@ vi.mock('@upstash/ratelimit', () => {
 
 import app from '../../index'
 import { TOOLS } from '../../lib/tools'
-import { INDUSTRY_VERTICAL_DESCRIPTIONS } from '../../lib/target-segments'
+import { INDUSTRY_VERTICAL_DESCRIPTIONS, BUSINESS_PROFILE_DESCRIPTIONS } from '../../lib/target-segments'
 import { mockRedis, withSession } from '../helpers'
 import { KNOWN_SLUGS, APY_EXPECTED } from './fixtures'
 import { realSupabase } from './db-helpers'
@@ -829,11 +829,13 @@ describe('query_business_checking: target segment ranking (inserts and removes o
     expect(slugs).toEqual(rank(scoresFor(['ecommerce'])))
   })
 
-  it('leaves order untouched when the requested segments match nothing', async () => {
+  it('leaves order untouched when the requested segments match nothing', async (ctx) => {
     const used = new Set([...segsBySlug.values()].flat().map((s) => s.segment))
-    const unused = Object.keys(INDUSTRY_VERTICAL_DESCRIPTIONS).find((v) => !used.has(v))
-    if (!unused) throw new Error('every industry_vertical value is tagged on some listing; cannot pick a requested segment that matches nothing')
-    const slugs = (await query({ target_industries: [unused] })).map((r) => r.listing_slug)
+    const unusedIn = Object.keys(INDUSTRY_VERTICAL_DESCRIPTIONS).find((v) => !used.has(v))
+    const unusedBp = Object.keys(BUSINESS_PROFILE_DESCRIPTIONS).find((v) => !used.has(v))
+    if (!unusedIn && !unusedBp) return ctx.skip('every segment value is tagged on some listing; zero-overlap ordering is still covered by the "breaks ties by baseline order" test via rank()')
+    const args = unusedIn ? { target_industries: [unusedIn] } : { target_business_profiles: [unusedBp!] }
+    const slugs = (await query(args)).map((r) => r.listing_slug)
     expect(slugs).toEqual(baselineSlugs)
   })
 
