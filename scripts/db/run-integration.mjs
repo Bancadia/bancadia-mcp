@@ -1,5 +1,5 @@
-// Discovers the local Supabase instance's URL/service-role key and runs the
-// integration suite against it, injected as env vars that
+// Resolves the Supabase URL/secret key (process.env, else .dev.vars; host
+// allowlisted) and runs the integration suite against it, injected as env vars that
 // vitest.integration.config.mts reads (Node-side) and forwards into the
 // Worker's bindings — src/lib/supabase.ts itself never changes.
 import { spawnSync } from 'node:child_process'

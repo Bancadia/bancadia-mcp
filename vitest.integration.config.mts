@@ -1,7 +1,7 @@
 import { defineConfig } from 'vitest/config'
 import { cloudflareTest } from '@cloudflare/vitest-pool-workers'
 
-// Real local Supabase instance, not mocked — see scripts/db/ and
+// Real Supabase instance (local, or the dev project in CI), not mocked — see scripts/db/ and
 // docs/current-testing-flow.md. Run via `npm run test:integration`, never
 // picked up by plain `npm test` (different filename than vitest.config.*'s
 // default discovery, and vitest.config.mts additionally excludes this
