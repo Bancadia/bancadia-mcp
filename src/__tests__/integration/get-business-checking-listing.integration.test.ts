@@ -77,13 +77,29 @@ describe('get_business_checking_listing — real local Supabase', () => {
     expect(data?.id).toBe(realId)
   })
 
-  it('target_industries/target_business_profiles are present and empty for unseeded data, proving the embed is not accidentally !inner-joined', async () => {
-    // No onboarding-script listing has seeded
-    // business_deposit_account_target_segments rows. If TARGET_SEGMENTS_EMBED
-    // were missing from the select string, these fields would be absent
-    // entirely; if it were accidentally `!inner`-joined, this whole query
-    // would return [] instead of the listing.
+  it('returns exactly the listing\'s DB segments, bucketed by category', async () => {
+    const id = await lookupListingIdBySlug(KNOWN_SLUGS.mercury)
+    const { data, error } = await realSupabase().from('business_deposit_account_target_segments').select('category, segment').eq('listing_id', id)
+    expect(error).toBeNull()
+    const segs = (data ?? []) as Array<{ category: string; segment: string }>
+    const of = (category: string) => segs.filter((s) => s.category === category).map((s) => s.segment).sort()
     const [listing] = await getListing(KNOWN_SLUGS.mercury)
+    expect([...(listing.target_industries as string[])].sort()).toEqual(of('industry_vertical'))
+    expect([...(listing.target_business_profiles as string[])].sort()).toEqual(of('business_profile'))
+  })
+
+  it('a listing with no segment rows still returns, with empty arrays (embed is not !inner-joined)', async (ctx) => {
+    // If TARGET_SEGMENTS_EMBED were missing, the fields would be absent; if it were `!inner`, the query would return [].
+    const db = realSupabase()
+    const [{ data: accounts }, { data: tagged }] = await Promise.all([
+      db.from('business_deposit_accounts').select('listing_slug, id').eq('listing_status', 'active').eq('product_type', 'checking'),
+      db.from('business_deposit_account_target_segments').select('listing_id'),
+    ])
+    const taggedIds = new Set((tagged ?? []).map((t) => t.listing_id))
+    const untagged = (accounts ?? []).find((a) => !taggedIds.has(a.id))
+    if (!untagged) return ctx.skip('every active checking listing has segment rows in this database')
+    const [listing] = await getListing(untagged.listing_slug)
+    expect(listing, untagged.listing_slug).toBeDefined()
     expect(listing.target_industries).toEqual([])
     expect(listing.target_business_profiles).toEqual([])
   })

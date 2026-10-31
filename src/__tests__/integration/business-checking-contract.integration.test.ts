@@ -17,6 +17,7 @@ vi.mock('@upstash/ratelimit', () => {
 
 import app from '../../index'
 import { TOOLS } from '../../lib/tools'
+import { INDUSTRY_VERTICAL_DESCRIPTIONS } from '../../lib/target-segments'
 import { mockRedis, withSession } from '../helpers'
 import { KNOWN_SLUGS, APY_EXPECTED } from './fixtures'
 import { realSupabase } from './db-helpers'
@@ -422,6 +423,13 @@ describe('query_business_checking: Bluevine golden record', () => {
     const row = (await query()).find((r) => r.listing_slug === KNOWN_SLUGS.bluevine)!
     const { last_modified, ...rest } = normalizeQueryRow(row)
     expect(typeof last_modified).toBe('string') // changes on every db:reset
+    // Segment tags differ per environment (none locally, real ones on dev), so they come from the DB, order-insensitively.
+    const segs = expectedRow(raw, raw.accounts.find((a) => a.listing_slug === KNOWN_SLUGS.bluevine)!)
+    const sorted = (v: unknown) => [...(v as string[])].sort()
+    expect(sorted(rest.target_industries)).toEqual(sorted(segs.target_industries))
+    expect(sorted(rest.target_business_profiles)).toEqual(sorted(segs.target_business_profiles))
+    rest.target_industries = segs.target_industries
+    rest.target_business_profiles = segs.target_business_profiles
     expect(rest).toStrictEqual({
       listing_slug: 'bluevine-business-checking',
       institution_name: 'Bluevine Capital Inc.',
@@ -438,8 +446,8 @@ describe('query_business_checking: Bluevine golden record', () => {
       minimum_opening_deposit: 0,
       entity_types_accepted: ['sole_prop', 'partnership', 'llc', 'c_corp', 's_corp'],
       available_states: ['ALL'],
-      target_industries: [],
-      target_business_profiles: [],
+      target_industries: segs.target_industries,
+      target_business_profiles: segs.target_business_profiles,
       insurance_type: 'fdic',
       free_transactions_per_month: null,
       cash_deposit_available: false,
@@ -737,7 +745,8 @@ describe('get_business_checking_listing: response contract', () => {
 
 // ---------------------------------------------------------------------------
 // Target-segment soft ranking. The seed data has no segment rows, so this
-// inserts missing tags and removes only those.
+// inserts missing tags and removes only those. Dev carries real tags, so
+// expectations are computed from the DB rows, never from an assumed-empty table.
 // ---------------------------------------------------------------------------
 
 describe('query_business_checking: target segment ranking (inserts and removes only its own rows)', () => {
@@ -821,7 +830,10 @@ describe('query_business_checking: target segment ranking (inserts and removes o
   })
 
   it('leaves order untouched when the requested segments match nothing', async () => {
-    const slugs = (await query({ target_industries: ['agriculture'] })).map((r) => r.listing_slug)
+    const used = new Set([...segsBySlug.values()].flat().map((s) => s.segment))
+    const unused = Object.keys(INDUSTRY_VERTICAL_DESCRIPTIONS).find((v) => !used.has(v))
+    if (!unused) throw new Error('every industry_vertical value is tagged on some listing; cannot pick a requested segment that matches nothing')
+    const slugs = (await query({ target_industries: [unused] })).map((r) => r.listing_slug)
     expect(slugs).toEqual(baselineSlugs)
   })
 
