@@ -1,42 +1,42 @@
-// Discovers the running local Supabase instance's API URL and service-role
-// key by shelling out to `supabase status -o json`, rather than hardcoding
-// http://127.0.0.1:54321 + a guessed local JWT — robust to config.toml port
-// changes and avoids drifting from whatever is actually running.
-import { execFileSync } from 'node:child_process'
+// Resolves the Supabase URL + secret key the integration tooling targets:
+// SUPABASE_URL/SUPABASE_SECRET_KEY from process.env (CI, or a one-off shell
+// override), else the same keys from the git-ignored .dev.vars (local).
+import { existsSync, readFileSync } from 'node:fs'
+import { parseEnv } from 'node:util'
 
 const BANCADIA_DB_PATH = process.env.BANCADIA_DB_PATH ?? '../bancadia-db'
 
+// The suite writes rows, so refuse anything that could be production.
+const ALLOWED_HOSTS = ['127.0.0.1', 'localhost', 'qbotkqtlyovicrpranqr.supabase.co']
+
 export function discoverSupabaseEnv() {
-  let raw
-  try {
-    raw = execFileSync(
-      'npx',
-      ['--no-install', 'supabase', '--workdir', BANCADIA_DB_PATH, 'status', '-o', 'json'],
-      { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }
-    )
-  } catch (err) {
+  let apiUrl = process.env.SUPABASE_URL
+  let serviceRoleKey = process.env.SUPABASE_SECRET_KEY
+  if (!apiUrl || !serviceRoleKey) {
+    const devVars = existsSync('.dev.vars') ? parseEnv(readFileSync('.dev.vars', 'utf8')) : {}
+    apiUrl = devVars.SUPABASE_URL
+    serviceRoleKey = devVars.SUPABASE_SECRET_KEY
+  }
+  if (!apiUrl || !serviceRoleKey) {
     throw new Error(
-      `Could not read local Supabase status from "${BANCADIA_DB_PATH}" ` +
-        `(resolve with BANCADIA_DB_PATH env var if bancadia-db isn't a sibling directory).\n` +
-        `Is it running? Try: npm run db:start\n\nUnderlying error: ${err.message}`
+      'SUPABASE_URL and SUPABASE_SECRET_KEY must be set in the environment or in .dev.vars. ' +
+        'For a local instance, start it with: npm run db:start'
     )
   }
 
-  let status
+  let host
   try {
-    status = JSON.parse(raw)
+    host = new URL(apiUrl).hostname
   } catch {
-    throw new Error(`Unexpected output from "supabase status -o json":\n${raw}`)
+    throw new Error(`SUPABASE_URL is not a valid URL: ${apiUrl}`)
   }
-
-  const { API_URL, SERVICE_ROLE_KEY } = status
-  if (!API_URL || !SERVICE_ROLE_KEY) {
+  if (!ALLOWED_HOSTS.includes(host)) {
     throw new Error(
-      `"supabase status -o json" did not include API_URL/SERVICE_ROLE_KEY. Got: ${raw}`
+      `Refusing to run integration tooling against "${host}". Allowed hosts: ${ALLOWED_HOSTS.join(', ')}.`
     )
   }
 
-  return { apiUrl: API_URL, serviceRoleKey: SERVICE_ROLE_KEY }
+  return { apiUrl, serviceRoleKey }
 }
 
 export { BANCADIA_DB_PATH }

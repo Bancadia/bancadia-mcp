@@ -32,3 +32,71 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+  integration:
+    runs-on: ubuntu-latest
+    # Fork PRs get no secrets; skip rather than fail.
+    if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
+    environment: dev-supabase
+    concurrency:
+      group: integration-dev-supabase # shared DB: one run at a time
+      cancel-in-progress: false
+    env:
+      SUPABASE_URL: https://qbotkqtlyovicrpranqr.supabase.co
+      SUPABASE_SECRET_KEY: ${{ secrets.DEV_SUPABASE_SECRET_KEY }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Seed integration fixtures
+        run: node scripts/db/seed-test-fixtures.mjs
+
+      - name: Integration tests (dev Supabase)
+        run: npm run test:integration
+
+  deploy-production:
+    needs: [ci, integration]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    concurrency:
+      group: deploy-production
+      cancel-in-progress: false
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Deploy to production
+        run: npm run deploy:production
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+
+      - name: Smoke test production
+        run: |
+          for i in 1 2 3 4 5; do
+            headers=$(curl -s -D - -o /dev/null -X POST https://mcp.bancadia.com/ \
+              -H 'Content-Type: application/json' \
+              -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18"}}' || true)
+            if echo "$headers" | grep -q '^HTTP/[0-9.]* 200' && echo "$headers" | grep -qi '^mcp-session-id:'; then
+              echo "Smoke test passed on attempt $i"; exit 0
+            fi
+            echo "Attempt $i/5 failed, retrying in 5s"; sleep 5
+          done
+          echo "Smoke test FAILED"; exit 1

@@ -10,6 +10,9 @@
 // the admin API rather than raw SQL against GoTrue's internal schema, which
 // this repo doesn't own and which can shift across Supabase CLI upgrades.
 //
+// Target comes from SUPABASE_URL/SUPABASE_SECRET_KEY in the env or .dev.vars
+// (see discover-env.mjs); CI runs this against the dev Supabase project.
+//
 // Mirrored in src/__tests__/integration/auth.integration.test.ts — keep the
 // raw token strings and fixed UUIDs in sync if either changes.
 import { createClient } from '@supabase/supabase-js'

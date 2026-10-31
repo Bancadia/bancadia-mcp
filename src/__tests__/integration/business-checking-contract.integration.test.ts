@@ -17,6 +17,7 @@ vi.mock('@upstash/ratelimit', () => {
 
 import app from '../../index'
 import { TOOLS } from '../../lib/tools'
+import { INDUSTRY_VERTICAL_DESCRIPTIONS, BUSINESS_PROFILE_DESCRIPTIONS } from '../../lib/target-segments'
 import { mockRedis, withSession } from '../helpers'
 import { KNOWN_SLUGS, APY_EXPECTED } from './fixtures'
 import { realSupabase } from './db-helpers'
@@ -74,6 +75,7 @@ type Raw = {
   promos: Map<string, Row[]>
   fees: Map<string, Row[]>
   features: Map<string, Row[]>
+  segments: Map<string, Row[]>
 }
 
 function groupBy(rows: Row[], key: string) {
@@ -89,7 +91,7 @@ async function selectAll(table: string): Promise<Row[]> {
 }
 
 async function loadRaw(): Promise<Raw> {
-  const [accounts, details, institutions, tiers, promos, fees, features] = await Promise.all([
+  const [accounts, details, institutions, tiers, promos, fees, features, segments] = await Promise.all([
     selectAll('business_deposit_accounts'),
     selectAll('business_checking_details'),
     selectAll('institutions'),
@@ -97,6 +99,7 @@ async function loadRaw(): Promise<Raw> {
     selectAll('business_deposit_promotions'),
     selectAll('business_deposit_fees'),
     selectAll('business_deposit_account_features'),
+    selectAll('business_deposit_account_target_segments'),
   ])
   return {
     accounts: accounts
@@ -110,13 +113,14 @@ async function loadRaw(): Promise<Raw> {
     promos: groupBy(promos, 'listing_id'),
     fees: groupBy(fees, 'listing_id'),
     features: groupBy(features, 'listing_id'),
+    segments: groupBy(segments, 'listing_id'),
   }
 }
 
 // Every attribute query_business_checking must return for one listing,
 // spelled out key by key from the raw rows. Keep this in step with the tool's
 // documented response shape (openapi.yaml), NOT with mapBusinessCheckingRow.
-function expectedRow(raw: Raw, a: Row, segments: Row[] = []): Row {
+function expectedRow(raw: Raw, a: Row, segments: Row[] = raw.segments.get(a.id) ?? []): Row {
   const d = raw.details.get(a.id)
   const g = (col: string) => d?.[col] ?? null
   const inst = raw.institutions.get(a.institution_id)
@@ -419,6 +423,13 @@ describe('query_business_checking: Bluevine golden record', () => {
     const row = (await query()).find((r) => r.listing_slug === KNOWN_SLUGS.bluevine)!
     const { last_modified, ...rest } = normalizeQueryRow(row)
     expect(typeof last_modified).toBe('string') // changes on every db:reset
+    // Segment tags differ per environment (none locally, real ones on dev), so they come from the DB, order-insensitively.
+    const segs = expectedRow(raw, raw.accounts.find((a) => a.listing_slug === KNOWN_SLUGS.bluevine)!)
+    const sorted = (v: unknown) => [...(v as string[])].sort()
+    expect(sorted(rest.target_industries)).toEqual(sorted(segs.target_industries))
+    expect(sorted(rest.target_business_profiles)).toEqual(sorted(segs.target_business_profiles))
+    rest.target_industries = segs.target_industries
+    rest.target_business_profiles = segs.target_business_profiles
     expect(rest).toStrictEqual({
       listing_slug: 'bluevine-business-checking',
       institution_name: 'Bluevine Capital Inc.',
@@ -435,8 +446,8 @@ describe('query_business_checking: Bluevine golden record', () => {
       minimum_opening_deposit: 0,
       entity_types_accepted: ['sole_prop', 'partnership', 'llc', 'c_corp', 's_corp'],
       available_states: ['ALL'],
-      target_industries: [],
-      target_business_profiles: [],
+      target_industries: segs.target_industries,
+      target_business_profiles: segs.target_business_profiles,
       insurance_type: 'fdic',
       free_transactions_per_month: null,
       cash_deposit_available: false,
@@ -734,35 +745,70 @@ describe('get_business_checking_listing: response contract', () => {
 
 // ---------------------------------------------------------------------------
 // Target-segment soft ranking. The seed data has no segment rows, so this
-// inserts a few and always removes them again.
+// inserts missing tags and removes only those. Dev carries real tags, so
+// expectations are computed from the DB rows, never from an assumed-empty table.
 // ---------------------------------------------------------------------------
 
-describe('query_business_checking: target segment ranking (inserts and removes its own rows)', () => {
+describe('query_business_checking: target segment ranking (inserts and removes only its own rows)', () => {
   const db = () => realSupabase()
+  type Seg = { listing_id: string; category: string; segment: string }
+  // Fixed synthetic ids: a crashed run's leftovers are recognizable and swept by the next run's pre-clean.
+  const SEG_IDS = ['00000000-0000-4000-8000-00000000a001', '00000000-0000-4000-8000-00000000a002', '00000000-0000-4000-8000-00000000a003']
   let karatId: string
   let rampId: string
+  let inserted: unknown[] = []
+  let segsBySlug: Map<string, Seg[]>
 
-  const cleanup = async () => {
-    await db().from('business_deposit_account_target_segments').delete().in('listing_id', [karatId, rampId])
+  const loadSegs = async () => {
+    const { data, error } = await db().from('business_deposit_account_target_segments').select('listing_id, category, segment')
+    expect(error).toBeNull()
+    const slugById = new Map(raw.accounts.map((a) => [a.id as string, a.listing_slug as string]))
+    segsBySlug = new Map()
+    for (const s of (data ?? []) as Seg[]) {
+      const slug = slugById.get(s.listing_id)
+      if (slug) segsBySlug.set(slug, [...(segsBySlug.get(slug) ?? []), s])
+    }
+  }
+  const segsOf = (slug: string, category?: string) =>
+    (segsBySlug.get(slug) ?? []).filter((s) => !category || s.category === category).map((s) => s.segment).sort()
+
+  const removeInserted = async () => {
+    if (inserted.length) await db().from('business_deposit_account_target_segments').delete().in('id', SEG_IDS)
+    inserted = []
   }
 
   beforeAll(async () => {
     karatId = raw.accounts.find((a) => a.listing_slug === 'karat-business-checking')!.id
     rampId = raw.accounts.find((a) => a.listing_slug === KNOWN_SLUGS.ramp)!.id
-    await cleanup() // in case an earlier run died mid-test
-    const { error } = await db()
+    const { error: cleanErr } = await db().from('business_deposit_account_target_segments').delete().in('id', SEG_IDS)
+    if (cleanErr) throw cleanErr
+    // Only tags absent from the DB are inserted (UNIQUE (listing_id, segment)); real tags are never touched.
+    const { data: existing } = await db()
       .from('business_deposit_account_target_segments')
-      .insert([
-        { listing_id: karatId, category: 'industry_vertical', segment: 'ecommerce' },
-        { listing_id: karatId, category: 'business_profile', segment: 'early_stage_startup' },
-        { listing_id: rampId, category: 'industry_vertical', segment: 'ecommerce' },
-      ])
-    expect(error).toBeNull()
+      .select('listing_id, segment')
+      .in('listing_id', [karatId, rampId])
+    const has = new Set((existing ?? []).map((e) => `${e.listing_id}:${e.segment}`))
+    const wanted = [
+      { id: SEG_IDS[0], listing_id: karatId, category: 'industry_vertical', segment: 'ecommerce' },
+      { id: SEG_IDS[1], listing_id: karatId, category: 'business_profile', segment: 'early_stage_startup' },
+      { id: SEG_IDS[2], listing_id: rampId, category: 'industry_vertical', segment: 'ecommerce' },
+    ]
+    const toInsert = wanted.filter((w) => !has.has(`${w.listing_id}:${w.segment}`))
+    if (toInsert.length) {
+      const { error } = await db().from('business_deposit_account_target_segments').insert(toInsert)
+      expect(error).toBeNull()
+      inserted = toInsert
+    }
+    await loadSegs()
   })
 
   afterAll(async () => {
-    await cleanup()
+    await removeInserted()
   })
+
+  // Overlap count of each listing's DB segments with the requested ones.
+  const scoresFor = (requested: string[]) =>
+    Object.fromEntries([...segsBySlug].map(([slug, segs]) => [slug, segs.filter((s) => requested.includes(s.segment)).length]))
 
   // Independent restatement of the ranking rule: descending overlap count,
   // ties keep the baseline (monthly_fee, id) order, nothing is excluded.
@@ -774,28 +820,32 @@ describe('query_business_checking: target segment ranking (inserts and removes i
 
   it('ranks by overlap count across both facets and never excludes non-matching listings', async () => {
     const slugs = (await query({ target_industries: ['ecommerce'], target_business_profiles: ['early_stage_startup'] })).map((r) => r.listing_slug)
-    expect(slugs).toEqual(rank({ 'karat-business-checking': 2, [KNOWN_SLUGS.ramp]: 1 }))
+    expect(slugs).toEqual(rank(scoresFor(['ecommerce', 'early_stage_startup'])))
     expect(slugs.length).toBe(baselineSlugs.length)
   })
 
   it('breaks ties by baseline order', async () => {
     const slugs = (await query({ target_industries: ['ecommerce'] })).map((r) => r.listing_slug)
-    expect(slugs).toEqual(rank({ 'karat-business-checking': 1, [KNOWN_SLUGS.ramp]: 1 }))
+    expect(slugs).toEqual(rank(scoresFor(['ecommerce'])))
   })
 
-  it('leaves order untouched when the requested segments match nothing', async () => {
-    const slugs = (await query({ target_industries: ['agriculture'] })).map((r) => r.listing_slug)
+  it('leaves order untouched when the requested segments match nothing', async (ctx) => {
+    const used = new Set([...segsBySlug.values()].flat().map((s) => s.segment))
+    const unusedIn = Object.keys(INDUSTRY_VERTICAL_DESCRIPTIONS).find((v) => !used.has(v))
+    const unusedBp = Object.keys(BUSINESS_PROFILE_DESCRIPTIONS).find((v) => !used.has(v))
+    if (!unusedIn && !unusedBp) return ctx.skip('every segment value is tagged on some listing; zero-overlap ordering is still covered by the "breaks ties by baseline order" test via rank()')
+    const args = unusedIn ? { target_industries: [unusedIn] } : { target_business_profiles: [unusedBp!] }
+    const slugs = (await query(args)).map((r) => r.listing_slug)
     expect(slugs).toEqual(baselineSlugs)
   })
 
   it('buckets each listing\'s segments into target_industries / target_business_profiles', async () => {
     const results = await query()
-    const karat = results.find((r) => r.listing_slug === 'karat-business-checking')!
-    const ramp = results.find((r) => r.listing_slug === KNOWN_SLUGS.ramp)!
-    const other = results.find((r) => r.listing_slug === KNOWN_SLUGS.mercury)!
-    expect(karat).toMatchObject({ target_industries: ['ecommerce'], target_business_profiles: ['early_stage_startup'] })
-    expect(ramp).toMatchObject({ target_industries: ['ecommerce'], target_business_profiles: [] })
-    expect(other).toMatchObject({ target_industries: [], target_business_profiles: [] })
+    for (const slug of ['karat-business-checking', KNOWN_SLUGS.ramp, KNOWN_SLUGS.mercury]) {
+      const r = results.find((x) => x.listing_slug === slug)!
+      expect([...(r.target_industries as string[])].sort(), slug).toEqual(segsOf(slug, 'industry_vertical'))
+      expect([...(r.target_business_profiles as string[])].sort(), slug).toEqual(segsOf(slug, 'business_profile'))
+    }
   })
 
   it('combines with a details filter (segments rank, apy_min restricts)', async () => {
@@ -803,9 +853,10 @@ describe('query_business_checking: target segment ranking (inserts and removes i
     const eligible = new Set(
       raw.accounts.filter((a) => has(raw.details.get(a.id)?.apy_max) && Number(raw.details.get(a.id)!.apy_max) >= 0.02).map((a) => a.listing_slug)
     )
-    // Ramp (apy_max 0.02, tagged ecommerce) ranks first; karat (0.0175) is filtered out entirely.
+    // Karat (0.0175) is filtered out entirely; the rest rank by ecommerce overlap.
     expect(new Set(slugs)).toEqual(eligible)
-    expect(slugs[0]).toBe(KNOWN_SLUGS.ramp)
+    const scores = scoresFor(['ecommerce'])
+    expect(slugs.map((s) => scores[s] ?? 0)).toEqual([...slugs.map((s) => scores[s] ?? 0)].sort((x, y) => y - x))
     expect(slugs).not.toContain('karat-business-checking')
   })
 })
