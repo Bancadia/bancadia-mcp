@@ -60,6 +60,16 @@ async function callTool(name: string, args: Record<string, unknown>): Promise<Ro
   return JSON.parse(body.result.content[0].text)
 }
 
+type RpcBody = { result?: { content: Array<{ text: string }> }; error?: { code: number; message: string } }
+
+async function callRaw(name: string, args: Record<string, unknown>): Promise<RpcBody> {
+  const request = post({ jsonrpc: '2.0', id: 1, method: 'tools/call', params: { name, arguments: args } })
+  const ctx = createExecutionContext()
+  const response = await app.fetch(request, env, ctx)
+  await waitOnExecutionContext(ctx)
+  return response.json<RpcBody>()
+}
+
 const query = (args: Record<string, unknown> = {}) => callTool('query_business_checking', args)
 const getListing = (slug: string) => callTool('get_business_checking_listing', { listing_slug: slug })
 
@@ -640,6 +650,72 @@ describe('query_business_checking: filters vs raw-table oracle', () => {
 })
 
 // ---------------------------------------------------------------------------
+// Malformed filter values: rejected up front with JSON-RPC -32602 (naming the
+// offending argument) instead of reaching Postgres and coming back as a
+// swallowed error that looks like "no matches".
+// ---------------------------------------------------------------------------
+
+describe('query_business_checking: malformed filter values', () => {
+  it.each<[string, Record<string, unknown>, string]>([
+    ['non-numeric string', { monthly_fee_max: 'abc' }, 'monthly_fee_max'],
+    ['null', { monthly_fee_max: null }, 'monthly_fee_max'],
+    ['NaN-like (non-finite) number', { apy_min: 1e999 }, 'apy_min'],
+    ['numeric string for a number', { minimum_opening_deposit_max: '10' }, 'minimum_opening_deposit_max'],
+    ['unknown insurance_type', { insurance_type: 'bogus' }, 'insurance_type'],
+    ['unknown rtp_network', { rtp_network: 'bogus' }, 'rtp_network'],
+    ['non-boolean string for a boolean', { rtp_supported: 'banana' }, 'rtp_supported'],
+    ['"true" string for a boolean', { interest_bearing: 'true' }, 'interest_bearing'],
+    ['non-numeric free_transactions_min', { free_transactions_min: 'abc' }, 'free_transactions_min'],
+    ['string for entity_types_accepted', { entity_types_accepted: 'sole_prop' }, 'entity_types_accepted'],
+    ['string for available_states', { available_states: 'CA' }, 'available_states'],
+    ['non-string array item', { available_states: ['CA', 5] }, 'available_states'],
+    ['unknown target_industries value', { target_industries: ['not_an_industry'] }, 'target_industries'],
+    ['unknown target_business_profiles value', { target_business_profiles: ['not_a_profile'] }, 'target_business_profiles'],
+  ])('%s -> -32602 naming the argument', async (_name, args, key) => {
+    const body = await callRaw('query_business_checking', args)
+    expect(body.result).toBeUndefined()
+    expect(body.error?.code).toBe(-32602)
+    expect(body.error?.message).toContain(key)
+  })
+
+  it('a malformed filter combined with a valid one is still rejected', async () => {
+    const body = await callRaw('query_business_checking', { monthly_fee_max: 10, apy_min: 'abc' })
+    expect(body.error?.code).toBe(-32602)
+  })
+
+  it('negative or huge numeric bounds are valid and match nothing', async () => {
+    expect(await query({ monthly_fee_max: -1 })).toEqual([])
+    expect(await query({ minimum_opening_deposit_max: -1 })).toEqual([])
+    expect(await query({ free_transactions_min: 1e9 })).toEqual([])
+  })
+
+  it('empty entity_types_accepted / available_states arrays apply no filter', async () => {
+    expect((await query({ entity_types_accepted: [] })).map((r) => r.listing_slug)).toEqual(baselineSlugs)
+    expect((await query({ available_states: [] })).map((r) => r.listing_slug)).toEqual(baselineSlugs)
+  })
+
+  it('unknown entity type matches nothing', async () => {
+    expect(await query({ entity_types_accepted: ['not_an_entity_type'] })).toEqual([])
+  })
+
+  it('available_states is case-sensitive and an unknown code only matches ALL-wildcard listings', async () => {
+    for (const states of [['ca'], ['ZZ']]) {
+      const expected = raw.accounts
+        .filter((a) => (a.available_states as string[]).includes('ALL') || states.every((s) => (a.available_states as string[]).includes(s)))
+        .map((a) => a.listing_slug)
+      expect((await query({ available_states: states })).map((r) => r.listing_slug), states.join()).toEqual(expected)
+    }
+  })
+
+  it('rejection does not write query_match_events', async () => {
+    const before = await realSupabase().from('query_match_events').select('id', { count: 'exact', head: true }).eq('session_id', SESSION_ID)
+    await callRaw('query_business_checking', { monthly_fee_max: 'abc' })
+    const after = await realSupabase().from('query_match_events').select('id', { count: 'exact', head: true }).eq('session_id', SESSION_ID)
+    expect(after.count).toBe(before.count)
+  })
+})
+
+// ---------------------------------------------------------------------------
 // get_business_checking_listing: response shape.
 // ---------------------------------------------------------------------------
 
@@ -728,11 +804,14 @@ describe('get_business_checking_listing: response contract', () => {
     expect(sawMultiTier).toBe(true)
   })
 
-  it('returns [] for unknown, empty and non-string slugs (no error leak)', async () => {
+  it('returns [] for unknown and empty slugs, and -32602 for non-string or missing ones', async () => {
     expect(await getListing('definitely-not-a-listing')).toEqual([])
     expect(await getListing('')).toEqual([])
-    expect(await callTool('get_business_checking_listing', { listing_slug: 42 })).toEqual([])
-    expect(await callTool('get_business_checking_listing', {})).toEqual([])
+    for (const args of [{ listing_slug: 42 }, { listing_slug: null }, {}]) {
+      const body = await callRaw('get_business_checking_listing', args)
+      expect(body.error?.code, JSON.stringify(args)).toBe(-32602)
+      expect(body.error?.message).toContain('listing_slug')
+    }
   })
 
   it('reports apy_default/apy_max for the single-listing view, including Found where default is 0', async () => {

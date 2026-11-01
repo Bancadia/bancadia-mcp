@@ -286,7 +286,7 @@ describe('get_business_checking_listing handler', () => {
   // Supabase instance by
   // src/__tests__/integration/get-business-checking-listing.integration.test.ts.
 
-  it('returns an empty array when listing_slug is missing', async () => {
+  it('rejects a missing listing_slug with -32602 before touching the database', async () => {
     const chain = mockQueryChain({ data: [sampleListing], error: null })
     vi.mocked(createSupabaseClient).mockReturnValue({
       from: vi.fn().mockReturnValue(chain),
@@ -302,9 +302,10 @@ describe('get_business_checking_listing handler', () => {
     const response = await app.fetch(request, env, ctx)
     await waitOnExecutionContext(ctx)
 
-    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
-    const results = JSON.parse(body.result.content[0].text)
-    expect(results).toEqual([])
+    const body = await response.json<{ error: { code: number; message: string } }>()
+    expect(body.error.code).toBe(-32602)
+    expect(body.error.message).toContain('listing_slug')
+    expect(createSupabaseClient).not.toHaveBeenCalled()
   })
 
   it('fire-and-forget records a single query_match_events row for a detail lookup', async () => {
