@@ -11,6 +11,7 @@ import { handleQueryBusinessChecking } from './handlers/query-business-checking'
 import { handleGetBusinessCheckingListing } from './handlers/get-business-checking-listing'
 import type { QueryMeta } from './lib/analytics'
 import { applyApplicationUrlHost } from './lib/urls'
+import { validateArgs } from './lib/validate-args'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -218,6 +219,10 @@ app.post('/', async (c) => {
       // as `qr` to every returned application_url (below). `qr` is added for
       // every tool, whether or not that tool records match events; for one
       // that doesn't, the id simply has no query_match_events row to join to.
+      const toolSchema = TOOLS.find((t) => t.name === name)!.inputSchema
+      const invalid = validateArgs(args, toolSchema)
+      if (invalid) return sendJsonRpc(c, id, { error: { code: -32602, message: invalid } })
+
       const requestId = crypto.randomUUID()
       const meta: QueryMeta = { toolName: name, developerId, sessionId: sessionId as string, requestId }
       const results = await handler(args, c.env, c.executionCtx, meta)
