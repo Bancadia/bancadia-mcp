@@ -225,7 +225,17 @@ app.post('/', async (c) => {
 
       const requestId = crypto.randomUUID()
       const meta: QueryMeta = { toolName: name, developerId, sessionId: sessionId as string, requestId }
-      const results = await handler(args, c.env, c.executionCtx, meta)
+      let results: object[]
+      try {
+        results = await handler(args, c.env, c.executionCtx, meta)
+      } catch (err) {
+        // The underlying message stays in the Worker logs, never in the
+        // response — it can carry Postgres/PostgREST internals.
+        console.error(`tools/call ${name} failed (request_id=${requestId})`, err)
+        return sendJsonRpc(c, id, {
+          error: { code: -32603, message: 'Internal error while querying listings. Please retry.' },
+        })
+      }
       const tagged = applyApplicationUrlHost(results, { src: 'mcp', qr: requestId })
       return sendJsonRpc(c, id, {
         result: {

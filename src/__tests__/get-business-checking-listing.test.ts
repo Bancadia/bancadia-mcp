@@ -308,6 +308,32 @@ describe('get_business_checking_listing handler', () => {
     expect(createSupabaseClient).not.toHaveBeenCalled()
   })
 
+  it('returns JSON-RPC -32603 (not an empty result) when the database query fails', async () => {
+    const chain = mockQueryChain({ data: null, error: { message: 'relation "x" does not exist' } })
+    vi.mocked(createSupabaseClient).mockReturnValue({
+      from: vi.fn().mockReturnValue(chain),
+    } as unknown as ReturnType<typeof createSupabaseClient>)
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const request = post({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'get_business_checking_listing', arguments: { listing_slug: 'found-business-checking' } },
+    })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    const body = await response.json<{ result?: unknown; error: { code: number; message: string } }>()
+    expect(body.result).toBeUndefined()
+    expect(body.error.code).toBe(-32603)
+    // Database internals stay in the logs, never in the response.
+    expect(body.error.message).not.toContain('relation')
+    expect(errorSpy).toHaveBeenCalled()
+    errorSpy.mockRestore()
+  })
+
   it('fire-and-forget records a single query_match_events row for a detail lookup', async () => {
     const queryChain = mockQueryChain({ data: [sampleListing], error: null })
     const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })

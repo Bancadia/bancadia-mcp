@@ -46,7 +46,12 @@ export async function handleGetBusinessCheckingListing(
     .eq('product_type', 'checking')
     .limit(1)
 
-  if (error || !data || data.length === 0) {
+  // Thrown rather than returned as [] so a failed lookup surfaces as a
+  // JSON-RPC error (index.ts) instead of looking like an unknown slug.
+  if (error) {
+    throw new Error(`get_business_checking_listing: ${error.message}`)
+  }
+  if (!data || data.length === 0) {
     return []
   }
 

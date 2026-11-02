@@ -118,7 +118,12 @@ export async function handleQueryBusinessChecking(
 
   const { data, error } = await query
 
-  if (error || !data) {
+  // Thrown rather than returned as [] so a failed query surfaces as a
+  // JSON-RPC error (index.ts) instead of looking like "no listings match".
+  if (error) {
+    throw new Error(`query_business_checking: ${error.message}`)
+  }
+  if (!data) {
     return []
   }
 
