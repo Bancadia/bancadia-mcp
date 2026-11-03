@@ -22,7 +22,7 @@ vi.mock('../lib/supabase', () => ({
 import app from '../index'
 import { createSupabaseClient } from '../lib/supabase'
 import { mapBusinessCheckingRow, type BusinessCheckingQueryRow } from '../handlers/query-business-checking'
-import { mockRedis, withSession, TEST_SESSION_ID, TEST_DEVELOPER_ID } from './helpers'
+import { mockRedis, mockAnalyticsTables, withSession, TEST_SESSION_ID, TEST_DEVELOPER_ID } from './helpers'
 
 function post(body: object) {
   return new Request('http://localhost/', {
@@ -216,9 +216,8 @@ describe('query_business_checking handler — mock-appropriate coverage only', (
 
   it('returns JSON-RPC -32603 (not an empty result) when the database query fails', async () => {
     const chain = mockQueryChain({ data: null, error: { message: 'relation "x" does not exist' } })
-    vi.mocked(createSupabaseClient).mockReturnValue({
-      from: vi.fn().mockReturnValue(chain),
-    } as unknown as ReturnType<typeof createSupabaseClient>)
+    const { from, eventInsert, matchInsert } = mockAnalyticsTables(chain)
+    vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
     const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
 
     const request = post({
@@ -238,6 +237,81 @@ describe('query_business_checking handler — mock-appropriate coverage only', (
     expect(body.error.message).not.toContain('relation')
     expect(errorSpy).toHaveBeenCalled()
     errorSpy.mockRestore()
+
+    // ...but the underlying message is kept server-side, on the query_events row.
+    expect(eventInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool_name: 'query_business_checking',
+        status: 'error',
+        result_count: null,
+        error_message: 'query_business_checking: relation "x" does not exist',
+      })
+    )
+    expect(matchInsert).not.toHaveBeenCalled()
+  })
+
+  it('logs a zero-result call to query_events with result_count 0 and no match rows', async () => {
+    const chain = mockQueryChain({ data: [], error: null })
+    const { from, eventInsert, matchInsert } = mockAnalyticsTables(chain)
+    vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
+
+    const ctx = createExecutionContext()
+    const response = await app.fetch(
+      post({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'query_business_checking', arguments: { available_states: ['WY'] } },
+      }),
+      env,
+      ctx
+    )
+    await waitOnExecutionContext(ctx)
+
+    const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
+    expect(JSON.parse(body.result.content[0].text)).toEqual([])
+    expect(eventInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool_name: 'query_business_checking',
+        status: 'ok',
+        result_count: 0,
+        query_filters: { available_states: ['WY'] },
+      })
+    )
+    expect(matchInsert).not.toHaveBeenCalled()
+  })
+
+  it('logs a rejected call to query_events as invalid_args without querying listings', async () => {
+    const chain = mockQueryChain({ data: [sampleListing], error: null })
+    const { from, eventInsert, matchInsert } = mockAnalyticsTables(chain)
+    vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
+
+    const ctx = createExecutionContext()
+    const response = await app.fetch(
+      post({
+        jsonrpc: '2.0',
+        id: 1,
+        method: 'tools/call',
+        params: { name: 'query_business_checking', arguments: { insurance_type: 'sipc' } },
+      }),
+      env,
+      ctx
+    )
+    await waitOnExecutionContext(ctx)
+
+    const body = await response.json<{ error: { code: number; message: string } }>()
+    expect(body.error.code).toBe(-32602)
+    expect(from).not.toHaveBeenCalledWith('business_deposit_accounts')
+    expect(eventInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        tool_name: 'query_business_checking',
+        status: 'invalid_args',
+        result_count: null,
+        error_message: body.error.message,
+        query_filters: { insurance_type: 'sipc' },
+      })
+    )
+    expect(matchInsert).not.toHaveBeenCalled()
   })
 
   it('JS-side available_states filter: ALL listings included, non-matching excluded', async () => {
@@ -276,10 +350,7 @@ describe('query_business_checking handler — mock-appropriate coverage only', (
 
   it('fire-and-forget records a query_match_events row per listing without affecting the response', async () => {
     const queryChain = mockQueryChain({ data: [sampleListing], error: null })
-    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
-    const from = vi.fn().mockImplementation((table: string) =>
-      table === 'query_match_events' ? { insert: insertMock } : queryChain
-    )
+    const { from, eventInsert, matchInsert: insertMock } = mockAnalyticsTables(queryChain)
     vi.mocked(createSupabaseClient).mockReturnValue({
       from,
     } as unknown as ReturnType<typeof createSupabaseClient>)
@@ -301,23 +372,30 @@ describe('query_business_checking handler — mock-appropriate coverage only', (
     expect(results[0]).not.toHaveProperty('id')
     expect(results[0]).not.toHaveProperty('institution_id')
 
-    expect(insertMock).toHaveBeenCalledWith([
+    expect(eventInsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        listing_id: 'listing-uuid-1',
-        institution_id: 'institution-uuid-1',
-        listing_slug: 'example-bank-business-checking-pro',
         tool_name: 'query_business_checking',
         developer_id: TEST_DEVELOPER_ID,
         session_id: TEST_SESSION_ID,
-        result_rank: 1,
+        status: 'ok',
         result_count: 1,
+        error_message: null,
         query_filters: { monthly_fee_max: 10 },
-      }),
+      })
+    )
+    const requestId = eventInsert.mock.calls[0][0].request_id as string
+    expect(insertMock).toHaveBeenCalledWith([
+      {
+        request_id: requestId,
+        listing_id: 'listing-uuid-1',
+        institution_id: 'institution-uuid-1',
+        listing_slug: 'example-bank-business-checking-pro',
+        result_rank: 1,
+      },
     ])
 
     // application_url is host-prefixed and tagged with src=mcp&qr=<request_id>,
-    // where qr is the same id logged on the query_match_events rows.
-    const requestId = insertMock.mock.calls[0][0][0].request_id as string
+    // where qr is the same id logged on the query_events row.
     expect(requestId).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)
     expect(results[0].application_url).toBe(
       `https://bancadia.com/go/example-bank/business-checking-pro?src=mcp&qr=${requestId}`
@@ -327,10 +405,7 @@ describe('query_business_checking handler — mock-appropriate coverage only', (
   it('uses one request_id per tools/call, shared by every logged row and every returned application_url', async () => {
     const second = { ...sampleListing, id: 'listing-uuid-1b', listing_slug: 'second', application_url: '/go/second/checking' }
     const queryChain = mockQueryChain({ data: [sampleListing, second], error: null })
-    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
-    const from = vi.fn().mockImplementation((table: string) =>
-      table === 'query_match_events' ? { insert: insertMock } : queryChain
-    )
+    const { from, eventInsert, matchInsert: insertMock } = mockAnalyticsTables(queryChain)
     vi.mocked(createSupabaseClient).mockReturnValue({
       from,
     } as unknown as ReturnType<typeof createSupabaseClient>)
@@ -830,8 +905,7 @@ describe('advanced filter combinations — details-table restriction', () => {
 
   it('query_match_events mirrors the filtered response exactly — same listings, correct rank/count, no leaked non-matches', async () => {
     const { chain } = mockRealisticQueryChain([matchAllHigherFee, matchAll, wrongAccounting])
-    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
-    const from = vi.fn().mockImplementation((table: string) => (table === 'query_match_events' ? { insert: insertMock } : chain))
+    const { from, eventInsert, matchInsert: insertMock } = mockAnalyticsTables(chain)
     vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
 
     const results = await runQuery({ accounting_integration_available: true })
@@ -843,12 +917,11 @@ describe('advanced filter combinations — details-table restriction', () => {
     const insertedRows = insertMock.mock.calls[0][0] as Array<{
       listing_id: string
       result_rank: number
-      result_count: number
     }>
     expect(insertedRows).toHaveLength(2)
     expect(insertedRows.map((r) => r.listing_id)).toEqual([matchAll.id, matchAllHigherFee.id])
     expect(insertedRows.map((r) => r.result_rank)).toEqual([1, 2])
-    expect(insertedRows.every((r) => r.result_count === 2)).toBe(true)
+    expect(eventInsert).toHaveBeenCalledWith(expect.objectContaining({ status: 'ok', result_count: 2 }))
   })
 })
 
@@ -927,10 +1000,7 @@ describe('target segments — soft-ranking, never a hard filter', () => {
 
   it('query_match_events result_rank reflects post-sort order, not pre-sort monthly_fee order', async () => {
     const { chain } = mockRealisticQueryChain([untaggedZeroMatch, taggedOneMatch, taggedTwoMatches])
-    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
-    const from = vi
-      .fn()
-      .mockImplementation((table: string) => (table === 'query_match_events' ? { insert: insertMock } : chain))
+    const { from, eventInsert, matchInsert: insertMock } = mockAnalyticsTables(chain)
     vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
 
     const results = await runQuery({

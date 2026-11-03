@@ -1,5 +1,5 @@
 import { createSupabaseClient } from '../lib/supabase'
-import { recordMatchEvents, type QueryMeta } from '../lib/analytics'
+import { recordQueryEvent, type QueryMeta } from '../lib/analytics'
 import { TARGET_SEGMENTS_EMBED } from '../lib/target-segments'
 import type { Env } from '../types'
 import type { Database } from '../lib/database.types'
@@ -31,6 +31,7 @@ export async function handleGetBusinessCheckingListing(
 ): Promise<object[]> {
   const listingSlug = args.listing_slug
   if (typeof listingSlug !== 'string' || listingSlug.length === 0) {
+    ctx.waitUntil(recordQueryEvent(env, meta, args, { status: 'ok', matches: [] }))
     return []
   }
 
@@ -52,15 +53,18 @@ export async function handleGetBusinessCheckingListing(
     throw new Error(`get_business_checking_listing: ${error.message}`)
   }
   if (!data || data.length === 0) {
+    // Unknown slug: still logged, as a zero-result call.
+    ctx.waitUntil(recordQueryEvent(env, meta, args, { status: 'ok', matches: [] }))
     return []
   }
 
   const row = data[0] as unknown as BusinessCheckingDetailRow
 
   ctx.waitUntil(
-    recordMatchEvents(env, meta, args, [
-      { listingId: row.id, institutionId: row.institution_id, listingSlug: row.listing_slug ?? null },
-    ])
+    recordQueryEvent(env, meta, args, {
+      status: 'ok',
+      matches: [{ listingId: row.id, institutionId: row.institution_id, listingSlug: row.listing_slug ?? null }],
+    })
   )
 
   const fees = (row.business_deposit_fees ?? []).filter(

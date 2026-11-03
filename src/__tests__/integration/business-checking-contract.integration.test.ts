@@ -707,11 +707,20 @@ describe('query_business_checking: malformed filter values', () => {
     }
   })
 
-  it('rejection does not write query_match_events', async () => {
-    const before = await realSupabase().from('query_match_events').select('id', { count: 'exact', head: true }).eq('session_id', SESSION_ID)
-    await callRaw('query_business_checking', { monthly_fee_max: 'abc' })
-    const after = await realSupabase().from('query_match_events').select('id', { count: 'exact', head: true }).eq('session_id', SESSION_ID)
-    expect(after.count).toBe(before.count)
+  it('rejection writes an invalid_args query_events row carrying the bad value, and no match rows', async () => {
+    // Unique value: earlier cases in this describe also send a non-numeric
+    // monthly_fee_max under the same SESSION_ID.
+    const args = { monthly_fee_max: `not-a-number-${crypto.randomUUID()}` }
+    const body = await callRaw('query_business_checking', args)
+    const { data, error } = await realSupabase()
+      .from('query_events')
+      .select('status, result_count, error_message, query_match_events(listing_id)')
+      .eq('session_id', SESSION_ID)
+      .eq('query_filters', JSON.stringify(args))
+    expect(error).toBeNull()
+    expect(data).toEqual([
+      { status: 'invalid_args', result_count: null, error_message: body.error?.message, query_match_events: [] },
+    ])
   })
 })
 

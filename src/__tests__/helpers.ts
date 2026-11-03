@@ -54,3 +54,18 @@ export function mockRedis(options: MockRedisOptions = {}) {
 
   return instance
 }
+
+// `from()` stub for handler tests that assert on analytics: query_events and
+// query_match_events each get their own insert spy, every other table gets
+// `queryChain`. recordQueryEvent inserts the query_events row first and only
+// then the match rows, so `matchInsert` is only called after `eventInsert`.
+export function mockAnalyticsTables(queryChain: unknown) {
+  const eventInsert = vi.fn().mockResolvedValue({ data: null, error: null })
+  const matchInsert = vi.fn().mockResolvedValue({ data: null, error: null })
+  const from = vi.fn().mockImplementation((table: string) => {
+    if (table === 'query_events') return { insert: eventInsert }
+    if (table === 'query_match_events') return { insert: matchInsert }
+    return queryChain
+  })
+  return { from, eventInsert, matchInsert }
+}
