@@ -28,14 +28,16 @@ export const ALL_KNOWN_SLUGS: string[] = Object.values(KNOWN_SLUGS)
 
 // business_checking_details.apy_default / apy_max for every interest-bearing
 // listing, read from the seeded local database (bancadia-db migration 052's
-// backfill). Stored as decimals (0.03 = 3%). The other 7 checking listings
-// are interest_bearing = false and have NULL for both. Deliberately chosen so
-// apy_default and apy_max diverge for found/bluevine/karat -- that's what lets
-// a test tell "filters on apy_max" apart from "filters on apy_default".
+// backfill). Stored as decimals (0.03 = 3%). The other 8 checking listings
+// are interest_bearing = false and have NULL for both -- including
+// karat-business-checking since bancadia-db migration 059 (single plan,
+// checking earns 0.00%; its 1.00% ATP rate is an account feature, not
+// checking APY). Deliberately chosen so apy_default and apy_max diverge for
+// found/bluevine -- that's what lets a test tell "filters on apy_max" apart
+// from "filters on apy_default".
 export const APY_EXPECTED = {
   'highbeam-business-checking': { apy_default: 0, apy_max: 0.0132 },
   [KNOWN_SLUGS.grasshopper]: { apy_default: 0.01, apy_max: 0.0135 },
-  'karat-business-checking': { apy_default: 0, apy_max: 0.0175 },
   [KNOWN_SLUGS.ramp]: { apy_default: 0.02, apy_max: 0.02 },
   [KNOWN_SLUGS.found]: { apy_default: 0, apy_max: 0.025 },
   [KNOWN_SLUGS.bluevine]: { apy_default: 0.013, apy_max: 0.03 },

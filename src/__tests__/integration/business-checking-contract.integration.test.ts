@@ -590,7 +590,8 @@ const FILTER_CASES: FilterCase[] = [
   { name: 'free_transactions_min 20 (inclusive; NULL excluded)', args: { free_transactions_min: 20 }, keep: (_a, d) => has(d?.free_transactions_per_month) && d!.free_transactions_per_month >= 20 },
   { name: 'free_transactions_min 100', args: { free_transactions_min: 100 }, keep: (_a, d) => has(d?.free_transactions_per_month) && d!.free_transactions_per_month >= 100 },
   { name: 'apy_min 0.02 (inclusive, on apy_max)', args: { apy_min: 0.02 }, keep: (_a, d) => has(d?.apy_max) && Number(d!.apy_max) >= 0.02 },
-  { name: 'apy_min 0.0175 (inclusive boundary)', args: { apy_min: 0.0175 }, keep: (_a, d) => has(d?.apy_max) && Number(d!.apy_max) >= 0.0175 },
+  // Grasshopper's apy_max sits exactly on 0.0135 (Karat's 0.0175 was the boundary before bancadia-db 059 nulled it).
+  { name: 'apy_min 0.0135 (inclusive boundary)', args: { apy_min: 0.0135 }, keep: (_a, d) => has(d?.apy_max) && Number(d!.apy_max) >= 0.0135 },
   { name: 'apy_min 0.0001 (drops NULL apy_max)', args: { apy_min: 0.0001 }, keep: (_a, d) => has(d?.apy_max) && Number(d!.apy_max) >= 0.0001 },
   { name: 'apy_min above every rate', args: { apy_min: 0.5 }, keep: () => false, degenerate: 'keepsNone' },
   { name: 'entity_types_accepted nonprofit', args: { entity_types_accepted: ['nonprofit'] }, keep: (a) => (a.entity_types_accepted as string[]).includes('nonprofit') },
@@ -941,7 +942,9 @@ describe('query_business_checking: target segment ranking (inserts and removes o
     const eligible = new Set(
       raw.accounts.filter((a) => has(raw.details.get(a.id)?.apy_max) && Number(raw.details.get(a.id)!.apy_max) >= 0.02).map((a) => a.listing_slug)
     )
-    // Karat (0.0175) is filtered out entirely; the rest rank by ecommerce overlap.
+    // Karat is filtered out entirely despite its ecommerce tag:
+    // it's non-interest-bearing with NULL apy_max (bancadia-db 059),
+    // and apy_min's !inner join drops NULLs. The rest rank by ecommerce overlap.
     expect(new Set(slugs)).toEqual(eligible)
     const scores = scoresFor(['ecommerce'])
     expect(slugs.map((s) => scores[s] ?? 0)).toEqual([...slugs.map((s) => scores[s] ?? 0)].sort((x, y) => y - x))
