@@ -24,6 +24,9 @@ jobs:
       - name: Lint (TypeScript)
         run: npm run lint
 
+      - name: Lint OpenAPI spec
+        run: npm run lint:openapi
+
       - name: Test
         run: npm test
 

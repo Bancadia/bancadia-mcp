@@ -8,6 +8,7 @@ import { runTool, type RunToolResult } from '../lib/run-tool'
 import { TOOLS } from '../lib/tools'
 import { parseQueryParams } from './params'
 import { problem } from './problem'
+import { buildOpenApi } from '../lib/openapi'
 
 type Vars = { requestId: string }
 const rest = new Hono<{ Bindings: Env; Variables: Vars }>()
@@ -84,6 +85,9 @@ function failure(c: import('hono').Context<{ Bindings: Env; Variables: Vars }>, 
     ? problem(c, 400, r.message)
     : problem(c, 500, 'Internal error while querying listings. Please retry.')
 }
+
+// Static document: no auth or rate limit, same /v1 headers and CORS as the data routes.
+rest.get('/openapi.json', (c) => c.json(buildOpenApi()))
 
 rest.get('/business-checking', async (c) => {
   const g = await gate(c)

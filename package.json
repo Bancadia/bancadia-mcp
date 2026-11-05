@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:integration": "node scripts/db/run-integration.mjs",
     "lint": "tsc --noEmit",
+    "lint:openapi": "npx --yes tsx@4.23.15 scripts/print-openapi.ts > \"${TMPDIR:-/tmp}/bancadia-openapi.json\" && npx --yes @redocly/cli@2.76.0 lint --extends recommended \"${TMPDIR:-/tmp}/bancadia-openapi.json\"",
     "db:start": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" start",
     "db:reset": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" db reset --local && node scripts/db/apply-grants.mjs && node scripts/db/seed-test-fixtures.mjs",
     "db:stop": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" stop"
