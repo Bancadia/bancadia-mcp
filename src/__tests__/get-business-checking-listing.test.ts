@@ -21,7 +21,7 @@ vi.mock('../lib/supabase', () => ({
 
 import app from '../index'
 import { createSupabaseClient } from '../lib/supabase'
-import { mockRedis, withSession, TEST_SESSION_ID, TEST_DEVELOPER_ID } from './helpers'
+import { mockRedis, mockAnalyticsTables, withSession, TEST_SESSION_ID, TEST_DEVELOPER_ID } from './helpers'
 
 function post(body: object) {
   return new Request('http://localhost/', {
@@ -286,11 +286,10 @@ describe('get_business_checking_listing handler', () => {
   // Supabase instance by
   // src/__tests__/integration/get-business-checking-listing.integration.test.ts.
 
-  it('rejects a missing listing_slug with -32602 before touching the database', async () => {
+  it('rejects a missing listing_slug with -32602 before querying listings, logging it as invalid_args', async () => {
     const chain = mockQueryChain({ data: [sampleListing], error: null })
-    vi.mocked(createSupabaseClient).mockReturnValue({
-      from: vi.fn().mockReturnValue(chain),
-    } as unknown as ReturnType<typeof createSupabaseClient>)
+    const { from, eventInsert } = mockAnalyticsTables(chain)
+    vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
 
     const request = post({
       jsonrpc: '2.0',
@@ -305,15 +304,41 @@ describe('get_business_checking_listing handler', () => {
     const body = await response.json<{ error: { code: number; message: string } }>()
     expect(body.error.code).toBe(-32602)
     expect(body.error.message).toContain('listing_slug')
-    expect(createSupabaseClient).not.toHaveBeenCalled()
+    expect(from).not.toHaveBeenCalledWith('business_deposit_accounts')
+    expect(eventInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ tool_name: 'get_business_checking_listing', status: 'invalid_args', query_filters: {} })
+    )
   })
 
-  it('fire-and-forget records a single query_match_events row for a detail lookup', async () => {
+  it('returns JSON-RPC -32603 (not an empty result) when the database query fails', async () => {
+    const chain = mockQueryChain({ data: null, error: { message: 'relation "x" does not exist' } })
+    vi.mocked(createSupabaseClient).mockReturnValue({
+      from: vi.fn().mockReturnValue(chain),
+    } as unknown as ReturnType<typeof createSupabaseClient>)
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
+
+    const request = post({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'tools/call',
+      params: { name: 'get_business_checking_listing', arguments: { listing_slug: 'found-business-checking' } },
+    })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(request, env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    const body = await response.json<{ result?: unknown; error: { code: number; message: string } }>()
+    expect(body.result).toBeUndefined()
+    expect(body.error.code).toBe(-32603)
+    // Database internals stay in the logs, never in the response.
+    expect(body.error.message).not.toContain('relation')
+    expect(errorSpy).toHaveBeenCalled()
+    errorSpy.mockRestore()
+  })
+
+  it('fire-and-forget records a query_events row and a single query_match_events row for a detail lookup', async () => {
     const queryChain = mockQueryChain({ data: [sampleListing], error: null })
-    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
-    const from = vi.fn().mockImplementation((table: string) =>
-      table === 'query_match_events' ? { insert: insertMock } : queryChain
-    )
+    const { from, eventInsert, matchInsert: insertMock } = mockAnalyticsTables(queryChain)
     vi.mocked(createSupabaseClient).mockReturnValue({
       from,
     } as unknown as ReturnType<typeof createSupabaseClient>)
@@ -334,31 +359,34 @@ describe('get_business_checking_listing handler', () => {
     expect(results[0]).not.toHaveProperty('id')
     expect(results[0]).not.toHaveProperty('institution_id')
 
-    expect(insertMock).toHaveBeenCalledWith([
+    expect(eventInsert).toHaveBeenCalledWith(
       expect.objectContaining({
-        listing_id: 'listing-uuid-2',
-        institution_id: 'institution-uuid-2',
-        listing_slug: 'found-business-checking',
         tool_name: 'get_business_checking_listing',
         developer_id: TEST_DEVELOPER_ID,
         session_id: TEST_SESSION_ID,
-        result_rank: 1,
+        status: 'ok',
         result_count: 1,
         query_filters: { listing_slug: 'found-business-checking' },
-      }),
+      })
+    )
+    const requestId = eventInsert.mock.calls[0][0].request_id as string
+    expect(insertMock).toHaveBeenCalledWith([
+      {
+        request_id: requestId,
+        listing_id: 'listing-uuid-2',
+        institution_id: 'institution-uuid-2',
+        listing_slug: 'found-business-checking',
+        result_rank: 1,
+      },
     ])
 
     // qr on the returned application_url is the logged request_id.
-    const requestId = insertMock.mock.calls[0][0][0].request_id as string
     expect(results[0].application_url).toBe(`https://bancadia.com/go/found/business-checking?src=mcp&qr=${requestId}`)
   })
 
-  it('does not attempt an insert when no listing matches (matchEvents empty)', async () => {
+  it('logs an unknown slug as a zero-result query_events row, with no match rows', async () => {
     const queryChain = mockQueryChain({ data: [], error: null })
-    const insertMock = vi.fn().mockResolvedValue({ data: null, error: null })
-    const from = vi.fn().mockImplementation((table: string) =>
-      table === 'query_match_events' ? { insert: insertMock } : queryChain
-    )
+    const { from, eventInsert, matchInsert: insertMock } = mockAnalyticsTables(queryChain)
     vi.mocked(createSupabaseClient).mockReturnValue({
       from,
     } as unknown as ReturnType<typeof createSupabaseClient>)
@@ -374,6 +402,9 @@ describe('get_business_checking_listing handler', () => {
     await waitOnExecutionContext(ctx)
 
     expect(response.status).toBe(200)
+    expect(eventInsert).toHaveBeenCalledWith(
+      expect.objectContaining({ tool_name: 'get_business_checking_listing', status: 'ok', result_count: 0 })
+    )
     expect(insertMock).not.toHaveBeenCalled()
   })
 })

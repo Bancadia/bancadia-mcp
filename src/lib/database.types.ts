@@ -1351,63 +1351,89 @@ export type Database = {
           },
         ]
       }
-      query_match_events: {
+      query_events: {
         Row: {
+          created_at: string
           developer_id: string | null
-          id: string
-          institution_id: string | null
-          listing_id: string
-          listing_slug: string | null
-          matched_at: string
+          error_message: string | null
           query_filters: Json | null
           request_id: string
-          result_count: number
-          result_rank: number
+          result_count: number | null
           session_id: string
+          status: Database["public"]["Enums"]["query_event_status_enum"]
           tool_name: string
         }
         Insert: {
+          created_at?: string
           developer_id?: string | null
-          id?: string
-          institution_id?: string | null
-          listing_id: string
-          listing_slug?: string | null
-          matched_at?: string
+          error_message?: string | null
           query_filters?: Json | null
           request_id: string
-          result_count: number
-          result_rank: number
+          result_count?: number | null
           session_id: string
+          status: Database["public"]["Enums"]["query_event_status_enum"]
           tool_name: string
         }
         Update: {
+          created_at?: string
           developer_id?: string | null
-          id?: string
-          institution_id?: string | null
-          listing_id?: string
-          listing_slug?: string | null
-          matched_at?: string
+          error_message?: string | null
           query_filters?: Json | null
           request_id?: string
-          result_count?: number
-          result_rank?: number
+          result_count?: number | null
           session_id?: string
+          status?: Database["public"]["Enums"]["query_event_status_enum"]
           tool_name?: string
         }
         Relationships: [
           {
-            foreignKeyName: "query_match_events_developer_id_fkey"
+            foreignKeyName: "query_events_developer_id_fkey"
             columns: ["developer_id"]
             isOneToOne: false
             referencedRelation: "developer_users"
             referencedColumns: ["id"]
           },
+        ]
+      }
+      query_match_events: {
+        Row: {
+          id: string
+          institution_id: string | null
+          listing_id: string
+          listing_slug: string | null
+          request_id: string
+          result_rank: number
+        }
+        Insert: {
+          id?: string
+          institution_id?: string | null
+          listing_id: string
+          listing_slug?: string | null
+          request_id: string
+          result_rank: number
+        }
+        Update: {
+          id?: string
+          institution_id?: string | null
+          listing_id?: string
+          listing_slug?: string | null
+          request_id?: string
+          result_rank?: number
+        }
+        Relationships: [
           {
             foreignKeyName: "query_match_events_institution_id_fkey"
             columns: ["institution_id"]
             isOneToOne: false
             referencedRelation: "institutions"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "query_match_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "query_events"
+            referencedColumns: ["request_id"]
           },
         ]
       }
@@ -1452,7 +1478,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "query_match_events_developer_id_fkey"
+            foreignKeyName: "query_events_developer_id_fkey"
             columns: ["developer_id"]
             isOneToOne: false
             referencedRelation: "developer_users"
@@ -1528,6 +1554,7 @@ export type Database = {
         | "fintech"
       insurance_type_enum: "fdic" | "ncua" | "uninsured"
       listing_status_enum: "draft" | "active" | "paused" | "scheduled"
+      query_event_status_enum: "ok" | "invalid_args" | "error"
       rtp_network_enum: "fednow" | "rtp_network" | "both" | "none"
       target_segment_category_enum: "industry_vertical" | "business_profile"
       target_segment_enum:
@@ -1756,6 +1783,7 @@ export const Constants = {
       ],
       insurance_type_enum: ["fdic", "ncua", "uninsured"],
       listing_status_enum: ["draft", "active", "paused", "scheduled"],
+      query_event_status_enum: ["ok", "invalid_args", "error"],
       rtp_network_enum: ["fednow", "rtp_network", "both", "none"],
       target_segment_category_enum: ["industry_vertical", "business_profile"],
       target_segment_enum: [

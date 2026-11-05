@@ -24,9 +24,10 @@ import { mockRedis, withSession } from '../helpers'
 import { KNOWN_SLUGS, EXPECTED, ALL_KNOWN_SLUGS, APY_EXPECTED, APY_SLUGS } from './fixtures'
 import { realSupabase } from './db-helpers'
 
-// Real UUID, unique per test file run — query_match_events.session_id is
+// Real UUID, unique per test file run — query_events.session_id is
 // UUID NOT NULL, and this also doubles as the isolation key for scoping
-// query_match_events assertions without needing any DB-wide cleanup.
+// query_events / query_match_events assertions without needing any DB-wide
+// cleanup.
 const SESSION_ID = crypto.randomUUID()
 
 function post(body: object) {
@@ -50,7 +51,7 @@ async function run(args: Record<string, unknown>) {
   })
   const ctx = createExecutionContext()
   const response = await app.fetch(request, env, ctx)
-  await waitOnExecutionContext(ctx) // ensures ctx.waitUntil(recordMatchEvents(...)) completes
+  await waitOnExecutionContext(ctx) // ensures ctx.waitUntil(recordQueryEvent(...)) completes
   const body = await response.json<{ result: { content: Array<{ text: string }> } }>()
   return JSON.parse(body.result.content[0].text) as Array<{ listing_slug: string } & Record<string, unknown>>
 }
@@ -76,15 +77,33 @@ describe('query_business_checking — real local Supabase', () => {
     expect(mercury).toMatchObject(EXPECTED[KNOWN_SLUGS.mercury])
   })
 
-  it('records query_match_events scoped to this test run session_id', async () => {
-    await run({})
-    const { data, error } = await realSupabase()
-      .from('query_match_events')
-      .select('listing_slug, session_id')
+  it('records a query_events row and its query_match_events rows scoped to this test run session_id', async () => {
+    const results = await run({})
+    const { data: events, error } = await realSupabase()
+      .from('query_events')
+      .select('request_id, status, result_count, query_match_events(listing_slug, result_rank)')
       .eq('session_id', SESSION_ID)
+      .eq('tool_name', 'query_business_checking')
+      .eq('query_filters', '{}')
     expect(error).toBeNull()
-    expect(data?.length).toBeGreaterThan(0)
-    expect(data?.every((r) => r.session_id === SESSION_ID)).toBe(true)
+    expect(events?.length).toBeGreaterThan(0)
+    for (const e of events ?? []) {
+      expect(e.status).toBe('ok')
+      expect(e.result_count).toBe(results.length)
+      expect(e.query_match_events.length).toBe(results.length)
+    }
+  })
+
+  it('records a zero-result call as a query_events row with result_count 0 and no match rows', async () => {
+    const results = await run({ monthly_fee_max: -1 })
+    expect(results).toEqual([])
+    const { data: events, error } = await realSupabase()
+      .from('query_events')
+      .select('status, result_count, query_match_events(listing_id)')
+      .eq('session_id', SESSION_ID)
+      .eq('query_filters', JSON.stringify({ monthly_fee_max: -1 }))
+    expect(error).toBeNull()
+    expect(events).toEqual([{ status: 'ok', result_count: 0, query_match_events: [] }])
   })
 
   it('monthly_fee_max excludes the two 15.00 listings but keeps the 0.00 ones', async () => {

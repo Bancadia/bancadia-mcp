@@ -3,7 +3,7 @@ export const APPLICATION_BASE_URL = 'https://bancadia.com'
 // Attribution tags appended to every application_url an MCP tool returns, so
 // bancadia-app's /go route can tell an MCP-delivered click apart from other
 // surfaces (`src`) and join it back to the tool call that produced it (`qr`
-// = query_match_events.request_id). See bancadia-app
+// = query_events.request_id). See bancadia-app
 // docs/plans/go-click-attribution.md §3.2.
 export type ApplicationUrlTags = Record<string, string | null | undefined>
 

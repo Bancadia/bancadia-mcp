@@ -9,7 +9,7 @@ import { validateOrigin } from './lib/origin'
 import { createSession, validateSession, deleteSession, SESSION_HEADER } from './lib/session'
 import { handleQueryBusinessChecking } from './handlers/query-business-checking'
 import { handleGetBusinessCheckingListing } from './handlers/get-business-checking-listing'
-import type { QueryMeta } from './lib/analytics'
+import { recordQueryEvent, type QueryMeta } from './lib/analytics'
 import { applyApplicationUrlHost } from './lib/urls'
 import { validateArgs } from './lib/validate-args'
 
@@ -86,7 +86,7 @@ app.post('/', async (c) => {
   const isNotification = id === undefined
 
   // Every method except `initialize` requires a previously-issued session.
-  // Hoisted so `tools/call` below can attach it to query_match_events rows.
+  // Hoisted so `tools/call` below can attach it to query_events rows.
   let sessionId: string | undefined
   if (method !== 'initialize') {
     const session = await validateSession(c.req.raw, c.env, c.executionCtx)
@@ -215,17 +215,36 @@ app.post('/', async (c) => {
       // returned early), which is the only place that assigns it.
       //
       // `requestId` is generated here, once per tools/call, so the same id is
-      // both logged as query_match_events.request_id (via meta) and appended
-      // as `qr` to every returned application_url (below). `qr` is added for
-      // every tool, whether or not that tool records match events; for one
-      // that doesn't, the id simply has no query_match_events row to join to.
-      const toolSchema = TOOLS.find((t) => t.name === name)!.inputSchema
-      const invalid = validateArgs(args, toolSchema)
-      if (invalid) return sendJsonRpc(c, id, { error: { code: -32602, message: invalid } })
-
+      // both logged as query_events.request_id (via meta) and appended as
+      // `qr` to every returned application_url (below). Generated before
+      // validation so rejected calls are logged too — an agent repeatedly
+      // sending a value the schema doesn't accept is a signal worth seeing.
       const requestId = crypto.randomUUID()
       const meta: QueryMeta = { toolName: name, developerId, sessionId: sessionId as string, requestId }
-      const results = await handler(args, c.env, c.executionCtx, meta)
+
+      const toolSchema = TOOLS.find((t) => t.name === name)!.inputSchema
+      const invalid = validateArgs(args, toolSchema)
+      if (invalid) {
+        c.executionCtx.waitUntil(recordQueryEvent(c.env, meta, args, { status: 'invalid_args', errorMessage: invalid }))
+        return sendJsonRpc(c, id, { error: { code: -32602, message: invalid } })
+      }
+      let results: object[]
+      try {
+        results = await handler(args, c.env, c.executionCtx, meta)
+      } catch (err) {
+        // The underlying message stays in the Worker logs, never in the
+        // response — it can carry Postgres/PostgREST internals.
+        console.error(`tools/call ${name} failed (request_id=${requestId})`, err)
+        c.executionCtx.waitUntil(
+          recordQueryEvent(c.env, meta, args, {
+            status: 'error',
+            errorMessage: err instanceof Error ? err.message : String(err),
+          })
+        )
+        return sendJsonRpc(c, id, {
+          error: { code: -32603, message: 'Internal error while querying listings. Please retry.' },
+        })
+      }
       const tagged = applyApplicationUrlHost(results, { src: 'mcp', qr: requestId })
       return sendJsonRpc(c, id, {
         result: {

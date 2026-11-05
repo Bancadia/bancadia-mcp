@@ -1,5 +1,5 @@
 import { createSupabaseClient } from '../lib/supabase'
-import { recordMatchEvents, type QueryMeta } from '../lib/analytics'
+import { recordQueryEvent, type QueryMeta } from '../lib/analytics'
 import { TARGET_SEGMENTS_EMBED, bucketTargetSegments, rankByTargetSegments } from '../lib/target-segments'
 import type { Env } from '../types'
 import type { Database } from '../lib/database.types'
@@ -118,11 +118,13 @@ export async function handleQueryBusinessChecking(
 
   const { data, error } = await query
 
-  if (error || !data) {
-    return []
+  // Thrown rather than returned as [] so a failed query surfaces as a
+  // JSON-RPC error (index.ts) instead of looking like "no listings match".
+  if (error) {
+    throw new Error(`query_business_checking: ${error.message}`)
   }
 
-  let results = data as unknown as BusinessCheckingQueryRow[]
+  let results = (data ?? []) as unknown as BusinessCheckingQueryRow[]
 
   // JS-side filter for entity_types_accepted
   if (Array.isArray(args.entity_types_accepted) && args.entity_types_accepted.length > 0) {
@@ -149,7 +151,7 @@ export async function handleQueryBusinessChecking(
   // any overlap between their tagged segments and the requested ones ranks
   // ahead of non-matching rows. Stable sort preserves the existing
   // monthly_fee-ascending order within each match-count tier. This also
-  // changes what recordMatchEvents below records as result_rank, since that
+  // changes what recordQueryEvent below records as result_rank, since that
   // reflects `results`' array order at the point it runs — intentional, so
   // the analytics reflect what the caller actually saw post-sort.
   results = rankByTargetSegments(
@@ -159,16 +161,14 @@ export async function handleQueryBusinessChecking(
   )
 
   ctx.waitUntil(
-    recordMatchEvents(
-      env,
-      meta,
-      args,
-      results.map((row) => ({
+    recordQueryEvent(env, meta, args, {
+      status: 'ok',
+      matches: results.map((row) => ({
         listingId: row.id,
         institutionId: row.institution_id,
         listingSlug: row.listing_slug ?? null,
-      }))
-    )
+      })),
+    })
   )
 
   return results.map(mapBusinessCheckingRow)
