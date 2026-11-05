@@ -1353,37 +1353,43 @@ export type Database = {
       }
       query_events: {
         Row: {
+          channel: string
           created_at: string
           developer_id: string | null
           error_message: string | null
           query_filters: Json | null
           request_id: string
           result_count: number | null
-          session_id: string
+          session_id: string | null
           status: Database["public"]["Enums"]["query_event_status_enum"]
           tool_name: string
+          user_agent: string | null
         }
         Insert: {
+          channel?: string
           created_at?: string
           developer_id?: string | null
           error_message?: string | null
           query_filters?: Json | null
           request_id: string
           result_count?: number | null
-          session_id: string
+          session_id?: string | null
           status: Database["public"]["Enums"]["query_event_status_enum"]
           tool_name: string
+          user_agent?: string | null
         }
         Update: {
+          channel?: string
           created_at?: string
           developer_id?: string | null
           error_message?: string | null
           query_filters?: Json | null
           request_id?: string
           result_count?: number | null
-          session_id?: string
+          session_id?: string | null
           status?: Database["public"]["Enums"]["query_event_status_enum"]
           tool_name?: string
+          user_agent?: string | null
         }
         Relationships: [
           {
