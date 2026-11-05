@@ -75,7 +75,7 @@ beforeAll(async () => {
 
 afterAll(async () => {
   if (restoreStates) await db.from('business_deposit_accounts').update({ available_states: restoreStates }).eq('listing_slug', STATE_SLUG)
-  if (taggedListingId) await db.from('business_deposit_account_target_segments').delete().eq('listing_id', taggedListingId)
+  if (taggedListingId) await db.from('business_deposit_account_target_segments').delete().eq('listing_id', taggedListingId).eq('segment', 'ecommerce')
 })
 
 describe('REST /v1/business-checking -- real local Supabase', () => {
@@ -91,13 +91,17 @@ describe('REST /v1/business-checking -- real local Supabase', () => {
   })
 
   it('5. available_states: ["ALL"] is a wildcard, a state-restricted listing only matches its states', async () => {
-    const ca = scoped((await restList('available_states=CA')).data)
-    expect(ca.sort()).toEqual(ALL_KNOWN_SLUGS.filter((s) => s !== STATE_SLUG).sort())
-    const ny = scoped((await restList('available_states=NY')).data)
-    expect(ny.sort()).toEqual([...ALL_KNOWN_SLUGS].sort())
-    const nyCa = scoped((await restList('available_states=NY,CA')).data)
-    expect(nyCa).not.toContain(STATE_SLUG)
-    expect(nyCa.length).toBe(ALL_KNOWN_SLUGS.length - 1)
+    // Expected sets come from the DB's current available_states (rho mutated above), so state-restricted
+    // listings that dev may already have don't break the assumptions.
+    const { data } = await db.from('business_deposit_accounts').select('listing_slug, available_states').in('listing_slug', ALL_KNOWN_SLUGS)
+    const expected = (states: string[]) =>
+      data!.filter((r) => states.every((s) => (r.available_states as string[]).some((a) => a === 'ALL' || a === s))).map((r) => r.listing_slug).sort()
+    for (const q of [['CA'], ['NY'], ['NY', 'CA']]) {
+      expect(scoped((await restList(`available_states=${q.join(',')}`)).data).sort()).toEqual(expected(q))
+    }
+    // rho (NY/TX only) must be excluded whenever CA is requested
+    expect(expected(['CA'])).not.toContain(STATE_SLUG)
+    expect(expected(['NY'])).toContain(STATE_SLUG)
   })
 
   it('11. a filter set that matches nothing is 200 with data [] and count 0', async () => {
@@ -107,20 +111,30 @@ describe('REST /v1/business-checking -- real local Supabase', () => {
   })
 
   it('12. target_industries re-orders (tagged listing floats up) but never changes the set', async () => {
+    // Independent of pre-existing tags in the target DB (dev already tags some listings 'ecommerce').
     const baseline = slugsOf((await restList('monthly_fee_max=0')).data)
-    const lastFree = [...baseline].reverse().find((s) => ALL_KNOWN_SLUGS.includes(s))!
-    taggedListingId = await lookupListingIdBySlug(lastFree)
+    const before = (await restList('monthly_fee_max=0&target_industries=ecommerce')).data
+    const hasTag = (r: Row) => ((r.target_industries as string[] | undefined) ?? []).includes('ecommerce')
+    // Last untagged known listing: always ranks behind every tagged one pre-tag, so tagging it must move it up.
+    const candidate = [...before].reverse().find((r) => ALL_KNOWN_SLUGS.includes(r.listing_slug) && !hasTag(r))?.listing_slug
+    if (!candidate) throw new Error("no known listing without an 'ecommerce' tag in the target DB to use as a candidate")
+    const listingId = await lookupListingIdBySlug(candidate)
     const { error } = await db
       .from('business_deposit_account_target_segments')
-      .insert({ listing_id: taggedListingId, category: 'industry_vertical', segment: 'ecommerce' })
+      .insert({ listing_id: listingId, category: 'industry_vertical', segment: 'ecommerce' })
     expect(error).toBeNull()
-
-    const ranked = slugsOf((await restList('monthly_fee_max=0&target_industries=ecommerce')).data)
-    expect(ranked[0]).toBe(lastFree)
-    expect(baseline.indexOf(lastFree)).toBeGreaterThan(0)
-    expect([...ranked].sort()).toEqual([...baseline].sort())
-    await db.from('business_deposit_account_target_segments').delete().eq('listing_id', taggedListingId)
-    taggedListingId = null
+    taggedListingId = listingId // only set once the insert succeeded, so cleanup never deletes a pre-existing tag
+    try {
+      const after = (await restList('monthly_fee_max=0&target_industries=ecommerce')).data
+      expect([...slugsOf(after)].sort()).toEqual([...baseline].sort())
+      expect(slugsOf(after).indexOf(candidate)).toBeLessThan(slugsOf(before).indexOf(candidate))
+      // every tagged listing ranks ahead of every untagged one
+      const tags = after.map(hasTag)
+      expect(tags.indexOf(false) === -1 || tags.lastIndexOf(true) < tags.indexOf(false)).toBe(true)
+    } finally {
+      await db.from('business_deposit_account_target_segments').delete().eq('listing_id', listingId).eq('segment', 'ecommerce')
+      taggedListingId = null
+    }
   })
 
   describe('13. parity: REST slug list (in order) equals MCP tools/call for the same args', () => {
