@@ -34,21 +34,18 @@ describe('authenticate — real Supabase fallback (Redis forced to cache-miss)',
   it('resolves a valid, non-revoked seeded token to the fixture developer', async () => {
     const ctx = createExecutionContext()
     const result = await authenticate(req(VALID_TOKEN), env as Env, ctx)
-    expect(result.valid).toBe(true)
-    expect(result.developerId).toBe(FIXTURE_DEVELOPER_ID)
+    expect(result).toMatchObject({ kind: 'developer', developerId: FIXTURE_DEVELOPER_ID })
   })
 
   it('rejects a revoked seeded token', async () => {
     const ctx = createExecutionContext()
     const result = await authenticate(req(REVOKED_TOKEN), env as Env, ctx)
-    expect(result.valid).toBe(false)
-    expect(result.developerId).toBeNull()
+    expect(result).toEqual({ kind: 'invalid' })
   })
 
   it('rejects an unknown token', async () => {
     const ctx = createExecutionContext()
     const result = await authenticate(req('sk_totally_unknown_token'), env as Env, ctx)
-    expect(result.valid).toBe(false)
-    expect(result.developerId).toBeNull()
+    expect(result).toEqual({ kind: 'invalid' })
   })
 })

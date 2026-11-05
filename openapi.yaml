@@ -19,7 +19,7 @@ info:
     |----------------------------|----------------|-------------------|--------------------------------------------------|
     | `initialize`               | no             | no (issues one)   | MCP lifecycle handshake — protocol/capability negotiation. |
     | `tools/list`               | no             | yes                | Returns the manifest of callable tools.          |
-    | `tools/call`               | yes (Bearer)   | yes                | Invokes a tool by name with arguments.            |
+    | `tools/call`               | optional (Bearer) | yes                | Invokes a tool by name with arguments.            |
     | `notifications/initialized` | n/a           | yes                | Client→server notification sent after `initialize`; any request omitting `id` is treated the same way (see below). |
 
     Any other `method` value, or an unrecognized tool `name` passed to
@@ -84,10 +84,11 @@ info:
 
     ## Authentication
 
-    `tools/call` requires `Authorization: Bearer <api-token>`. Tokens are
-    obtained by registering at bancadia.com/developer/signup. Missing,
-    malformed (no `Bearer` prefix), or revoked/unknown tokens all return
-    HTTP `401` with JSON-RPC error code `-32001`.
+    `tools/call` accepts an optional `Authorization: Bearer <api-token>`.
+    Without the header the call is anonymous (rate limited per IP). With a
+    valid token it is credited to that developer. A present but revoked or
+    unknown token returns HTTP `401` with JSON-RPC error code `-32001`.
+    Tokens are obtained by registering at bancadia.com/developer/signup.
 
     ## Origin validation
 
@@ -99,8 +100,10 @@ info:
 
     ## Rate limiting
 
-    Successful `tools/call` requests are subject to a per-token sliding-window
-    rate limit (default: 100 requests / 60s, configurable server-side).
+    Successful `tools/call` requests are subject to a sliding-window rate
+    limit: per token (default 100 requests / 60s) or, for anonymous calls,
+    per client IP (default 60 requests / 60s). Both are configurable
+    server-side.
     `X-RateLimit-*` response headers are present on every `tools/call`
     response (success or rate-limited) — never on `tools/list`, `/health`, or
     `/.well-known/mcp`, since only `tools/call` is rate-limited. Exceeding the
@@ -487,8 +490,9 @@ paths:
           description: The `Origin` header is present but not on the allowlist.
         "401":
           description: >-
-            Unauthorized. Returned for `tools/call` when the `Authorization`
-            header is missing, malformed, or carries an unknown/revoked token.
+            Unauthorized. Returned for `tools/call` when an `Authorization`
+            header is present but carries an unknown/revoked token. A missing
+            header is not an error (anonymous call).
           content:
             application/json:
               schema:
@@ -499,8 +503,9 @@ paths:
                 error:
                   code: -32001
                   message: >-
-                    Unauthorized. Register at bancadia.com/developer/signup
-                    to obtain an API token.
+                    Unauthorized. The API token is optional, but the one
+                    provided is invalid or revoked. Omit the Authorization
+                    header to call anonymously.
         "404":
           description: >-
             Three cases: the top-level `method` is not `tools/list` or
@@ -538,7 +543,7 @@ paths:
                       code: -32600
                       message: "Session not found or expired. Re-initialize."
         "429":
-          description: Per-token rate limit exceeded.
+          description: Rate limit exceeded (per token, or per IP for anonymous calls).
           headers:
             X-RateLimit-Limit:
               $ref: "#/components/headers/X-RateLimit-Limit"
@@ -618,7 +623,7 @@ components:
       type: http
       scheme: bearer
       description: >-
-        Required only for `tools/call`. Obtain a token at
+        Optional, `tools/call` only. Credits usage to your developer account. Obtain a token at
         bancadia.com/developer/signup.
 
   parameters:

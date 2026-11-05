@@ -15,7 +15,7 @@
       "headers": [
         {
           "name": "Authorization",
-          "description": "Bearer token required for tools/call (e.g. 'Bearer <token>'). Not required for initialize or tools/list. Obtain a token at https://bancadia.com/developer/signup.",
+          "description": "Optional bearer token (e.g. 'Bearer <token>') that credits tools/call usage to your developer account. Without it, calls are anonymous and rate limited per IP. An invalid token returns 401. Obtain a token at https://bancadia.com/developer/signup.",
           "isRequired": false,
           "isSecret": true
         }

@@ -11,22 +11,21 @@ async function sha256hex(input: string): Promise<string> {
 
 type CachedToken = { valid: boolean; developerId: string | null }
 
-export async function authenticate(
-  request: Request,
-  env: Env,
-  ctx: ExecutionContext
-): Promise<{ valid: boolean; tokenHash: string | null; developerId: string | null }> {
+export type AuthResult =
+  | { kind: 'anonymous' }
+  | { kind: 'developer'; tokenHash: string; developerId: string | null }
+  | { kind: 'invalid' }
+
+// Header absent or empty = anonymous; a present-but-unknown/revoked token is
+// 'invalid' (callers 401 rather than silently downgrading to anonymous).
+export async function authenticate(request: Request, env: Env, ctx: ExecutionContext): Promise<AuthResult> {
   const authHeader = request.headers.get('Authorization')
-  if (!authHeader) {
-    return { valid: false, tokenHash: null, developerId: null }
-  }
+  if (!authHeader) return { kind: 'anonymous' }
 
   const token = authHeader.startsWith('Bearer ')
     ? authHeader.slice('Bearer '.length).trim()
     : authHeader.trim()
-  if (!token) {
-    return { valid: false, tokenHash: null, developerId: null }
-  }
+  if (!token) return { kind: 'anonymous' }
 
   const hash = await sha256hex(token)
 
@@ -37,11 +36,7 @@ export async function authenticate(
 
   const cached = await redis.get<CachedToken>(`token:${hash}`)
   if (cached !== null) {
-    return {
-      valid: cached.valid,
-      tokenHash: cached.valid ? hash : null,
-      developerId: cached.valid ? cached.developerId : null,
-    }
+    return cached.valid ? { kind: 'developer', tokenHash: hash, developerId: cached.developerId } : { kind: 'invalid' }
   }
 
   // Cache miss — query Supabase
@@ -58,5 +53,5 @@ export async function authenticate(
 
   ctx.waitUntil(redis.set(`token:${hash}`, { valid: isValid, developerId }, { ex: 60 }))
 
-  return { valid: isValid, tokenHash: isValid ? hash : null, developerId }
+  return isValid ? { kind: 'developer', tokenHash: hash, developerId } : { kind: 'invalid' }
 }

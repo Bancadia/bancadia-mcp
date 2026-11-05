@@ -10,7 +10,7 @@ Runs as a [Cloudflare Worker](https://workers.cloudflare.com/) on [Hono](https:/
 | ------ | ----------------- | -------------------------------------------------------------- | ---------------------------- |
 | GET    | `/health`         | Liveness check                                                 | none                          |
 | GET    | `/.well-known/mcp`| Public discovery/manifest (server info + tool list)            | none                          |
-| POST   | `/`               | JSON-RPC 2.0 endpoint — `initialize`, `tools/list`, `tools/call`| session; `tools/call` also needs a bearer token |
+| POST   | `/`               | JSON-RPC 2.0 endpoint — `initialize`, `tools/list`, `tools/call`| session; `tools/call` accepts an optional bearer token |
 | GET    | `/`               | Standalone SSE stream (server-initiated messages, keep-alive)  | session                       |
 | DELETE | `/`               | Terminate a session                                             | session                       |
 
@@ -18,11 +18,11 @@ Runs as a [Cloudflare Worker](https://workers.cloudflare.com/) on [Hono](https:/
 
 1. `POST /` with `method: "initialize"` — no auth required. Returns an `Mcp-Session-Id` response header; every subsequent request must send that value back as the `Mcp-Session-Id` request header.
 2. `POST /` with `method: "tools/list"` — session required, no bearer token needed. Returns the tool manifest.
-3. `POST /` with `method: "tools/call"` — session **and** `Authorization: Bearer <token>` required. Per-token sliding-window rate limiting applies (`X-RateLimit-*` response headers on both success and 429).
+3. `POST /` with `method: "tools/call"` — session required; `Authorization: Bearer <token>` is optional (no header = anonymous, rate limited per IP; an invalid token is a 401). Sliding-window rate limiting applies (per token, or per IP via `ANON_RATE_LIMIT_REQUESTS` / `ANON_RATE_LIMIT_WINDOW_SECONDS`, default 60 / 60s) (`X-RateLimit-*` response headers on both success and 429).
 
 Responses are plain JSON by default, or Server-Sent Events if the request's `Accept` header includes `text/event-stream`.
 
-For production use, obtain a bearer token from the [Bancadia developer portal](https://bancadia.com/developer/signup) — see [bancadia.com/docs](https://bancadia.com/docs) for full API documentation.
+For production use, optionally obtain a bearer token (credits usage to you) from the [Bancadia developer portal](https://bancadia.com/developer/signup) — see [bancadia.com/docs](https://bancadia.com/docs) for full API documentation.
 
 ## Available tools
 

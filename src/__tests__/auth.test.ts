@@ -22,7 +22,7 @@ vi.mock('../lib/supabase', () => ({
 
 import app from '../index'
 import { createSupabaseClient } from '../lib/supabase'
-import { mockRedis, withSession } from './helpers'
+import { mockAnalyticsTables, mockRedis, withSession } from './helpers'
 
 function post(body: object, headers: Record<string, string> = {}) {
   return new Request('http://localhost/', {
@@ -67,15 +67,42 @@ describe('auth middleware', () => {
     } as unknown as ReturnType<typeof createSupabaseClient>)
   })
 
-  it('returns 401 when Authorization header is missing', async () => {
-    const request = post(toolsCallBody)
+  it('allows anonymous tools/call (no Authorization) and logs developer_id null, channel mcp', async () => {
+    const { from, eventInsert } = mockAnalyticsTables(makeSupabaseChain())
+    vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
+
     const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
+    const response = await app.fetch(post(toolsCallBody, { 'User-Agent': 'test-agent' }), env, ctx)
     await waitOnExecutionContext(ctx)
 
-    expect(response.status).toBe(401)
-    const body = await response.json<{ error: { code: number } }>()
-    expect(body.error.code).toBe(-32001)
+    expect(response.status).toBe(200)
+    expect(eventInsert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        developer_id: null,
+        channel: 'mcp',
+        session_id: expect.any(String),
+        user_agent: 'test-agent',
+      })
+    )
+  })
+
+  it('treats an empty Authorization header as anonymous', async () => {
+    const ctx = createExecutionContext()
+    const response = await app.fetch(post(toolsCallBody, { Authorization: 'Bearer ' }), env, ctx)
+    await waitOnExecutionContext(ctx)
+    expect(response.status).toBe(200)
+  })
+
+  it('logs the developer id for a valid token', async () => {
+    mockRedis({ tokenValid: true })
+    const { from, eventInsert } = mockAnalyticsTables(makeSupabaseChain())
+    vi.mocked(createSupabaseClient).mockReturnValue({ from } as unknown as ReturnType<typeof createSupabaseClient>)
+
+    const ctx = createExecutionContext()
+    await app.fetch(post(toolsCallBody, { Authorization: 'Bearer sk_valid_token' }), env, ctx)
+    await waitOnExecutionContext(ctx)
+
+    expect(eventInsert).toHaveBeenCalledWith(expect.objectContaining({ developer_id: 'test-developer-id' }))
   })
 
   it('returns 200 when Authorization has no Bearer prefix (raw token accepted)', async () => {
@@ -109,6 +136,9 @@ describe('auth middleware', () => {
     await waitOnExecutionContext(ctx)
 
     expect(response.status).toBe(401)
+    const body = await response.json<{ error: { code: number; message: string } }>()
+    expect(body.error.code).toBe(-32001)
+    expect(body.error.message).toContain('optional')
   })
 
   it('returns 200 on cache miss with valid DB token, and Redis set is called', async () => {

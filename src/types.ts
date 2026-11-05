@@ -5,6 +5,8 @@ export interface Env {
   UPSTASH_REDIS_REST_TOKEN: string
   RATE_LIMIT_REQUESTS?: string
   RATE_LIMIT_WINDOW_SECONDS?: string
+  ANON_RATE_LIMIT_REQUESTS?: string
+  ANON_RATE_LIMIT_WINDOW_SECONDS?: string
   SESSION_TTL_SECONDS?: string
   ALLOWED_ORIGINS?: string
 }

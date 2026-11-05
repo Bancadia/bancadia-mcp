@@ -1,10 +1,9 @@
 import { Hono, type Context } from 'hono'
 import { streamSSE } from 'hono/streaming'
-import { Ratelimit } from '@upstash/ratelimit'
-import { Redis } from '@upstash/redis'
 import type { Env } from './types'
 import { TOOLS, getToolManifest } from './lib/tools'
 import { authenticate } from './lib/auth'
+import { rateLimit } from './lib/rate-limit'
 import { validateOrigin } from './lib/origin'
 import { createSession, validateSession, deleteSession, SESSION_HEADER } from './lib/session'
 import { handleQueryBusinessChecking } from './handlers/query-business-checking'
@@ -156,32 +155,31 @@ app.post('/', async (c) => {
     return sendJsonRpc(c, id, { result: getToolManifest() })
   }
 
-  // tools/call — session required (checked above), plus bearer auth
+  // tools/call — session required (checked above), bearer token optional
   if (method === 'tools/call') {
-    const { valid, tokenHash, developerId } = await authenticate(c.req.raw, c.env, c.executionCtx)
-    if (!valid) {
+    const auth = await authenticate(c.req.raw, c.env, c.executionCtx)
+    if (auth.kind === 'invalid') {
       return sendJsonRpc(
         c,
         id,
         {
           error: {
             code: -32001,
-            message: 'Unauthorized. Register at bancadia.com/developer/signup to obtain an API token.',
+            message:
+              'Unauthorized. The API token is optional, but the one provided is invalid or revoked. Omit the Authorization header to call anonymously, or get a token at bancadia.com/developer/signup.',
           },
         },
         401
       )
     }
+    const developerId = auth.kind === 'developer' ? auth.developerId : null
 
-    // Per-token rate limiting
-    const limit = parseInt(c.env.RATE_LIMIT_REQUESTS ?? '100')
-    const window = parseInt(c.env.RATE_LIMIT_WINDOW_SECONDS ?? '60')
-    const ratelimit = new Ratelimit({
-      redis: new Redis({ url: c.env.UPSTASH_REDIS_REST_URL, token: c.env.UPSTASH_REDIS_REST_TOKEN }),
-      limiter: Ratelimit.slidingWindow(limit, `${window} s`),
-      prefix: 'rl',
-    })
-    const { success, limit: rlLimit, remaining, reset } = await ratelimit.limit(`token:${tokenHash}`)
+    // Per-token limit for developers, per-IP (ANON_* defaults) for anonymous calls
+    const { success, limit: rlLimit, remaining, reset } = await rateLimit(
+      c.env,
+      auth.kind === 'developer' ? `token:${auth.tokenHash}` : `ip:${c.req.header('CF-Connecting-IP') ?? 'unknown'}`,
+      auth.kind
+    )
 
     c.header('X-RateLimit-Limit', String(rlLimit))
     c.header('X-RateLimit-Remaining', String(remaining))
@@ -220,7 +218,14 @@ app.post('/', async (c) => {
       // validation so rejected calls are logged too — an agent repeatedly
       // sending a value the schema doesn't accept is a signal worth seeing.
       const requestId = crypto.randomUUID()
-      const meta: QueryMeta = { toolName: name, developerId, sessionId: sessionId as string, requestId }
+      const meta: QueryMeta = {
+        toolName: name,
+        developerId,
+        channel: 'mcp',
+        sessionId: sessionId as string,
+        userAgent: c.req.header('User-Agent') ?? null,
+        requestId,
+      }
 
       const toolSchema = TOOLS.find((t) => t.name === name)!.inputSchema
       const invalid = validateArgs(args, toolSchema)

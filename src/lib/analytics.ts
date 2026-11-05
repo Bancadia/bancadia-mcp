@@ -5,7 +5,9 @@ import type { Json } from './database.types'
 export type QueryMeta = {
   toolName: string
   developerId: string | null
-  sessionId: string
+  channel: 'mcp' | 'rest'
+  sessionId: string | null // null for REST
+  userAgent: string | null
   // Generated once per tools/call in index.ts. Written as
   // query_events.request_id (and on that call's query_match_events rows) AND
   // appended as `qr` to each returned application_url, so a /go click can be
@@ -45,6 +47,8 @@ export async function recordQueryEvent(
       request_id: meta.requestId,
       tool_name: meta.toolName,
       session_id: meta.sessionId,
+      channel: meta.channel,
+      user_agent: meta.userAgent?.slice(0, 512) ?? null,
       developer_id: meta.developerId,
       query_filters: args as Json,
       status: outcome.status,

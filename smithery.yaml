@@ -7,9 +7,8 @@ startCommand:
     properties:
       apiToken:
         type: string
-        description: "Your Bancadia API key generated from developer settings in https://bancadia.com/developer/signup"
+        description: "Optional. Your Bancadia API key (credits calls to your developer account; anonymous calls work without it) generated from developer settings in https://bancadia.com/developer/signup"
         # Forward the configured value upstream as the Authorization header
         x-to:
           header: "Authorization"
-    required:
-      - apiToken
+    required: []

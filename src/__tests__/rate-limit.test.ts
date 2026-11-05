@@ -114,17 +114,39 @@ describe('rate limiting', () => {
     expect(body.error.message).toBe('Rate limit exceeded.')
   })
 
-  it('returns 401 without any X-RateLimit-* headers when unauthenticated', async () => {
-    // No Authorization header, but a valid session
-    const request = post(toolsCallBody)
+  it('rate limits anonymous calls by IP key with the ANON_* limits', async () => {
+    const { Ratelimit } = await import('@upstash/ratelimit')
+    const request = post(toolsCallBody, { 'CF-Connecting-IP': '203.0.113.7' })
     const ctx = createExecutionContext()
-    const response = await app.fetch(request, env, ctx)
+    const response = await app.fetch(request, { ...env, ANON_RATE_LIMIT_REQUESTS: '7', ANON_RATE_LIMIT_WINDOW_SECONDS: '30' }, ctx)
     await waitOnExecutionContext(ctx)
 
-    expect(response.status).toBe(401)
-    expect(response.headers.get('X-RateLimit-Limit')).toBeNull()
-    expect(response.headers.get('X-RateLimit-Remaining')).toBeNull()
-    expect(response.headers.get('X-RateLimit-Reset')).toBeNull()
+    expect(response.status).toBe(200)
+    expect(mockLimit).toHaveBeenCalledWith('ip:203.0.113.7')
+    expect(Ratelimit.slidingWindow).toHaveBeenLastCalledWith(7, '30 s')
+  })
+
+  it('uses ip:unknown when CF-Connecting-IP is absent', async () => {
+    const ctx = createExecutionContext()
+    await app.fetch(post(toolsCallBody), env, ctx)
+    await waitOnExecutionContext(ctx)
+    expect(mockLimit).toHaveBeenCalledWith('ip:unknown')
+  })
+
+  it('rate limits a valid token by its token key, not IP', async () => {
+    const ctx = createExecutionContext()
+    await app.fetch(post(toolsCallBody, { Authorization: 'Bearer sk_valid_token', 'CF-Connecting-IP': '203.0.113.7' }), env, ctx)
+    await waitOnExecutionContext(ctx)
+    expect(mockLimit).toHaveBeenCalledWith(expect.stringMatching(/^token:[0-9a-f]{64}$/))
+  })
+
+  it('returns 429 for an anonymous caller over the limit', async () => {
+    mockLimit.mockResolvedValue({ success: false, limit: 60, remaining: 0, reset: 1700000060000 })
+    const ctx = createExecutionContext()
+    const response = await app.fetch(post(toolsCallBody), env, ctx)
+    await waitOnExecutionContext(ctx)
+    expect(response.status).toBe(429)
+    expect(response.headers.get('X-RateLimit-Limit')).toBe('60')
   })
 
   it('does not consume quota on 401 (rate limiter not called)', async () => {
