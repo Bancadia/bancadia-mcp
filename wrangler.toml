@@ -21,4 +21,7 @@ workers_dev = true
 [env.production]
 name = "bancadia-mcp-production"
 workers_dev = false
-routes = [{ pattern = "mcp.bancadia.com/*", zone_name = "bancadia.com" }]
+routes = [
+  { pattern = "mcp.bancadia.com/*", zone_name = "bancadia.com" },
+  { pattern = "api.bancadia.com", custom_domain = true },
+]

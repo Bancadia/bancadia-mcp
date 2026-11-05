@@ -6,11 +6,9 @@ import { authenticate } from './lib/auth'
 import { rateLimit } from './lib/rate-limit'
 import { validateOrigin } from './lib/origin'
 import { createSession, validateSession, deleteSession, SESSION_HEADER } from './lib/session'
-import { handleQueryBusinessChecking } from './handlers/query-business-checking'
-import { handleGetBusinessCheckingListing } from './handlers/get-business-checking-listing'
-import { recordQueryEvent, type QueryMeta } from './lib/analytics'
-import { applyApplicationUrlHost } from './lib/urls'
-import { validateArgs } from './lib/validate-args'
+import { type QueryMeta } from './lib/analytics'
+import { runTool, isKnownTool } from './lib/run-tool'
+import rest from './rest/router'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -55,6 +53,9 @@ function sendJsonRpc(
   return c.json(body, status)
 }
 
+// Public REST API (no session, optional bearer token)
+app.route('/v1', rest)
+
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
@@ -65,6 +66,8 @@ app.get('/.well-known/mcp', (c) =>
     version: SERVER_VERSION,
     endpoint: 'https://mcp.bancadia.com',
     tools_list: 'https://mcp.bancadia.com/',
+    rest_api: 'https://api.bancadia.com/v1',
+    openapi: 'https://api.bancadia.com/v1/openapi.json',
     tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
   })
 )
@@ -194,29 +197,11 @@ app.post('/', async (c) => {
       arguments?: Record<string, unknown>
     }
 
-    type ToolHandler = (
-      args: Record<string, unknown>,
-      env: Env,
-      ctx: ExecutionContext,
-      meta: QueryMeta
-    ) => Promise<object[]>
-
-    const toolHandlers: Record<string, ToolHandler> = {
-      query_business_checking: handleQueryBusinessChecking,
-      get_business_checking_listing: handleGetBusinessCheckingListing,
-    }
-
-    const handler = toolHandlers[name]
-    if (handler) {
-      // `sessionId` is always set here: `tools/call` only runs after the
-      // `method !== 'initialize'` block above validated the session (or
-      // returned early), which is the only place that assigns it.
-      //
-      // `requestId` is generated here, once per tools/call, so the same id is
-      // both logged as query_events.request_id (via meta) and appended as
-      // `qr` to every returned application_url (below). Generated before
-      // validation so rejected calls are logged too — an agent repeatedly
-      // sending a value the schema doesn't accept is a signal worth seeing.
+    if (isKnownTool(name)) {
+      // `requestId` is generated once per tools/call so the same id is both
+      // logged as query_events.request_id (via meta) and appended as `qr` to
+      // every returned application_url. `sessionId` is always set here:
+      // tools/call only runs after the session check above.
       const requestId = crypto.randomUUID()
       const meta: QueryMeta = {
         toolName: name,
@@ -226,34 +211,16 @@ app.post('/', async (c) => {
         userAgent: c.req.header('User-Agent') ?? null,
         requestId,
       }
-
-      const toolSchema = TOOLS.find((t) => t.name === name)!.inputSchema
-      const invalid = validateArgs(args, toolSchema)
-      if (invalid) {
-        c.executionCtx.waitUntil(recordQueryEvent(c.env, meta, args, { status: 'invalid_args', errorMessage: invalid }))
-        return sendJsonRpc(c, id, { error: { code: -32602, message: invalid } })
-      }
-      let results: object[]
-      try {
-        results = await handler(args, c.env, c.executionCtx, meta)
-      } catch (err) {
-        // The underlying message stays in the Worker logs, never in the
-        // response — it can carry Postgres/PostgREST internals.
-        console.error(`tools/call ${name} failed (request_id=${requestId})`, err)
-        c.executionCtx.waitUntil(
-          recordQueryEvent(c.env, meta, args, {
-            status: 'error',
-            errorMessage: err instanceof Error ? err.message : String(err),
-          })
-        )
+      const r = await runTool(name, args, meta, c.env, c.executionCtx)
+      if (r.status === 'invalid_args') return sendJsonRpc(c, id, { error: { code: -32602, message: r.message } })
+      if (r.status === 'error') {
         return sendJsonRpc(c, id, {
           error: { code: -32603, message: 'Internal error while querying listings. Please retry.' },
         })
       }
-      const tagged = applyApplicationUrlHost(results, { src: 'mcp', qr: requestId })
       return sendJsonRpc(c, id, {
         result: {
-          content: [{ type: 'text', text: JSON.stringify(tagged) }],
+          content: [{ type: 'text', text: JSON.stringify(r.results) }],
         },
       })
     }
