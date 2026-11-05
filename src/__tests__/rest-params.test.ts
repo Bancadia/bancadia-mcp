@@ -32,6 +32,25 @@ describe('parseQueryParams', () => {
     expect(parse('n=Infinity')).toHaveProperty('error')
     expect(parse('n=')).toHaveProperty('error')
   })
+  it('rejects non-decimal numbers', () => {
+    for (const v of ['0x10', '%205%20', '1e999', '1e3', '+5', '.5', '5.', '--1']) {
+      expect(parse(`n=${v}`), v).toHaveProperty('error')
+    }
+  })
+  it('accepts plain decimals', () => {
+    expect(parse('n=-1.5')).toEqual({ args: { n: -1.5 } })
+    expect(parse('n=25')).toEqual({ args: { n: 25 } })
+  })
+  it('caps array items at 50', () => {
+    const items = (k: number) => Array.from({ length: k }, (_, i) => `v${i}`).join(',')
+    expect(parse(`a=${items(50)}`)).toHaveProperty('args')
+    expect(parse(`a=${items(51)}`)).toHaveProperty('error')
+  })
+  it('caps a single value at 200 chars', () => {
+    expect(parse(`s=${'x'.repeat(200)}`)).toHaveProperty('args')
+    expect(parse(`s=${'x'.repeat(201)}`)).toHaveProperty('error')
+    expect(parse(`a=${'x'.repeat(201)}`)).toHaveProperty('error')
+  })
   it('rejects non true/false booleans', () => {
     expect(parse('b=yes')).toHaveProperty('error')
     expect(parse('b=')).toHaveProperty('error')
