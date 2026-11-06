@@ -58,8 +58,12 @@ const sampleListing = {
   entity_types_accepted: ['llc', 'sole_prop', 's_corp'],
   available_states: ['ALL'],
   insurance_type: 'fdic',
+  deposit_insurance_limit: 250000,
+  deposit_insurance_extended: true,
+  deposit_insurance_extended_limit: 3000000,
   application_url: '/go/example-bank/business-checking-pro',
   last_modified: '2026-01-01',
+  last_verified: '2026-01-02T00:00:00Z',
   is_verified: true,
   listing_status: 'active',
   institutions: {
@@ -196,6 +200,10 @@ describe('mapBusinessCheckingRow — pure mapper shape, no DB involved', () => {
     expect(item.application_url).toBe('/go/example-bank/business-checking-pro')
     expect(item).toHaveProperty('last_modified')
     expect(item).toHaveProperty('is_verified')
+    expect(item.last_verified).toBe('2026-01-02T00:00:00Z')
+    expect(item.deposit_insurance_limit).toBe(250000)
+    expect(item.deposit_insurance_extended).toBe(true)
+    expect(item.deposit_insurance_extended_limit).toBe(3000000)
     expect(item.institution_name).toBe('Example Bank')
     expect(item.institution?.institution_type).toBe('regional_bank')
     expect(item.incoming_international_wire_fee).toBe(15)

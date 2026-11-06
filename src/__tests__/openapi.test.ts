@@ -59,7 +59,7 @@ describe('openapi document', () => {
 const row = {
   id: 'l1', institution_id: 'i1', listing_slug: 'found', product_name: 'Found', monthly_fee: 0,
   monthly_fee_waiver_condition: null, minimum_opening_deposit: 0, entity_types_accepted: ['llc'],
-  available_states: ['ALL'], insurance_type: 'fdic', application_url: '/go/x', last_modified: '2026-01-01',
+  available_states: ['ALL'], insurance_type: 'fdic', deposit_insurance_limit: 250000, deposit_insurance_extended: false, deposit_insurance_extended_limit: null, application_url: '/go/x', last_modified: '2026-01-01', last_verified: null,
   is_verified: true, listing_status: 'active',
   institutions: { name: 'Found', display_name: 'Found', website_url: null, logo_url: null, institution_type: 'fintech', support_email: null },
   business_checking_details: { free_transactions_per_month: 1 },

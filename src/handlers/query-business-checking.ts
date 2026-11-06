@@ -205,6 +205,10 @@ export function mapBusinessCheckingRow(row: BusinessCheckingQueryRow) {
     target_industries,
     target_business_profiles,
     insurance_type: row.insurance_type,
+    // The limit columns default to 250000 even for uninsured rows; don't tell clients an uninsured account is covered.
+    deposit_insurance_limit: row.insurance_type === 'uninsured' ? null : row.deposit_insurance_limit,
+    deposit_insurance_extended: row.deposit_insurance_extended,
+    deposit_insurance_extended_limit: row.deposit_insurance_extended_limit,
     free_transactions_per_month: details?.free_transactions_per_month ?? null,
     cash_deposit_available: details?.cash_deposit_available ?? null,
     cash_deposit_fee_per_100: details?.cash_deposit_fee_per_100 ?? null,
@@ -259,6 +263,7 @@ export function mapBusinessCheckingRow(row: BusinessCheckingQueryRow) {
     })),
     application_url: row.application_url,
     last_modified: row.last_modified,
+    last_verified: row.last_verified,
     is_verified: row.is_verified,
   }
 }

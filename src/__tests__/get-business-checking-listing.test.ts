@@ -54,8 +54,12 @@ const sampleListing = {
   entity_types_accepted: ['llc', 'sole_prop'],
   available_states: ['ALL'],
   insurance_type: 'fdic',
+  deposit_insurance_limit: 250000,
+  deposit_insurance_extended: true,
+  deposit_insurance_extended_limit: 3000000,
   application_url: '/go/found/business-checking',
   last_modified: '2026-01-01',
+  last_verified: '2026-01-02T00:00:00Z',
   is_verified: true,
   listing_status: 'active',
   institutions: {

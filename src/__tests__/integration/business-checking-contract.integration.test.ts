@@ -160,6 +160,9 @@ function expectedRow(raw: Raw, a: Row, segments: Row[] = raw.segments.get(a.id) 
     target_industries: segments.filter((s) => s.category === 'industry_vertical').map((s) => s.segment),
     target_business_profiles: segments.filter((s) => s.category === 'business_profile').map((s) => s.segment),
     insurance_type: a.insurance_type,
+    deposit_insurance_limit: a.insurance_type === 'uninsured' ? null : a.deposit_insurance_limit,
+    deposit_insurance_extended: a.deposit_insurance_extended,
+    deposit_insurance_extended_limit: a.deposit_insurance_extended_limit,
     free_transactions_per_month: g('free_transactions_per_month'),
     cash_deposit_available: g('cash_deposit_available'),
     cash_deposit_fee_per_100: g('cash_deposit_fee_per_100'),
@@ -205,6 +208,7 @@ function expectedRow(raw: Raw, a: Row, segments: Row[] = raw.segments.get(a.id) 
     })),
     application_url: expectedApplicationUrl(a.application_url),
     last_modified: a.last_modified,
+    last_verified: a.last_verified,
     is_verified: a.is_verified,
   }
 }
@@ -370,10 +374,10 @@ const QUERY_KEYS = [
   'accounting_integration_available', 'ach_debit_block_available', 'application_url', 'apy_default', 'apy_max',
   'apy_tiers', 'atm_fee_reimbursement', 'atm_fee_reimbursement_limit', 'atm_network', 'available_states',
   'bill_pay_available', 'cash_deposit_available', 'cash_deposit_fee_per_100', 'check_writing_available',
-  'corporate_card_available', 'daily_debit_limit', 'entity_types_accepted', 'expense_integration_available',
+  'corporate_card_available', 'daily_debit_limit', 'deposit_insurance_extended', 'deposit_insurance_extended_limit', 'deposit_insurance_limit', 'entity_types_accepted', 'expense_integration_available',
   'free_domestic_wires_per_month', 'free_transactions_per_month', 'incoming_domestic_wire_fee',
   'incoming_international_wire_fee', 'institution', 'institution_name', 'insurance_type', 'interest_bearing',
-  'is_verified', 'last_modified', 'listing_slug', 'minimum_opening_deposit', 'monthly_cash_deposit_limit',
+  'is_verified', 'last_modified', 'last_verified', 'listing_slug', 'minimum_opening_deposit', 'monthly_cash_deposit_limit',
   'monthly_fee', 'monthly_fee_waiver_condition', 'multicurrency_support', 'outgoing_domestic_wire_fee',
   'outgoing_international_wire_fee', 'overdraft_line_of_credit_available', 'overdraft_protection_available',
   'per_transaction_fee_after_limit', 'physical_debit_card_available', 'plan_tiers', 'positive_pay_available',
@@ -417,6 +421,22 @@ describe('query_business_checking: response contract', () => {
     }
   })
 
+  it('returns last_verified and the deposit insurance fields on every listing, typed and consistent', async () => {
+    const results = await query()
+    expect(results.length).toBeGreaterThan(0)
+    for (const r of results) {
+      expect(r.last_verified === null || !Number.isNaN(Date.parse(r.last_verified as string)), r.listing_slug).toBe(true)
+      expect(typeof r.deposit_insurance_extended, r.listing_slug).toBe('boolean')
+      if (r.insurance_type === 'uninsured') expect(r.deposit_insurance_limit, r.listing_slug).toBeNull()
+      else expect(typeof r.deposit_insurance_limit, r.listing_slug).toBe('number')
+      if (!r.deposit_insurance_extended) expect(r.deposit_insurance_extended_limit, r.listing_slug).toBeNull()
+    }
+    // A listing with extended coverage and a published limit (Mercury) surfaces both numbers.
+    const mercury = results.find((r) => r.listing_slug === 'mercury-business-banking')!
+    expect(mercury.deposit_insurance_extended).toBe(true)
+    expect(mercury.deposit_insurance_extended_limit).toBe(5000000)
+  })
+
   it('returns affiliate-tracked listings first, then monthly_fee ascending with id as the tiebreaker (exact order, not just stable)', async () => {
     const slugs = (await query()).map((r) => r.listing_slug)
     expect(slugs).toEqual(baselineSlugs)
@@ -436,8 +456,9 @@ describe('query_business_checking: Bluevine golden record', () => {
   // onboarding script for Bluevine changes, update this deliberately.
   it('matches the expected literal response', async () => {
     const row = (await query()).find((r) => r.listing_slug === KNOWN_SLUGS.bluevine)!
-    const { last_modified, ...rest } = normalizeQueryRow(row)
+    const { last_modified, last_verified, ...rest } = normalizeQueryRow(row)
     expect(typeof last_modified).toBe('string') // changes on every db:reset
+    expect(typeof last_verified).toBe('string') // seeded with now(), so also changes on db:reset
     // Segment tags differ per environment (none locally, real ones on dev), so they come from the DB, order-insensitively.
     const segs = expectedRow(raw, raw.accounts.find((a) => a.listing_slug === KNOWN_SLUGS.bluevine)!)
     const sorted = (v: unknown) => [...(v as string[])].sort()
@@ -464,6 +485,9 @@ describe('query_business_checking: Bluevine golden record', () => {
       target_industries: segs.target_industries,
       target_business_profiles: segs.target_business_profiles,
       insurance_type: 'fdic',
+      deposit_insurance_limit: 250000,
+      deposit_insurance_extended: true,
+      deposit_insurance_extended_limit: 3000000,
       free_transactions_per_month: null,
       cash_deposit_available: false,
       cash_deposit_fee_per_100: null,

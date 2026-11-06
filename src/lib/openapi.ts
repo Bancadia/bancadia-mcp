@@ -48,6 +48,17 @@ const listingProps: Record<string, Schema> = {
   target_industries: { type: 'array', items: { type: 'string' }, description: 'Business types the listing is built for.' },
   target_business_profiles: { type: 'array', items: { type: 'string' }, description: 'Business stages the listing is built for.' },
   insurance_type: { type: 'string', enum: [...E.insurance_type_enum] },
+  deposit_insurance_limit: nullable('number', {
+    description: 'Standard deposit insurance coverage in USD per depositor, per ownership category. Null when insurance_type is uninsured.',
+  }),
+  deposit_insurance_extended: {
+    type: 'boolean',
+    description:
+      "True when coverage above deposit_insurance_limit is offered through a sweep or program-bank arrangement. This is not standard FDIC/NCUA coverage.",
+  },
+  deposit_insurance_extended_limit: nullable('number', {
+    description: 'Total extended coverage in USD when deposit_insurance_extended is true. Null when not extended or the limit is not published.',
+  }),
   free_transactions_per_month: nullable('integer'),
   cash_deposit_available: nullable('boolean'),
   cash_deposit_fee_per_100: nullable('number'),
@@ -101,8 +112,12 @@ const listingProps: Record<string, Schema> = {
     type: 'string',
     description: 'Tracked Bancadia link to apply. Give it to the user exactly as returned, including its query string.',
   },
-  last_modified: { type: 'string' },
-  is_verified: { type: 'boolean' },
+  last_modified: { type: 'string', format: 'date-time', description: 'When the listing record was last edited.' },
+  last_verified: nullable('string', {
+    format: 'date-time',
+    description: "When Bancadia last confirmed this listing against the institution's published terms. Null if never verified.",
+  }),
+  is_verified: { type: 'boolean', description: 'Whether the listing is currently marked as verified.' },
 }
 
 const featureSchema = {
@@ -169,7 +184,11 @@ const listingExample = sample(listingProps, {
   insurance_type: 'fdic',
   rtp_network: 'none',
   application_url: 'https://bancadia.com/go/found/business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000',
+  deposit_insurance_limit: 250000,
+  deposit_insurance_extended: true,
+  deposit_insurance_extended_limit: 3000000,
   last_modified: '2026-01-01T00:00:00Z',
+  last_verified: '2026-01-01T00:00:00Z',
   is_verified: true,
 })
 const detailExample = { ...sample(detailProps, listingExample), general_fees: [], general_features: [] }
