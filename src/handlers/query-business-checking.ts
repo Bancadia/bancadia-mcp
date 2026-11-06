@@ -57,6 +57,9 @@ export async function handleQueryBusinessChecking(
     )
     .eq('listing_status', 'active')
     .eq('product_type', 'checking')
+    // Affiliate-tracked listings first, applied only to rows that already
+    // passed every filter. Sort key only: mapBusinessCheckingRow never emits it.
+    .order('is_affiliate_tracked', { ascending: false })
     .order('monthly_fee', { ascending: true })
     // Secondary tiebreaker — Postgres does not guarantee row order for ties
     // on monthly_fee alone, and rankByTargetSegments below relies on a

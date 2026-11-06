@@ -183,6 +183,31 @@ describe('query_business_checking — real local Supabase', () => {
     })
   })
 
+  describe('affiliate-tracked ranking (Novo and Lili are is_affiliate_tracked via migration 061)', () => {
+    const AFFILIATE = [KNOWN_SLUGS.novo, KNOWN_SLUGS.lili]
+
+    it('ranks Novo and Lili ahead of every other known listing, including cheaper ones', async () => {
+      const slugs = scopeToKnown(await run({})).map((r) => r.listing_slug)
+      expect(slugs.slice(0, 2).sort()).toEqual([...AFFILIATE].sort())
+    })
+
+    it('never returns is_affiliate_tracked', async () => {
+      for (const row of await run({})) expect(row).not.toHaveProperty('is_affiliate_tracked')
+    })
+
+    it('keeps an affiliate listing first among the results that pass the filter (cash_deposit_available)', async () => {
+      const slugs = scopeToKnown(await run({ cash_deposit_available: true })).map((r) => r.listing_slug)
+      expect(slugs[0]).toBe(KNOWN_SLUGS.lili)
+      expect(slugs).not.toContain(KNOWN_SLUGS.novo)
+    })
+
+    it('excludes affiliate listings that fail the filter instead of promoting them (interest_bearing)', async () => {
+      const slugs = scopeToKnown(await run({ interest_bearing: true })).map((r) => r.listing_slug)
+      for (const s of AFFILIATE) expect(slugs).not.toContain(s)
+      expect(slugs.length).toBeGreaterThan(0)
+    })
+  })
+
   it('monthly_fee ordering is stable across repeated calls against the same live dataset', async () => {
     const [first, second] = await Promise.all([run({}), run({})])
     expect(first.map((r) => r.listing_slug)).toEqual(second.map((r) => r.listing_slug))

@@ -78,7 +78,7 @@ const getListing = (slug: string) => callTool('get_business_checking_listing', {
 // ---------------------------------------------------------------------------
 
 type Raw = {
-  accounts: Row[] // active checking listings in baseline order (monthly_fee asc, id asc)
+  accounts: Row[] // active checking listings in baseline order (affiliate first, monthly_fee asc, id asc)
   details: Map<string, Row>
   institutions: Map<string, Row>
   tiers: Map<string, Row[]>
@@ -114,9 +114,14 @@ async function loadRaw(): Promise<Raw> {
   return {
     accounts: accounts
       .filter((a) => a.listing_status === 'active' && a.product_type === 'checking')
-      // Postgres orders uuids bytewise, which for lowercase hex text equals
-      // plain string order.
-      .sort((a, b) => Number(a.monthly_fee) - Number(b.monthly_fee) || (a.id < b.id ? -1 : 1)),
+      // Affiliate-tracked first, then monthly_fee asc, then id. Postgres orders
+      // uuids bytewise, which for lowercase hex text equals plain string order.
+      .sort(
+        (a, b) =>
+          Number(b.is_affiliate_tracked) - Number(a.is_affiliate_tracked) ||
+          Number(a.monthly_fee) - Number(b.monthly_fee) ||
+          (a.id < b.id ? -1 : 1)
+      ),
     details: new Map(details.map((d) => [d.listing_id, d])),
     institutions: new Map(institutions.map((i) => [i.id, i])),
     tiers: groupBy(tiers, 'listing_id'),
@@ -412,7 +417,7 @@ describe('query_business_checking: response contract', () => {
     }
   })
 
-  it('returns listings in monthly_fee ascending order with id as the tiebreaker (exact order, not just stable)', async () => {
+  it('returns affiliate-tracked listings first, then monthly_fee ascending with id as the tiebreaker (exact order, not just stable)', async () => {
     const slugs = (await query()).map((r) => r.listing_slug)
     expect(slugs).toEqual(baselineSlugs)
   })
