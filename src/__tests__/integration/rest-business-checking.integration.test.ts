@@ -21,9 +21,10 @@ import app from '../../index'
 import { mockRedis, withSession } from '../helpers'
 import { KNOWN_SLUGS, ALL_KNOWN_SLUGS, REST_FILTER_CASES } from './fixtures'
 import { realSupabase, lookupListingIdBySlug } from './db-helpers'
+import { mcpOk } from './v2-helpers'
 
 type Row = { listing_slug: string } & Record<string, unknown>
-type RestBody = { data: Row[]; meta: { count: number; request_id: string; filters?: unknown } }
+type RestBody = { data: Row[]; meta: { count: number; request_id: string; filters?: unknown; total_matches: number } }
 
 async function rest(path: string, headers: Record<string, string> = {}) {
   const ctx = createExecutionContext()
@@ -32,8 +33,9 @@ async function rest(path: string, headers: Record<string, string> = {}) {
   return response
 }
 
+// REST is v2: default page is 7, so ask for the max page (13 seeded listings fit) to compare full sets.
 const restList = async (query: string) => {
-  const res = await rest(`/business-checking${query ? `?${query}` : ''}`)
+  const res = await rest(`/business-checking-listings?${query ? `${query}&` : ''}limit=20`)
   expect(res.status).toBe(200)
   return res.json<RestBody>()
 }
@@ -113,7 +115,7 @@ describe('REST /v1/business-checking -- real local Supabase', () => {
   it('12. target_industries re-orders (tagged listing floats up) but never changes the set', async () => {
     // Independent of pre-existing tags in the target DB (dev already tags some listings 'ecommerce').
     const baseline = slugsOf((await restList('monthly_fee_max=0')).data)
-    const before = (await restList('monthly_fee_max=0&target_industries=ecommerce')).data
+    const before = (await restList('monthly_fee_max=0&rank_industries=ecommerce&fields=target_industries')).data
     const hasTag = (r: Row) => ((r.target_industries as string[] | undefined) ?? []).includes('ecommerce')
     // Last untagged known listing: always ranks behind every tagged one pre-tag, so tagging it must move it up.
     const candidate = [...before].reverse().find((r) => ALL_KNOWN_SLUGS.includes(r.listing_slug) && !hasTag(r))?.listing_slug
@@ -125,7 +127,7 @@ describe('REST /v1/business-checking -- real local Supabase', () => {
     expect(error).toBeNull()
     taggedListingId = listingId // only set once the insert succeeded, so cleanup never deletes a pre-existing tag
     try {
-      const after = (await restList('monthly_fee_max=0&target_industries=ecommerce')).data
+      const after = (await restList('monthly_fee_max=0&rank_industries=ecommerce&fields=target_industries')).data
       expect([...slugsOf(after)].sort()).toEqual([...baseline].sort())
       expect(slugsOf(after).indexOf(candidate)).toBeLessThan(slugsOf(before).indexOf(candidate))
       // every tagged listing ranks ahead of every untagged one
@@ -140,44 +142,40 @@ describe('REST /v1/business-checking -- real local Supabase', () => {
   describe('13. parity: REST slug list (in order) equals MCP tools/call for the same args', () => {
     for (const c of REST_FILTER_CASES) {
       it(c.name, async () => {
-        const [r, m] = await Promise.all([restList(c.query), mcp('query_business_checking', c.mcp, SESSION_ID, { Authorization: 'Bearer sk_test_token' })])
-        expect(slugsOf(r.data)).toEqual(slugsOf(m.results))
+        const r = await restList(c.query)
+        const m = await mcpOk('list_business_checking', { ...c.mcp, limit: 20 })
+        expect(slugsOf(r.data)).toEqual(slugsOf(m.data.rows))
       })
     }
     it('available_states', async () => {
-      const [r, m] = await Promise.all([
-        restList('available_states=CA,NY'),
-        mcp('query_business_checking', { available_states: ['CA', 'NY'] }, SESSION_ID),
-      ])
-      expect(slugsOf(r.data)).toEqual(slugsOf(m.results))
+      const r = await restList('available_states=CA,NY')
+      const m = await mcpOk('list_business_checking', { available_states: ['CA', 'NY'], limit: 20 })
+      expect(slugsOf(r.data)).toEqual(slugsOf(m.data.rows))
     })
   })
 
   describe('14. detail', () => {
-    it('known slug returns plan_tiers, general_fees and general_features matching the DB and the MCP tool', async () => {
+    it('known slug returns the requested sections, matching the DB counts and the MCP get_listing tool', async () => {
       const slug = KNOWN_SLUGS.bluevine
-      const res = await rest(`/business-checking/${slug}`)
+      const res = await rest(`/business-checking-listings/${slug}?sections=tiers,fees,features`)
       expect(res.status).toBe(200)
       const { data } = await res.json<{ data: Record<string, unknown> }>()
-      expect(data.listing_slug).toBe(slug)
+      expect(data.slug).toBe(slug)
 
       const id = await lookupListingIdBySlug(slug)
       const [tiers, fees, feats] = await Promise.all([
         db.from('business_deposit_plan_tiers').select('id').eq('listing_id', id),
-        // wire/cash-deposit fees are exposed as flat columns, not under general_fees (same rule as the contract suite)
-        db.from('business_deposit_fees').select('id').eq('listing_id', id).is('plan_tier_id', null)
-          .not('fee_type', 'in', '(wire_domestic_outgoing,wire_domestic_incoming,wire_international_outgoing,wire_international_incoming,cash_deposit)'),
-        db.from('business_deposit_account_features').select('id').eq('listing_id', id).is('plan_tier_id', null),
+        db.from('business_deposit_fees').select('id').eq('listing_id', id),
+        db.from('business_deposit_account_features').select('id').eq('listing_id', id),
       ])
-      expect((data.plan_tiers as unknown[]).length).toBe(tiers.data!.length)
-      expect((data.general_fees as unknown[]).length).toBe(fees.data!.length)
-      expect((data.general_features as unknown[]).length).toBe(feats.data!.length)
       expect(tiers.data!.length).toBeGreaterThan(0)
       expect(fees.data!.length + feats.data!.length).toBeGreaterThan(0)
+      expect((data.tiers as unknown[]).length).toBe(tiers.data!.length)
+      expect(data.detail_has).toEqual(expect.arrayContaining([`tiers:${tiers.data!.length}`]))
 
-      const m = await mcp('get_business_checking_listing', { listing_slug: slug }, SESSION_ID)
+      const m = await mcpOk('get_listing', { slugs: [slug], sections: ['tiers', 'fees', 'features'] })
       const strip = (o: Record<string, unknown>) => ({ ...o, application_url: undefined })
-      expect(strip(data)).toEqual(strip(m.results[0]))
+      expect(strip(data)).toEqual(strip(m.data.listings[0]))
     })
 
     it('unknown slug is a 404 problem+json', async () => {
@@ -193,7 +191,7 @@ describe('REST /v1/business-checking -- real local Supabase', () => {
       const body = await restList('monthly_fee_max=0')
       const { data, error } = await db
         .from('query_events')
-        .select('channel, session_id, developer_id, result_count, status, tool_name, query_match_events(listing_slug)')
+        .select('channel, session_id, developer_id, result_count, status, tool_name, profile, query_match_events(listing_slug)')
         .eq('request_id', body.meta.request_id)
         .single()
       expect(error).toBeNull()
@@ -203,28 +201,33 @@ describe('REST /v1/business-checking -- real local Supabase', () => {
         developer_id: null,
         result_count: body.data.length,
         status: 'ok',
-        tool_name: 'query_business_checking',
+        tool_name: 'list_business_checking',
+        profile: 'v2',
       })
       expect(data!.query_match_events.length).toBe(body.data.length)
+      expect(body.meta.total_matches).toBeGreaterThanOrEqual(body.data.length)
     })
 
     it('detail call: one query_match_events row with the listing institution_id', async () => {
       const slug = KNOWN_SLUGS.novo
-      const res = await rest(`/business-checking/${slug}`)
+      const res = await rest(`/business-checking-listings/${slug}`)
       const { meta } = await res.json<{ meta: { request_id: string } }>()
-      const { data: acct } = await db.from('business_deposit_accounts').select('id, institution_id').eq('listing_slug', slug).single()
+      const { data: acct } = await db.from('business_deposit_accounts').select('id').eq('listing_slug', slug).single()
       const { data, error } = await db
         .from('query_events')
         .select('channel, session_id, developer_id, result_count, tool_name, query_match_events(listing_id, institution_id, listing_slug)')
         .eq('request_id', meta.request_id)
         .single()
       expect(error).toBeNull()
-      expect(data).toMatchObject({ channel: 'rest', session_id: null, developer_id: null, result_count: 1, tool_name: 'get_business_checking_listing' })
-      expect(data!.query_match_events).toEqual([{ listing_id: acct!.id, institution_id: acct!.institution_id, listing_slug: slug }])
+      expect(data).toMatchObject({ channel: 'rest', session_id: null, developer_id: null, result_count: 1, tool_name: 'get_listing' })
+      // v2 logs from the DB's returned_ids, which carry no institution (spec section 6: institution_id null)
+      expect(data!.query_match_events).toEqual([{ listing_id: acct!.id, institution_id: null, listing_slug: slug }])
     })
   })
 
   it('16. anonymous MCP tools/call (no Authorization) succeeds and logs developer_id NULL, channel mcp', async () => {
+    // earlier v2 helpers leave a v2-profile session mock behind; this legacy tool needs a legacy session
+    mockRedis({ tokenValid: true, tokenDeveloperId: null, sessionProfile: 'legacy' })
     const m = await mcp('query_business_checking', { monthly_fee_max: -1 }, ANON_SESSION_ID)
     expect(m.status).toBe(200)
     expect(m.results).toEqual([])

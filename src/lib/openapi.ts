@@ -1,197 +1,33 @@
-import { TOOLS } from './tools'
-import { Constants } from './database.types'
+import { TOOLS_V2 } from './tools-v2'
 
 type Schema = Record<string, unknown>
+type ToolSchema = { properties: Record<string, Schema>; required?: readonly string[] }
 
-const E = Constants.public.Enums
-const toolSchema = (name: string) =>
-  TOOLS.find((t) => t.name === name)!.inputSchema as unknown as { properties: Record<string, Schema>; required?: string[] }
-
-const nullable = (type: string, extra: Schema = {}): Schema => ({ type: [type, 'null'], ...extra })
+const tool = (name: string) => TOOLS_V2.find((t) => t.name === name)!
+const toolSchema = (name: string) => tool(name).inputSchema as unknown as ToolSchema
 const ref = (name: string) => ({ $ref: `#/components/schemas/${name}` })
 
 const TRACKED_LINK =
-  'Each result\'s application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.'
+  "Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string."
+const ID = '00000000-0000-4000-8000-000000000000'
+const URL_EXAMPLE = `https://bancadia.com/go/found/online-business-checking?src=rest&qr=${ID}`
 
-// Mirrors the object returned by mapBusinessCheckingRow (src/handlers/query-business-checking.ts).
-// A contract test fails if the mapper's keys and these properties diverge.
-const planTierProps: Record<string, Schema> = {
-  plan_name: { type: 'string' },
-  monthly_fee: { type: 'number' },
-  monthly_fee_waiver_condition: nullable('string'),
-  apy: nullable('number'),
-  apy_max_balance_eligible: nullable('number'),
-  apy_condition: nullable('string'),
-  is_default: { type: 'boolean' },
-  sort_order: { type: 'integer' },
-}
-
-const listingProps: Record<string, Schema> = {
-  listing_slug: { type: 'string', description: 'Stable public identifier; use it with GET /business-checking/{listing_slug}.' },
-  institution_name: nullable('string'),
-  institution: {
-    type: ['object', 'null'],
-    properties: {
-      display_name: nullable('string'),
-      website_url: nullable('string'),
-      logo_url: nullable('string'),
-      institution_type: { type: 'string', enum: [...E.institution_type_enum] },
-      support_email: nullable('string'),
-    },
-  },
-  product_name: { type: 'string' },
-  monthly_fee: { type: 'number', description: 'Monthly fee in USD.' },
-  monthly_fee_waiver_condition: nullable('string'),
-  minimum_opening_deposit: { type: 'number' },
-  entity_types_accepted: { type: 'array', items: { type: 'string', enum: [...E.entity_type_enum] } },
-  available_states: { type: 'array', items: { type: 'string' }, description: "Two-letter state codes; ['ALL'] means every state." },
-  target_industries: { type: 'array', items: { type: 'string' }, description: 'Business types the listing is built for.' },
-  target_business_profiles: { type: 'array', items: { type: 'string' }, description: 'Business stages the listing is built for.' },
-  insurance_type: { type: 'string', enum: [...E.insurance_type_enum] },
-  deposit_insurance_limit: nullable('number', {
-    description: 'Standard deposit insurance coverage in USD per depositor, per ownership category. Null when insurance_type is uninsured.',
-  }),
-  deposit_insurance_extended: {
-    type: 'boolean',
-    description:
-      "True when coverage above deposit_insurance_limit is offered through a sweep or program-bank arrangement. This is not standard FDIC/NCUA coverage.",
-  },
-  deposit_insurance_extended_limit: nullable('number', {
-    description: 'Total extended coverage in USD when deposit_insurance_extended is true. Null when not extended or the limit is not published.',
-  }),
-  free_transactions_per_month: nullable('integer'),
-  cash_deposit_available: nullable('boolean'),
-  cash_deposit_fee_per_100: nullable('number'),
-  monthly_cash_deposit_limit: nullable('number'),
-  sub_accounts_supported: nullable('boolean'),
-  rtp_supported: nullable('boolean'),
-  rtp_network: { type: ['string', 'null'], enum: [...E.rtp_network_enum, null] },
-  accounting_integration_available: nullable('boolean'),
-  tax_integration_available: nullable('boolean'),
-  expense_integration_available: nullable('boolean'),
-  interest_bearing: nullable('boolean'),
-  apy_max: nullable('number', { description: 'Best rate the account can pay, as a decimal (0.02 = 2%).' }),
-  apy_default: nullable('number', { description: 'Standard rate, as a decimal.' }),
-  apy_tiers: { description: 'Balance-tiered rates, structure varies by institution. Null when not applicable.' },
-  outgoing_domestic_wire_fee: nullable('number'),
-  incoming_domestic_wire_fee: nullable('number'),
-  outgoing_international_wire_fee: nullable('number'),
-  incoming_international_wire_fee: nullable('number'),
-  multicurrency_support: nullable('boolean'),
-  free_domestic_wires_per_month: nullable('integer'),
-  per_transaction_fee_after_limit: nullable('number'),
-  atm_fee_reimbursement: nullable('boolean'),
-  atm_fee_reimbursement_limit: nullable('number'),
-  atm_network: nullable('string'),
-  overdraft_protection_available: nullable('boolean'),
-  overdraft_line_of_credit_available: nullable('boolean'),
-  daily_debit_limit: nullable('number'),
-  ach_debit_block_available: nullable('boolean'),
-  positive_pay_available: nullable('boolean'),
-  remote_deposit_capture: nullable('boolean'),
-  bill_pay_available: nullable('boolean'),
-  check_writing_available: nullable('boolean'),
-  corporate_card_available: nullable('boolean'),
-  virtual_cards_available: nullable('boolean'),
-  physical_debit_card_available: nullable('boolean'),
-  plan_tiers: { type: 'array', items: { type: 'object', properties: planTierProps } },
-  promotions: {
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        bonus_amount: { type: 'number' },
-        condition_description: { type: 'string' },
-        minimum_deposit: nullable('number'),
-        expiry_date: nullable('string', { format: 'date' }),
-        promo_url: nullable('string'),
-      },
-    },
-  },
-  application_url: {
-    type: 'string',
-    description: 'Tracked Bancadia link to apply. Give it to the user exactly as returned, including its query string.',
-  },
-  last_modified: { type: 'string', format: 'date-time', description: 'When the listing record was last edited.' },
-  last_verified: nullable('string', {
-    format: 'date-time',
-    description: "When Bancadia last confirmed this listing against the institution's published terms. Null if never verified.",
-  }),
-  is_verified: { type: 'boolean', description: 'Whether the listing is currently marked as verified.' },
-}
-
-const featureSchema = {
-  type: 'object',
-  properties: {
-    category: { type: 'string', enum: [...E.feature_category_enum] },
-    description: { type: 'string' },
-    value: nullable('number'),
-  },
-}
-const feeSchema = {
-  type: 'object',
-  properties: {
-    fee_type: { type: 'string', enum: [...E.fee_type_enum] },
-    amount: nullable('number'),
-    amount_description: nullable('string'),
-    eligibility_criteria: nullable('string'),
-    tiers: { description: 'Tiered fee structure, varies by fee. Null when not applicable.' },
-    waivable: { type: 'boolean' },
-    waiver_condition: nullable('string'),
-  },
-}
-
-const detailProps: Record<string, Schema> = {
-  ...listingProps,
-  plan_tiers: {
-    type: 'array',
-    items: {
-      type: 'object',
-      properties: {
-        ...planTierProps,
-        features: { type: 'array', items: featureSchema },
-        fees: { type: 'array', items: feeSchema },
-      },
-    },
-  },
-  general_fees: { type: 'array', items: feeSchema, description: 'Fees that apply to every plan tier.' },
-  general_features: { type: 'array', items: featureSchema, description: 'Features that apply to every plan tier.' },
-}
-
-// Example values by type, so the example always carries every documented key.
-const sample = (props: Record<string, Schema>, over: Record<string, unknown>) =>
-  Object.fromEntries(
-    Object.entries(props).map(([k, s]) => {
-      const t = [s.type].flat()[0]
-      const base = t === 'boolean' ? false : t === 'number' || t === 'integer' ? 0 : t === 'array' ? [] : t === 'object' ? null : t === 'string' ? '' : null
-      return [k, k in over ? over[k] : base]
+// Query parameters are the tool's input properties (arrays comma separated; min_limits as key:number pairs).
+function parameters(name: string, only?: string[]) {
+  return Object.entries(toolSchema(name).properties)
+    .filter(([k]) => !only || only.includes(k))
+    .map(([k, { description, ...schema }]) => {
+      const object = schema.type === 'object'
+      return {
+        name: k,
+        in: 'query',
+        required: (toolSchema(name).required ?? []).includes(k),
+        description: object ? `${description}. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.` : description,
+        schema: object ? { type: 'string' } : schema,
+        ...(schema.type === 'array' ? { style: 'form', explode: false } : {}),
+      }
     })
-  )
-
-const listingExample = sample(listingProps, {
-  listing_slug: 'found-business-checking',
-  institution_name: 'Found',
-  institution: {
-    display_name: 'Found',
-    website_url: 'https://found.com',
-    logo_url: 'https://found.com/logo.png',
-    institution_type: 'fintech',
-    support_email: 'support@found.com',
-  },
-  product_name: 'Found Business Checking',
-  entity_types_accepted: ['llc', 'sole_prop'],
-  available_states: ['ALL'],
-  insurance_type: 'fdic',
-  rtp_network: 'none',
-  application_url: 'https://bancadia.com/go/found/business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000',
-  deposit_insurance_limit: 250000,
-  deposit_insurance_extended: true,
-  deposit_insurance_extended_limit: 3000000,
-  last_modified: '2026-01-01T00:00:00Z',
-  last_verified: '2026-01-01T00:00:00Z',
-  is_verified: true,
-})
-const detailExample = { ...sample(detailProps, listingExample), general_fees: [], general_features: [] }
+}
 
 const problemResponse = (description: string) => ({
   description,
@@ -199,7 +35,7 @@ const problemResponse = (description: string) => ({
 })
 
 const errors = {
-  '400': problemResponse('Bad or unknown parameter.'),
+  '400': problemResponse('Bad or unknown parameter. The detail lists the valid values.'),
   '401': problemResponse('An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.'),
   '429': {
     ...problemResponse('Rate limit exceeded.'),
@@ -215,28 +51,93 @@ const headers = {
   'RateLimit-Reset': { description: 'Seconds until the window resets.', schema: { type: 'integer' } },
 }
 
+const ok = (description: string, schema: Schema, example: unknown) => ({
+  description,
+  headers,
+  content: { 'application/json': { schema, example } },
+})
+
+const meta = (extra: Record<string, Schema> = {}, required: string[] = []) => ({
+  type: 'object',
+  required: ['count', 'request_id', 'filters', ...required],
+  properties: {
+    count: { type: 'integer', description: 'Number of items in data.' },
+    request_id: { type: 'string' },
+    filters: { type: 'object', description: 'The parsed arguments that were applied.', additionalProperties: true },
+    ...extra,
+  },
+})
+const envelope = (data: Schema, m: Schema) => ({ type: 'object', required: ['data', 'meta'], properties: { data, meta: m } })
+const arrayOf = (name: string) => ({ type: 'array', items: ref(name) })
+const meta0 = { count: 1, request_id: ID, filters: {} }
+
+const bankRow = { listing_slug: 'found-online-business-checking', institution_name: 'Indie Technologies, Inc. dba Found', product_name: 'Found Business Checking', monthly_fee: 0, minimum_opening_deposit: 0, insurance_type: 'fdic', apy_max: 0.0125, apy_default: 0.0125, free_transactions_per_month: 0, application_url: URL_EXAMPLE }
+const fact = { topic: 'fees', plan: 'all plans', snippet: 'One free cash deposit each month; after that a $2.00 fee ...', source_url: 'https://found.com/help/can-i-deposit-cash', as_of: '2026-11-09' }
+const feeRow = { fee_type: 'cash_deposit', plan: 'all plans', amount: 2, amount_status: 'set', fee_unit: 'per_transaction', description: 'Cash deposit fee' }
+const listingDetail = { slug: 'found-online-business-checking', application_url: URL_EXAMPLE, detail_has: ['tiers:1', 'fees:17'], tiers: [{ plan_name: 'Standard', monthly_fee: 0, is_default: true }] }
+
+const L = '/business-checking-listings'
+const WILDCARD = 'Use - in place of {listing_slug} to read across all listings.'
+const slugParam = {
+  name: 'listing_slug', in: 'path', required: true,
+  description: "The listing's stable public identifier, as returned by the list route. The literal - is not a slug (it is the all-listings wildcard).",
+  schema: { type: 'string' },
+}
+
+const section = (route: string, title: string, key: string) => ({
+  get: {
+    operationId: `getBusinessCheckingListing${title}`,
+    summary: `Get a listing's ${route}`,
+    description: `Returns only the ${route} section of one listing (the same rows as get_listing sections=${key}). Takes no query parameters. data is that section's array (empty when the listing has none); meta.listing carries listing_slug and its tracked application_url. ${TRACKED_LINK}`,
+    tags: ['Business checking'],
+    parameters: [slugParam],
+    responses: {
+      '200': ok(`The listing's ${route}.`, ref('SectionResponse'), {
+        data: [], meta: { ...meta0, count: 0, listing: { listing_slug: 'found-online-business-checking', application_url: URL_EXAMPLE } },
+      }),
+      ...errors,
+      '404': problemResponse('No listing with that listing_slug.'),
+    },
+  },
+})
+
 export function buildOpenApi() {
-  const q = toolSchema('query_business_checking')
-  const d = toolSchema('get_business_checking_listing')
-  const desc = (name: string) => TOOLS.find((t) => t.name === name)!.description
-
-  const queryParameters = Object.entries(q.properties).map(([name, { description, ...schema }]) => ({
-    name,
-    in: 'query',
-    required: false,
-    description,
-    schema,
-    ...(schema.type === 'array' ? { style: 'form', explode: false } : {}),
-  }))
-  const { description: slugDescription, ...slugSchema } = d.properties.listing_slug!
-
+  const list = {
+    operationId: 'listBusinessCheckingListings',
+    summary: 'List business checking listings',
+    description: `Find business checking accounts matching filter criteria. Returns up to limit rows (default 7, max 20, clamped; the effective limit is in meta.limit); page with offset and meta.next_offset. data is an array of rows; paging and extras (total_matches, matches_overview, excluded_by, possible_matches) are in meta. Select more columns with fields. Array parameters are comma-separated. Unknown parameters return 400. ${TRACKED_LINK}`,
+    tags: ['Business checking'],
+    parameters: parameters('list_business_checking'),
+    responses: {
+      '200': ok('Matching listings.', ref('ListResponse'), {
+        data: [bankRow],
+        meta: { count: 1, request_id: ID, filters: { monthly_fee_max: 0, limit: 1 }, total_matches: 13, returned: 1, limit: 1, next_offset: 1, notes: 'Absent field = not offered or not published.', hint: 'Free-text fee and feature details are searchable: call search_facts(query, slugs) or get_listing(slugs, sections).', excluded_by: {}, matches_overview: [{ slug: 'found-online-business-checking', name: 'Indie Technologies, Inc. dba Found' }] },
+      }),
+      ...errors,
+    },
+  }
+  const single = {
+    operationId: 'getBusinessCheckingListing',
+    summary: 'Get one business checking listing',
+    description: `Detail on one listing by its listing_slug; choose sections (summary, tiers, fees, features, promotions). ${TRACKED_LINK}`,
+    tags: ['Business checking'],
+    parameters: [slugParam, ...parameters('get_listing', ['sections'])],
+    responses: {
+      '200': ok('The listing.', ref('DetailResponse'), { data: listingDetail, meta: meta0 }),
+      ...errors,
+      '404': problemResponse('No listing with that listing_slug.'),
+    },
+  }
+  const deprecate = (op: typeof list | typeof single, operationId: string, successor: string) => ({
+    get: { ...op, operationId, deprecated: true, summary: `${op.summary} (deprecated alias)`, description: `Deprecated: use ${successor}. Behaves exactly like it and sends Deprecation: true and a successor-version Link header. ${op.description}` },
+  })
   return {
     openapi: '3.1.0',
     info: {
       title: 'Bancadia Business Checking API',
-      version: '1.0.0',
+      version: '2.0.0',
       summary: 'Compare U.S. business checking accounts with structured filters.',
-      description: `Read-only JSON API over Bancadia's registry of verified business checking account products. No API key is required; an optional bearer token raises rate limits and attributes usage to your developer account. ${TRACKED_LINK}`,
+      description: `Read-only JSON API over Bancadia's registry of verified business checking account products. No API key is required; an optional bearer token raises rate limits and attributes usage to your developer account. Responses are slim: a missing field means not offered or not published. ${WILDCARD} ${TRACKED_LINK}`,
       contact: { name: 'Bancadia', email: 'hello@bancadia.com', url: 'https://bancadia.com' },
     },
     servers: [{ url: 'https://api.bancadia.com/v1' }],
@@ -244,59 +145,46 @@ export function buildOpenApi() {
     tags: [{ name: 'Business checking', description: 'Business checking account listings.' }],
     security: [{}, { bearerAuth: [] }],
     paths: {
-      '/business-checking': {
+      [L]: { get: list },
+      [`${L}/-/facts`]: {
         get: {
-          operationId: 'searchBusinessCheckingAccounts',
-          summary: 'Search business checking accounts',
-          description: `Use this to find business checking accounts matching filter criteria; with no parameters it returns every active listing. ${desc('query_business_checking')} Array parameters are comma-separated (entity_types_accepted=llc,s_corp). Unknown parameters return 400.`,
+          operationId: 'searchBusinessCheckingFacts',
+          summary: 'Search fee and feature details across all listings',
+          description: `${tool('search_facts').description} data is the hits array; scanned, banks_matched, no_match and unknown_slugs are in meta. ${WILDCARD} ${TRACKED_LINK}`,
           tags: ['Business checking'],
-          parameters: queryParameters,
+          parameters: parameters('search_facts'),
           responses: {
-            '200': {
-              description: 'Matching listings.',
-              headers,
-              content: {
-                'application/json': {
-                  schema: ref('ListResponse'),
-                  example: {
-                    data: [listingExample],
-                    meta: { count: 1, request_id: '00000000-0000-4000-8000-000000000000', filters: { monthly_fee_max: 0 } },
-                  },
-                },
-              },
-            },
+            '200': ok('Banks with matching facts.', ref('FactsResponse'), {
+              data: [{ slug: 'found-online-business-checking', name: 'Indie Technologies, Inc. dba Found', application_url: URL_EXAMPLE, facts: [fact] }],
+              meta: { ...meta0, scanned: 13, banks_matched: 1 },
+            }),
             ...errors,
           },
         },
       },
-      '/business-checking/{listing_slug}': {
+      [`${L}/-/fees`]: {
         get: {
-          operationId: 'getBusinessCheckingAccount',
-          summary: 'Get one business checking account',
-          description: `Use this after a search to get full detail (fees, features, plan tiers) on one listing by its listing_slug. ${TRACKED_LINK}`,
+          operationId: 'compareBusinessCheckingFees',
+          summary: 'Compare specific fees across all listings',
+          description: `${tool('fees_by_type').description} data is an array of banks. ${WILDCARD} ${TRACKED_LINK}`,
           tags: ['Business checking'],
-          parameters: [
-            { name: 'listing_slug', in: 'path', required: true, description: slugDescription, schema: slugSchema },
-          ],
+          parameters: parameters('fees_by_type'),
           responses: {
-            '200': {
-              description: 'The listing.',
-              headers,
-              content: {
-                'application/json': {
-                  schema: ref('DetailResponse'),
-                  example: {
-                    data: detailExample,
-                    meta: { count: 1, request_id: '00000000-0000-4000-8000-000000000000' },
-                  },
-                },
-              },
-            },
+            '200': ok('Banks with their matching fee rows.', ref('FeesResponse'), {
+              data: [{ slug: 'found-online-business-checking', name: 'Indie Technologies, Inc. dba Found', application_url: URL_EXAMPLE, fees: [feeRow] }],
+              meta: meta0,
+            }),
             ...errors,
-            '404': problemResponse('No listing with that listing_slug.'),
           },
         },
       },
+      [`${L}/{listing_slug}`]: { get: single },
+      [`${L}/{listing_slug}/fees`]: section('fees', 'Fees', 'fees'),
+      [`${L}/{listing_slug}/features`]: section('features', 'Features', 'features'),
+      [`${L}/{listing_slug}/promotions`]: section('promotions', 'Promotions', 'promotions'),
+      [`${L}/{listing_slug}/plans`]: section('plans', 'Plans', 'tiers'),
+      '/business-checking': deprecate(list, 'listBusinessCheckingAccounts', `GET ${L}`),
+      '/business-checking/{listing_slug}': deprecate(single, 'getBusinessCheckingAccount', `GET ${L}/{listing_slug}`),
     },
     components: {
       securitySchemes: {
@@ -308,36 +196,84 @@ export function buildOpenApi() {
         },
       },
       schemas: {
-        BusinessCheckingListing: { type: 'object', properties: listingProps },
-        BusinessCheckingListingDetail: { type: 'object', properties: detailProps },
-        ListResponse: {
+        BankRow: {
           type: 'object',
-          required: ['data', 'meta'],
+          description: 'A listing row. Slim: null, false, empty and missing values are omitted. Columns depend on the fields parameter; the default set is shown.',
+          required: ['listing_slug', 'application_url'],
+          additionalProperties: true,
           properties: {
-            data: { type: 'array', items: ref('BusinessCheckingListing') },
-            meta: {
-              type: 'object',
-              required: ['count', 'request_id', 'filters'],
-              properties: {
-                count: { type: 'integer' },
-                request_id: { type: 'string' },
-                filters: { type: 'object', description: 'The parsed filters that were applied.', additionalProperties: true },
-              },
-            },
+            listing_slug: { type: 'string', description: 'Stable public identifier.' },
+            institution_name: { type: 'string' },
+            product_name: { type: 'string' },
+            monthly_fee: { type: 'number' },
+            minimum_opening_deposit: { type: 'number' },
+            insurance_type: { type: 'string' },
+            apy_max: { type: 'number', description: 'Best rate the account can pay, as a decimal (0.02 = 2%).' },
+            apy_default: { type: 'number', description: 'Standard rate, as a decimal.' },
+            free_transactions_per_month: { type: 'integer' },
+            matched: { type: 'array', description: 'Present with an integrations filter.', items: { type: 'object', additionalProperties: true } },
+            matched_limits: { type: 'array', description: 'Present with min_limits.', items: { type: 'object', additionalProperties: true } },
+            application_url: { type: 'string', description: 'Tracked Bancadia link to apply. Give it to the user exactly as returned, including its query string.' },
           },
         },
-        DetailResponse: {
+        FactHit: {
           type: 'object',
-          required: ['data', 'meta'],
+          required: ['slug', 'name', 'application_url', 'facts'],
           properties: {
-            data: ref('BusinessCheckingListingDetail'),
-            meta: {
-              type: 'object',
-              required: ['count', 'request_id'],
-              properties: { count: { type: 'integer' }, request_id: { type: 'string' } },
-            },
+            slug: { type: 'string' },
+            name: { type: 'string' },
+            application_url: { type: 'string' },
+            facts: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { topic: { type: 'string' }, plan: { type: 'string' }, snippet: { type: 'string' }, source_url: { type: 'string' }, as_of: { type: 'string' } } } },
           },
         },
+        FeeBank: {
+          type: 'object',
+          required: ['slug', 'name', 'application_url', 'fees'],
+          properties: {
+            slug: { type: 'string' },
+            name: { type: 'string' },
+            application_url: { type: 'string' },
+            fees: { type: 'array', items: { type: 'object', additionalProperties: true, properties: { fee_type: { type: 'string' }, plan: { type: 'string' }, amount: { type: 'number' }, fee_unit: { type: 'string' }, description: { type: 'string' } } } },
+          },
+        },
+        Listing: {
+          type: 'object',
+          required: ['slug', 'application_url', 'detail_has'],
+          additionalProperties: true,
+          description: 'Only the requested sections are present; detail_has counts every non-empty section.',
+          properties: {
+            slug: { type: 'string' },
+            application_url: { type: 'string' },
+            detail_has: { type: 'array', items: { type: 'string' } },
+            summary: { type: 'object', additionalProperties: true },
+            tiers: { type: 'array', items: { type: 'object', additionalProperties: true } },
+            fees: { type: 'array', items: { type: 'object', additionalProperties: true } },
+            features: { type: 'array', items: { type: 'object', additionalProperties: true } },
+            promotions: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          },
+        },
+        ListResponse: envelope(arrayOf('BankRow'), meta({
+          total_matches: { type: 'integer', description: 'All listings matching the filters.' },
+          returned: { type: 'integer' },
+          limit: { type: 'integer', description: 'Effective page size after clamping (1-20).' },
+          next_offset: { type: ['integer', 'null'], description: 'Offset of the next page, null on the last page.' },
+          notes: { type: 'string' },
+          hint: { type: 'string' },
+          excluded_by: { type: 'object', description: 'Per filter, how many listings it excludes on its own.', additionalProperties: { type: 'integer' } },
+          matches_overview: { type: 'array', description: 'Every match (slug, name) in order; only when total_matches > returned.', items: { type: 'object', properties: { slug: { type: 'string' }, name: { type: 'string' } } } },
+          possible_matches: { type: 'array', description: 'Only with an integrations filter.', items: { type: 'object', additionalProperties: true } },
+        }, ['total_matches', 'returned', 'limit', 'next_offset', 'notes'])),
+        FactsResponse: envelope(arrayOf('FactHit'), meta({
+          scanned: { type: 'integer' },
+          banks_matched: { type: 'integer' },
+          no_match: { type: 'array', items: { type: 'object', additionalProperties: true } },
+          unknown_slugs: { type: 'array', items: { type: 'string' } },
+        })),
+        FeesResponse: envelope(arrayOf('FeeBank'), meta()),
+        SectionResponse: envelope({ type: 'array', items: { type: 'object', additionalProperties: true } }, meta({
+          listing: { type: 'object', required: ['listing_slug', 'application_url'], properties: { listing_slug: { type: 'string' }, application_url: { type: 'string' } } },
+        }, ['listing'])),
+        DetailResponse: envelope(ref('Listing'), meta()),
         Problem: {
           type: 'object',
           description: 'RFC 9457 problem details.',

@@ -33,9 +33,24 @@ For production use, optionally obtain a bearer token (credits usage to you) from
 
 See `src/lib/tools.ts` for the full JSON Schema of each tool's arguments, or query `GET /.well-known/mcp` / `tools/list` directly.
 
+### Profiles (`legacy` and `v2`)
+
+The MCP tool set is chosen per session. The default is `MCP_PROFILE` (`wrangler.toml`, currently `legacy`); a client opts in at `initialize` with the header `X-Bancadia-Profile: v2` or the URL query `?profile=v2` (header wins; read once, stored on the session). A tool name outside the session's profile is `-32601 Unknown tool`.
+
+| Profile | Tools |
+| ------- | ----- |
+| `legacy` | `query_business_checking`, `get_business_checking_listing` (unchanged) |
+| `v2` | `list_business_checking`, `search_facts`, `fees_by_type`, `get_listing` — slim, paged JSON backed by Postgres functions; schema in `docs/v2-tool-manifest.json`, behavior in `docs/v2-tool-spec.md` |
+
+v2 lists accept the usual filters plus `has_active_promotion` (true: only listings with a current promotion, rows include it; recorded for only some banks) and default to 7 rows (max 20, clamped; `next_offset` pages). DB validation errors (SQLSTATE `22023`) are returned as `-32602` with the valid values. `npm run measure:tokens` prints the v2 schema and default-list token sizes for a running Worker.
+
+### REST API (always v2)
+
+Resource-oriented routes, all with `{ data, meta }` envelopes: `GET /v1/business-checking-listings` (list; `data` is an array of rows, default 7 / max 20, paging in `meta`), `/business-checking-listings/{listing_slug}[?sections=]`, `/business-checking-listings/{listing_slug}/fees|features|promotions|plans` (no query params; `meta.listing` carries the tracked link), and the cross-listing reads `/business-checking-listings/-/fees` and `/-/facts` (use `-` in place of `{listing_slug}` to read across all listings). `GET /v1/business-checking` and `/v1/business-checking/{listing_slug}` remain as deprecated aliases (`Deprecation: true` and a successor-version `Link` header). REST ignores `MCP_PROFILE`. This is a breaking change from the earlier REST list (which returned every listing with full detail). OpenAPI: `GET /v1/openapi.json`, checked in as `docs/openapi-rest.json` (regenerate with `npx tsx scripts/print-openapi.ts > docs/openapi-rest.json`; a test fails on drift).
+
 ### `application_url` attribution tags
 
-Every `application_url` returned by `tools/call` is an absolute `https://bancadia.com/go/...` link with attribution params appended: `src=mcp` and `qr=<request_id>`, where `request_id` is a UUID generated once per `tools/call` and also written as that call's `query_events.request_id` and on each of its `query_match_events` rows (so a `/go` click can be joined back to the tool call, and listing, that surfaced it). Params already present on the stored URL are never overwritten. Every call to a known tool gets a `query_events` row — including zero-result calls, calls rejected for invalid arguments (`status = 'invalid_args'`) and failed calls (`status = 'error'`) — while `query_match_events` holds one row per returned listing. Host-prefixing and tagging both happen in one layer, `applyApplicationUrlHost` in `src/lib/urls.ts`, applied in `src/index.ts`.
+Every `application_url` returned by `tools/call` is an absolute `https://bancadia.com/go/...` link with attribution params appended: `src=mcp` (`src=rest` on the REST API) and `qr=<request_id>`, where `request_id` is a UUID generated once per `tools/call` and also written as that call's `query_events.request_id` and on each of its `query_match_events` rows (so a `/go` click can be joined back to the tool call, and listing, that surfaced it). Params already present on the stored URL are never overwritten. Every call to a known tool gets a `query_events` row — including zero-result calls, calls rejected for invalid arguments (`status = 'invalid_args'`) and failed calls (`status = 'error'`) — while `query_match_events` holds one row per returned listing. Host-prefixing and tagging happen in one layer: `applyApplicationUrlHost` (`src/lib/urls.ts`) for legacy tools, `tagResponse` (`src/lib/tag-response.ts`, with a runtime assert that every bank row is tagged) for v2, both applied in `runTool`.
 
 **Clients and agents should pass `application_url` through unmodified, including its query string.** Stripping the params loses attribution for that click.
 

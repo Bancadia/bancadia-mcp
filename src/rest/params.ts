@@ -6,7 +6,7 @@ const MAX_VALUE_LENGTH = 200
 const DECIMAL = /^-?\d+(\.\d+)?$/
 
 // Parses URL query params into tool args per the declared property types.
-// number: plain decimal only; boolean: 'true'|'false'; array: comma-separated; string: as-is.
+// number: plain decimal only; integer: whole number; object: key:number pairs; boolean: 'true'|'false'; array: comma-separated; string: as-is.
 // Enum/required checks are left to validateArgs(). Unknown keys are errors.
 export function parseQueryParams(
   searchParams: URLSearchParams,
@@ -17,7 +17,8 @@ export function parseQueryParams(
   for (const key of new Set(searchParams.keys())) {
     const prop = props[key]
     if (!prop) {
-      return { error: `Unknown query parameter '${key}'. Valid parameters: ${Object.keys(props).join(', ')}` }
+      const valid = Object.keys(props)
+      return { error: valid.length ? `Unknown query parameter '${key}'. Valid parameters: ${valid.join(', ')}` : 'This route takes no query parameters.' }
     }
     const values = searchParams.getAll(key)
     if (values.some((v) => v.length > MAX_VALUE_LENGTH)) {
@@ -37,6 +38,19 @@ export function parseQueryParams(
       const n = DECIMAL.test(raw) ? Number(raw) : NaN
       if (!Number.isFinite(n)) return { error: `Invalid parameter '${key}': expected a finite decimal number` }
       args[key] = n
+    } else if (prop.type === 'integer') {
+      if (!/^-?\d+$/.test(raw)) return { error: `Invalid parameter '${key}': expected an integer` }
+      args[key] = Number(raw)
+    } else if (prop.type === 'object') {
+      // key:number pairs, comma separated (min_limits=sub_accounts:12,free_wires:2)
+      const obj: Record<string, number> = {}
+      for (const pair of raw === '' ? [] : raw.split(',')) {
+        const [k, n, ...extra] = pair.split(':')
+        if (!k || extra.length || n === undefined || !DECIMAL.test(n))
+          return { error: `Invalid parameter '${key}': expected comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2` }
+        obj[k] = Number(n)
+      }
+      args[key] = obj
     } else if (prop.type === 'boolean') {
       if (raw !== 'true' && raw !== 'false') return { error: `Invalid parameter '${key}': expected true or false` }
       args[key] = raw === 'true'

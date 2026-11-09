@@ -252,34 +252,33 @@ describe('affiliate-tracked ranking — query_business_checking', () => {
   })
 })
 
-describe('affiliate-tracked ranking — REST GET /v1/business-checking', () => {
-  it('applies the same ordering and never exposes is_affiliate_tracked', async () => {
-    setup([listing('plain', { monthly_fee: 0 }), listing('aff', { monthly_fee: 12, affiliate: true })])
+// REST is always v2: ordering and filtering (affiliate-first included) moved into the DB function
+// (covered by integration/v2-ordering-overview). The Worker must pass the DB order through untouched,
+// forward the filters, and never expose affiliate status.
+describe('affiliate-tracked ranking — REST GET /v1/business-checking (v2, DB-side ranking)', () => {
+  const rpcRows = (slugs: string[]) => ({
+    rows: slugs.map((s) => ({ listing_slug: s, application_url: `/go/${s}/checking` })),
+    total_matches: slugs.length, returned: slugs.length, limit: 7, next_offset: null, excluded_by: {},
+    returned_ids: slugs.map((s, i) => ({ id: `id-${s}`, slug: s, rank: i + 1 })),
+  })
+  const get = async (path: string, slugs: string[]) => {
+    const rpc = vi.fn().mockResolvedValue({ data: rpcRows(slugs), error: null })
+    vi.mocked(createSupabaseClient).mockReturnValue({ rpc, from: mockAnalyticsTables({}).from } as never)
     const ctx = createExecutionContext()
-    const res = await app.fetch(
-      new Request('http://localhost/v1/business-checking', { headers: { 'CF-Connecting-IP': '1.2.3.4' } }),
-      env,
-      ctx
-    )
+    const res = await app.fetch(new Request(`http://localhost/v1${path}`, { headers: { 'CF-Connecting-IP': '1.2.3.4' } }), env, ctx)
     await waitOnExecutionContext(ctx)
+    return { res, rpc, text: await res.text() }
+  }
+
+  it('keeps the DB order and never exposes is_affiliate_tracked', async () => {
+    const { res, text } = await get('/business-checking-listings', ['aff', 'plain'])
     expect(res.status).toBe(200)
-    const text = await res.text()
     expect(text).not.toContain('affiliate')
-    const body = JSON.parse(text) as { data?: Array<{ listing_slug: string }>; results?: Array<{ listing_slug: string }> }
-    const slugs = (body.data ?? body.results ?? []).map((r) => r.listing_slug)
-    expect(slugs).toEqual(['aff', 'plain'])
+    expect((JSON.parse(text) as { data: Array<{ listing_slug: string }> }).data.map((r) => r.listing_slug)).toEqual(['aff', 'plain'])
   })
 
-  it('excludes a filter-failing affiliate listing', async () => {
-    setup([listing('plain', { monthly_fee: 0 }), listing('aff', { monthly_fee: 12, affiliate: true })])
-    const ctx = createExecutionContext()
-    const res = await app.fetch(
-      new Request('http://localhost/v1/business-checking?monthly_fee_max=5', { headers: { 'CF-Connecting-IP': '1.2.3.4' } }),
-      env,
-      ctx
-    )
-    await waitOnExecutionContext(ctx)
-    const body = (await res.json()) as { data?: Array<{ listing_slug: string }>; results?: Array<{ listing_slug: string }> }
-    expect((body.data ?? body.results ?? []).map((r) => r.listing_slug)).toEqual(['plain'])
+  it('forwards filters to the DB function (it excludes filter-failing listings, affiliate or not)', async () => {
+    const { rpc } = await get('/business-checking-listings?monthly_fee_max=5', ['plain'])
+    expect(rpc.mock.calls[0]![1]).toMatchObject({ p_filters: { monthly_fee_max: 5 } })
   })
 })

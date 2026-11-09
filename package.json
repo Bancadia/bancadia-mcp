@@ -13,7 +13,9 @@
     "lint:openapi": "npx --yes tsx@4.23.15 scripts/print-openapi.ts > \"${TMPDIR:-/tmp}/bancadia-openapi.json\" && npx --yes @redocly/cli@2.76.0 lint --extends recommended \"${TMPDIR:-/tmp}/bancadia-openapi.json\"",
     "db:start": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" start",
     "db:reset": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" db reset --local && node scripts/db/apply-grants.mjs && node scripts/db/seed-test-fixtures.mjs",
-    "db:stop": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" stop"
+    "db:stop": "npx --no-install supabase --workdir \"${BANCADIA_DB_PATH:-../bancadia-db}\" stop",
+    "measure:tokens": "node scripts/measure-tokens.mjs",
+    "capture:goldens": "vitest run --config vitest.golden.config.mts"
   },
   "repository": {
     "type": "git",

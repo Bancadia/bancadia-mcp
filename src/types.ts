@@ -9,4 +9,5 @@ export interface Env {
   ANON_RATE_LIMIT_WINDOW_SECONDS?: string
   SESSION_TTL_SECONDS?: string
   ALLOWED_ORIGINS?: string
+  MCP_PROFILE?: string
 }

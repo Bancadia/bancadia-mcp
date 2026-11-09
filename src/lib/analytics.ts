@@ -1,6 +1,7 @@
 import { createSupabaseClient } from './supabase'
 import type { Env } from '../types'
 import type { Json } from './database.types'
+import { profileOfTool } from './tools-v2'
 
 export type QueryMeta = {
   toolName: string
@@ -17,14 +18,18 @@ export type QueryMeta = {
 
 export type MatchedListing = {
   listingId: string
-  institutionId: string
+  institutionId: string | null
   listingSlug: string | null
+  rank?: number // global rank (v2); defaults to position + 1
 }
+
+// v2-only columns of the query_events row.
+export type V2EventColumns = { total_matches: number | null; offset: number | null; fields: string[] | null }
 
 // 'ok' covers zero-result calls too (matches: []) — those are the calls worth
 // finding, since they show what agents ask for that the registry can't satisfy.
 export type QueryOutcome =
-  | { status: 'ok'; matches: MatchedListing[] }
+  | { status: 'ok'; matches: MatchedListing[]; v2?: V2EventColumns }
   | { status: 'invalid_args' | 'error'; errorMessage: string }
 
 const MAX_ERROR_MESSAGE_LENGTH = 1000
@@ -52,6 +57,8 @@ export async function recordQueryEvent(
       developer_id: meta.developerId,
       query_filters: args as Json,
       status: outcome.status,
+      profile: profileOfTool(meta.toolName),
+      ...(outcome.status === 'ok' ? outcome.v2 : {}),
       result_count: outcome.status === 'ok' ? outcome.matches.length : null,
       error_message: outcome.status === 'ok' ? null : outcome.errorMessage.slice(0, MAX_ERROR_MESSAGE_LENGTH),
     })
@@ -64,7 +71,7 @@ export async function recordQueryEvent(
         listing_id: match.listingId,
         institution_id: match.institutionId,
         listing_slug: match.listingSlug,
-        result_rank: index + 1,
+        result_rank: match.rank ?? index + 1,
       }))
     )
   } catch {
