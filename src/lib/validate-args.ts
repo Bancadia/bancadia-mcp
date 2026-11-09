@@ -1,4 +1,4 @@
-type PropSchema = { type?: string; enum?: readonly string[]; items?: PropSchema }
+type PropSchema = { type?: string; enum?: readonly string[]; items?: PropSchema; additionalProperties?: PropSchema }
 type InputSchema = { properties?: Record<string, PropSchema | undefined>; required?: readonly string[] }
 
 function checkValue(value: unknown, schema: PropSchema): string | null {
@@ -6,6 +6,16 @@ function checkValue(value: unknown, schema: PropSchema): string | null {
     case 'number':
       if (typeof value !== 'number' || !Number.isFinite(value)) return 'a finite number'
       break
+    case 'integer':
+      if (!Number.isInteger(value)) return 'a whole number'
+      break
+    case 'object': {
+      if (typeof value !== 'object' || value === null || Array.isArray(value)) return 'an object'
+      const ap = schema.additionalProperties
+      const bad = ap ? Object.values(value).find((v) => checkValue(v, ap) !== null) : undefined
+      if (bad !== undefined) return `an object whose values are each ${checkValue(bad, ap!)}`
+      break
+    }
     case 'boolean':
       if (typeof value !== 'boolean') return 'a boolean'
       break

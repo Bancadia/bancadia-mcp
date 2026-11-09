@@ -68,7 +68,7 @@ describe('query_business_checking — real local Supabase', () => {
     mockRedis({ tokenValid: true, tokenDeveloperId: null })
   })
 
-  it('returns all 11 known onboarding-script listings, shaped correctly', async () => {
+  it('returns all 11 known (of 13 active) onboarding-script listings, shaped correctly', async () => {
     const results = await run({})
     const scoped = scopeToKnown(results)
     expect(scoped.length).toBe(ALL_KNOWN_SLUGS.length)
@@ -125,11 +125,11 @@ describe('query_business_checking — real local Supabase', () => {
     const results = await run({ rtp_supported: true })
     const slugs = scopeToKnown(results).map((r) => r.listing_slug)
     expect(slugs).toContain(KNOWN_SLUGS.chase)
-    // mercury/bluevine/novo all have rtp_supported: false — if the !inner
+    // bluevine/novo have rtp_supported: false (mercury is true since migration 071) — if the !inner
     // hint were missing (the historical bug class this repo already shipped
     // once, for accounting_integration_available), this filter would be a
     // silent no-op and they'd leak through here too.
-    expect(slugs).not.toContain(KNOWN_SLUGS.mercury)
+    expect(slugs).toContain(KNOWN_SLUGS.mercury)
     expect(slugs).not.toContain(KNOWN_SLUGS.bluevine)
     expect(slugs).not.toContain(KNOWN_SLUGS.novo)
   })
@@ -178,7 +178,7 @@ describe('query_business_checking — real local Supabase', () => {
     })
 
     it('apy_min above every seeded apy_max returns none of the seeded listings', async () => {
-      const results = await run({ apy_min: 0.031 })
+      const results = await run({ apy_min: 0.034 })
       expect(apyScoped(results)).toEqual([])
     })
   })

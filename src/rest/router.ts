@@ -5,7 +5,7 @@ import { authenticate } from '../lib/auth'
 import { rateLimit } from '../lib/rate-limit'
 import { recordQueryEvent, type QueryMeta } from '../lib/analytics'
 import { runTool, type RunToolResult } from '../lib/run-tool'
-import { TOOLS } from '../lib/tools'
+import { TOOLS_V2 } from '../lib/tools-v2'
 import { parseQueryParams } from './params'
 import { problem } from './problem'
 import { buildOpenApi } from '../lib/openapi'
@@ -15,8 +15,6 @@ const rest = new Hono<{ Bindings: Env; Variables: Vars }>()
 
 const LINK =
   '<https://bancadia.com/docs/rest-api>; rel="service-doc", <https://api.bancadia.com/v1/openapi.json>; rel="service-desc"'
-
-const schemaOf = (name: string) => TOOLS.find((t) => t.name === name)!.inputSchema
 
 rest.use(
   '*',
@@ -89,12 +87,22 @@ function failure(c: import('hono').Context<{ Bindings: Env; Variables: Vars }>, 
 // Static document: no auth or rate limit, same /v1 headers and CORS as the data routes.
 rest.get('/openapi.json', (c) => c.json(buildOpenApi()))
 
-rest.get('/business-checking', async (c) => {
+type Ctx = import('hono').Context<{ Bindings: Env; Variables: Vars }>
+type Payload = any // eslint-disable-line @typescript-eslint/no-explicit-any
+
+// Shared by every data route: gate, parse query params against `schema`, run the v2 tool, shape the envelope.
+async function serve(
+  c: Ctx,
+  toolName: string,
+  schema: { properties?: Record<string, { type?: string } | undefined> },
+  toArgs: (parsed: Record<string, unknown>) => Record<string, unknown>,
+  shape: (payload: Payload) => { data: unknown; extra?: Record<string, unknown> } | null
+) {
   const g = await gate(c)
   if (g instanceof Response) return g
-  const meta = metaFor(c, 'query_business_checking', g.developerId)
+  const meta = metaFor(c, toolName, g.developerId)
 
-  const parsed = parseQueryParams(new URL(c.req.url).searchParams, schemaOf(meta.toolName))
+  const parsed = parseQueryParams(new URL(c.req.url).searchParams, schema)
   if ('error' in parsed) {
     c.executionCtx.waitUntil(
       recordQueryEvent(c.env, meta, Object.fromEntries(new URL(c.req.url).searchParams), {
@@ -104,23 +112,78 @@ rest.get('/business-checking', async (c) => {
     )
     return problem(c, 400, parsed.error)
   }
-  const r = await runTool(meta.toolName, parsed.args, meta, c.env, c.executionCtx)
+  const args = toArgs(parsed.args)
+  const r = await runTool(toolName, args, meta, c.env, c.executionCtx)
   if (r.status !== 'ok') return failure(c, r)
-  return c.json({
-    data: r.results,
-    meta: { count: r.results.length, request_id: meta.requestId, filters: parsed.args },
-  })
+  const shaped = shape(r.results)
+  if (!shaped) return problem(c, 404, 'No business checking listing with that listing_slug.')
+  const count = Array.isArray(shaped.data) ? shaped.data.length : 1
+  return c.json({ data: shaped.data, meta: { count, request_id: meta.requestId, filters: args, ...shaped.extra } })
+}
+
+// Everything in the payload except the array that became `data`.
+const without = (p: Payload, key: string) => Object.fromEntries(Object.entries(p).filter(([k]) => k !== key))
+
+const schemaOf = (name: string) => TOOLS_V2.find((t) => t.name === name)!.inputSchema
+const same = (a: Record<string, unknown>) => a
+
+const NOT_FOUND = 'Unknown endpoint. See https://api.bancadia.com/v1/openapi.json.'
+const L = '/business-checking-listings'
+
+const list = (c: Ctx) =>
+  serve(c, 'list_business_checking', schemaOf('list_business_checking'), same, (p) => ({ data: p.rows, extra: without(p, 'rows') }))
+
+// `-` is the wildcard segment ("across all listings"), never a slug.
+const single = (c: Ctx) =>
+  c.req.param('listing_slug') === '-'
+    ? problem(c, 404, NOT_FOUND)
+    : serve(
+        c,
+        'get_listing',
+        { properties: { sections: schemaOf('get_listing').properties.sections } },
+        (a) => ({ slugs: [c.req.param('listing_slug')], ...a }),
+        (p) => (p.listings.length ? { data: p.listings[0] } : null)
+      )
+
+rest.get(`${L}/-/facts`, (c) =>
+  serve(c, 'search_facts', schemaOf('search_facts'), same, (p) => ({ data: p.hits, extra: without(p, 'hits') })))
+rest.get(`${L}/-/fees`, (c) =>
+  serve(c, 'fees_by_type', schemaOf('fees_by_type'), same, (p) => ({ data: p })))
+// Sub-resources take no query params; data is that section's array, meta.listing carries the tagged link.
+const SECTIONS = { fees: 'fees', features: 'features', promotions: 'promotions', plans: 'tiers' } as const
+for (const [route, section] of Object.entries(SECTIONS)) {
+  rest.get(`${L}/:listing_slug/${route}`, (c) =>
+    c.req.param('listing_slug') === '-'
+      ? problem(c, 404, NOT_FOUND)
+      : serve(
+          c,
+          'get_listing',
+          { properties: {} },
+          () => ({ slugs: [c.req.param('listing_slug')], sections: [section] }),
+          (p) => {
+            const l = p.listings[0]
+            return l
+              ? { data: l[section] ?? [], extra: { listing: { listing_slug: l.slug, application_url: l.application_url } } }
+              : null
+          }
+        ))
+}
+
+rest.get(L, list)
+rest.get(`${L}/:listing_slug`, single)
+
+// Deprecated aliases: same handlers, plus Deprecation and successor-version headers.
+const deprecated = (c: Ctx, successor: string) => {
+  c.header('Deprecation', 'true')
+  c.header('Link', `<${successor}>; rel="successor-version"`, { append: true })
+}
+rest.get('/business-checking', (c) => {
+  deprecated(c, `/v1${L}`)
+  return list(c)
 })
-
-rest.get('/business-checking/:listing_slug', async (c) => {
-  const g = await gate(c)
-  if (g instanceof Response) return g
-  const meta = metaFor(c, 'get_business_checking_listing', g.developerId)
-
-  const r = await runTool(meta.toolName, { listing_slug: c.req.param('listing_slug') }, meta, c.env, c.executionCtx)
-  if (r.status !== 'ok') return failure(c, r)
-  if (r.results.length === 0) return problem(c, 404, 'No business checking listing with that listing_slug.')
-  return c.json({ data: r.results[0], meta: { count: 1, request_id: meta.requestId } })
+rest.get('/business-checking/:listing_slug', (c) => {
+  deprecated(c, `/v1${L}/${c.req.param('listing_slug')}`)
+  return single(c)
 })
 
 rest.all('*', (c) => problem(c, 404, 'Unknown endpoint. See https://api.bancadia.com/v1/openapi.json.'))

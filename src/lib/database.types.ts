@@ -208,36 +208,64 @@ export type Database = {
       }
       business_deposit_account_features: {
         Row: {
+          as_of: string | null
           category: Database["public"]["Enums"]["feature_category_enum"]
           created_at: string
           description: string
           id: string
+          limit_key: string | null
           listing_id: string
           plan_tier_id: string | null
           sort_order: number | null
+          source: string
+          source_page: string | null
+          source_url: string | null
+          tsv: unknown
           value: number | null
+          value_unit: string | null
         }
         Insert: {
+          as_of?: string | null
           category: Database["public"]["Enums"]["feature_category_enum"]
           created_at?: string
           description: string
           id?: string
+          limit_key?: string | null
           listing_id: string
           plan_tier_id?: string | null
           sort_order?: number | null
+          source?: string
+          source_page?: string | null
+          source_url?: string | null
+          tsv?: unknown
           value?: number | null
+          value_unit?: string | null
         }
         Update: {
+          as_of?: string | null
           category?: Database["public"]["Enums"]["feature_category_enum"]
           created_at?: string
           description?: string
           id?: string
+          limit_key?: string | null
           listing_id?: string
           plan_tier_id?: string | null
           sort_order?: number | null
+          source?: string
+          source_page?: string | null
+          source_url?: string | null
+          tsv?: unknown
           value?: number | null
+          value_unit?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "business_deposit_account_features_limit_key_fkey"
+            columns: ["limit_key"]
+            isOneToOne: false
+            referencedRelation: "limit_key_vocab"
+            referencedColumns: ["slug"]
+          },
           {
             foreignKeyName: "business_deposit_account_features_listing_id_fkey"
             columns: ["listing_id"]
@@ -429,46 +457,118 @@ export type Database = {
           },
         ]
       }
+      business_deposit_feature_integrations: {
+        Row: {
+          connection_method: string | null
+          feature_id: string
+          integration_slug: string
+          note: string | null
+        }
+        Insert: {
+          connection_method?: string | null
+          feature_id: string
+          integration_slug: string
+          note?: string | null
+        }
+        Update: {
+          connection_method?: string | null
+          feature_id?: string
+          integration_slug?: string
+          note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "business_deposit_feature_integrations_feature_id_fkey"
+            columns: ["feature_id"]
+            isOneToOne: false
+            referencedRelation: "business_deposit_account_features"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "business_deposit_feature_integrations_integration_slug_fkey"
+            columns: ["integration_slug"]
+            isOneToOne: false
+            referencedRelation: "integration_vocab"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       business_deposit_fees: {
         Row: {
+          allowance_period: string | null
           amount: number | null
           amount_description: string | null
+          amount_status:
+            | Database["public"]["Enums"]["amount_status_enum"]
+            | null
+          as_of: string | null
           created_at: string
           description: string
           eligibility_criteria: string | null
+          fee_max_amount: number | null
+          fee_min_amount: number | null
           fee_type: Database["public"]["Enums"]["fee_type_enum"]
+          fee_unit: Database["public"]["Enums"]["fee_unit_enum"] | null
+          free_allowance_amount: number | null
+          free_allowance_unit: string | null
           id: string
           listing_id: string
           plan_tier_id: string | null
+          source_url: string | null
           tiers: Json | null
+          tsv: unknown
           waivable: boolean
           waiver_condition: string | null
         }
         Insert: {
+          allowance_period?: string | null
           amount?: number | null
           amount_description?: string | null
+          amount_status?:
+            | Database["public"]["Enums"]["amount_status_enum"]
+            | null
+          as_of?: string | null
           created_at?: string
           description: string
           eligibility_criteria?: string | null
+          fee_max_amount?: number | null
+          fee_min_amount?: number | null
           fee_type: Database["public"]["Enums"]["fee_type_enum"]
+          fee_unit?: Database["public"]["Enums"]["fee_unit_enum"] | null
+          free_allowance_amount?: number | null
+          free_allowance_unit?: string | null
           id?: string
           listing_id: string
           plan_tier_id?: string | null
+          source_url?: string | null
           tiers?: Json | null
+          tsv?: unknown
           waivable?: boolean
           waiver_condition?: string | null
         }
         Update: {
+          allowance_period?: string | null
           amount?: number | null
           amount_description?: string | null
+          amount_status?:
+            | Database["public"]["Enums"]["amount_status_enum"]
+            | null
+          as_of?: string | null
           created_at?: string
           description?: string
           eligibility_criteria?: string | null
+          fee_max_amount?: number | null
+          fee_min_amount?: number | null
           fee_type?: Database["public"]["Enums"]["fee_type_enum"]
+          fee_unit?: Database["public"]["Enums"]["fee_unit_enum"] | null
+          free_allowance_amount?: number | null
+          free_allowance_unit?: string | null
           id?: string
           listing_id?: string
           plan_tier_id?: string | null
+          source_url?: string | null
           tiers?: Json | null
+          tsv?: unknown
           waivable?: boolean
           waiver_condition?: string | null
         }
@@ -924,6 +1024,48 @@ export type Database = {
         }
         Relationships: []
       }
+      integration_vocab: {
+        Row: {
+          aliases: string[]
+          kind: string
+          label: string
+          slug: string
+        }
+        Insert: {
+          aliases?: string[]
+          kind: string
+          label: string
+          slug: string
+        }
+        Update: {
+          aliases?: string[]
+          kind?: string
+          label?: string
+          slug?: string
+        }
+        Relationships: []
+      }
+      limit_key_vocab: {
+        Row: {
+          description: string | null
+          label: string
+          slug: string
+          unit: string
+        }
+        Insert: {
+          description?: string | null
+          label: string
+          slug: string
+          unit: string
+        }
+        Update: {
+          description?: string | null
+          label?: string
+          slug?: string
+          unit?: string
+        }
+        Relationships: []
+      }
       listing_audits: {
         Row: {
           action: string
@@ -1357,12 +1499,16 @@ export type Database = {
           created_at: string
           developer_id: string | null
           error_message: string | null
+          fields: string[] | null
+          offset: number | null
+          profile: string | null
           query_filters: Json | null
           request_id: string
           result_count: number | null
           session_id: string | null
           status: Database["public"]["Enums"]["query_event_status_enum"]
           tool_name: string
+          total_matches: number | null
           user_agent: string | null
         }
         Insert: {
@@ -1370,12 +1516,16 @@ export type Database = {
           created_at?: string
           developer_id?: string | null
           error_message?: string | null
+          fields?: string[] | null
+          offset?: number | null
+          profile?: string | null
           query_filters?: Json | null
           request_id: string
           result_count?: number | null
           session_id?: string | null
           status: Database["public"]["Enums"]["query_event_status_enum"]
           tool_name: string
+          total_matches?: number | null
           user_agent?: string | null
         }
         Update: {
@@ -1383,12 +1533,16 @@ export type Database = {
           created_at?: string
           developer_id?: string | null
           error_message?: string | null
+          fields?: string[] | null
+          offset?: number | null
+          profile?: string | null
           query_filters?: Json | null
           request_id?: string
           result_count?: number | null
           session_id?: string | null
           status?: Database["public"]["Enums"]["query_event_status_enum"]
           tool_name?: string
+          total_matches?: number | null
           user_agent?: string | null
         }
         Relationships: [
@@ -1445,6 +1599,16 @@ export type Database = {
       }
     }
     Views: {
+      fee_consistency_issues: {
+        Row: {
+          fact_source: string | null
+          fact_value: number | null
+          flat_column: string | null
+          flat_value: number | null
+          listing_slug: string | null
+        }
+        Relationships: []
+      }
       go_clicks_attributed: {
         Row: {
           attributed_channel:
@@ -1494,9 +1658,66 @@ export type Database = {
       }
     }
     Functions: {
-      [_ in never]: never
+      fees_by_type: {
+        Args: { p_fee_types: string[]; p_plan?: string; p_slugs?: string[] }
+        Returns: Json
+      }
+      get_listing_sections: {
+        Args: { p_sections?: string[]; p_slugs: string[] }
+        Returns: Json
+      }
+      list_business_checking: {
+        Args: {
+          p_fields?: string[]
+          p_filters?: Json
+          p_limit?: number
+          p_offset?: number
+        }
+        Returns: Json
+      }
+      mcp_check_values: {
+        Args: { p_label: string; p_valid: string[]; p_vals: string[] }
+        Returns: string[]
+      }
+      mcp_checking_default_fields: { Args: never; Returns: string[] }
+      mcp_checking_fields: { Args: never; Returns: string[] }
+      mcp_checking_rows_json: {
+        Args: { p_fields: string[]; p_ids: string[] }
+        Returns: {
+          listing_id: string
+          obj: Json
+        }[]
+      }
+      mcp_fee_json: {
+        Args: {
+          f: Database["public"]["Tables"]["business_deposit_fees"]["Row"]
+          p_plan: string
+        }
+        Returns: Json
+      }
+      mcp_jsonb_texts: {
+        Args: { p_j: Json; p_label: string }
+        Returns: string[]
+      }
+      mcp_plan_tiers_json: { Args: { p_listing: string }; Returns: Json }
+      mcp_resolve_integrations: {
+        Args: { p_names: string[] }
+        Returns: string[]
+      }
+      search_listing_facts: {
+        Args: {
+          p_max_banks?: number
+          p_max_chars?: number
+          p_per_bank?: number
+          p_query: string
+          p_slugs?: string[]
+          p_topic?: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
+      amount_status_enum: "set" | "free" | "not_published" | "not_offered"
       app_method_enum: "online" | "branch" | "phone"
       apy_balance_variation_enum: "none" | "tiered" | "blended" | "stepped"
       apy_rate_variability_enum: "fixed" | "variable"
@@ -1551,6 +1772,15 @@ export type Database = {
         | "card_replacement"
         | "foreign_transaction"
         | "other"
+      fee_unit_enum:
+        | "per_wire"
+        | "per_100"
+        | "monthly"
+        | "percent"
+        | "per_transaction"
+        | "per_item"
+        | "per_check"
+        | "flat"
       institution_type_enum:
         | "national_bank"
         | "regional_bank"
@@ -1721,6 +1951,7 @@ export const Constants = {
   },
   public: {
     Enums: {
+      amount_status_enum: ["set", "free", "not_published", "not_offered"],
       app_method_enum: ["online", "branch", "phone"],
       apy_balance_variation_enum: ["none", "tiered", "blended", "stepped"],
       apy_rate_variability_enum: ["fixed", "variable"],
@@ -1778,6 +2009,16 @@ export const Constants = {
         "card_replacement",
         "foreign_transaction",
         "other",
+      ],
+      fee_unit_enum: [
+        "per_wire",
+        "per_100",
+        "monthly",
+        "percent",
+        "per_transaction",
+        "per_item",
+        "per_check",
+        "flat",
       ],
       institution_type_enum: [
         "national_bank",

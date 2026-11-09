@@ -1,7 +1,8 @@
 import { Hono, type Context } from 'hono'
 import { streamSSE } from 'hono/streaming'
 import type { Env } from './types'
-import { TOOLS, getToolManifest } from './lib/tools'
+import { getTools, getToolManifest } from './lib/tools'
+import { envProfile, resolveProfile, effectiveProfile, type Profile } from './lib/profile'
 import { authenticate } from './lib/auth'
 import { rateLimit } from './lib/rate-limit'
 import { validateOrigin } from './lib/origin'
@@ -68,7 +69,7 @@ app.get('/.well-known/mcp', (c) =>
     tools_list: 'https://mcp.bancadia.com/',
     rest_api: 'https://api.bancadia.com/v1',
     openapi: 'https://api.bancadia.com/v1/openapi.json',
-    tools: TOOLS.map((t) => ({ name: t.name, description: t.description })),
+    tools: getTools(envProfile(c.env)).map((t) => ({ name: t.name, description: t.description })),
   })
 )
 
@@ -90,6 +91,7 @@ app.post('/', async (c) => {
   // Every method except `initialize` requires a previously-issued session.
   // Hoisted so `tools/call` below can attach it to query_events rows.
   let sessionId: string | undefined
+  let profile: Profile = envProfile(c.env)
   if (method !== 'initialize') {
     const session = await validateSession(c.req.raw, c.env, c.executionCtx)
     if (!session.ok) {
@@ -112,6 +114,7 @@ app.post('/', async (c) => {
       )
     }
     sessionId = session.sessionId
+    profile = effectiveProfile(session.record, c.env)
 
     const protocolHeader = c.req.header(PROTOCOL_VERSION_HEADER)
     if (protocolHeader && !SUPPORTED_PROTOCOL_VERSIONS.includes(protocolHeader)) {
@@ -141,7 +144,7 @@ app.post('/', async (c) => {
     const protocolVersion =
       requested && SUPPORTED_PROTOCOL_VERSIONS.includes(requested) ? requested : LATEST_PROTOCOL_VERSION
 
-    const sessionId = await createSession(c.env, protocolVersion)
+    const sessionId = await createSession(c.env, protocolVersion, resolveProfile(c.req.raw, c.env))
     c.header(SESSION_HEADER, sessionId)
 
     return sendJsonRpc(c, id, {
@@ -155,7 +158,7 @@ app.post('/', async (c) => {
 
   // tools/list — session required (checked above), no bearer auth required
   if (method === 'tools/list') {
-    return sendJsonRpc(c, id, { result: getToolManifest() })
+    return sendJsonRpc(c, id, { result: getToolManifest(profile) })
   }
 
   // tools/call — session required (checked above), bearer token optional
@@ -197,7 +200,7 @@ app.post('/', async (c) => {
       arguments?: Record<string, unknown>
     }
 
-    if (isKnownTool(name)) {
+    if (isKnownTool(name, profile)) {
       // `requestId` is generated once per tools/call so the same id is both
       // logged as query_events.request_id (via meta) and appended as `qr` to
       // every returned application_url. `sessionId` is always set here:

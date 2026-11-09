@@ -1,5 +1,6 @@
 import { Redis } from '@upstash/redis'
 import type { Env } from '../types'
+import type { Profile } from './profile'
 
 export const SESSION_HEADER = 'Mcp-Session-Id'
 
@@ -8,6 +9,7 @@ const DEFAULT_TTL_SECONDS = 1800
 export interface SessionRecord {
   protocolVersion: string
   createdAt: number
+  profile?: Profile
 }
 
 export type SessionValidation =
@@ -28,10 +30,11 @@ function sessionKey(sessionId: string): string {
 
 export async function createSession(
   env: Env,
-  protocolVersion: string
+  protocolVersion: string,
+  profile?: Profile
 ): Promise<string> {
   const sessionId = crypto.randomUUID()
-  const record: SessionRecord = { protocolVersion, createdAt: Date.now() }
+  const record: SessionRecord = { protocolVersion, createdAt: Date.now(), profile }
   await redisClient(env).set(sessionKey(sessionId), record, { ex: ttlSeconds(env) })
   return sessionId
 }

@@ -40,7 +40,7 @@ export const APY_EXPECTED = {
   [KNOWN_SLUGS.grasshopper]: { apy_default: 0.01, apy_max: 0.0135 },
   [KNOWN_SLUGS.ramp]: { apy_default: 0.02, apy_max: 0.02 },
   [KNOWN_SLUGS.found]: { apy_default: 0, apy_max: 0.025 },
-  [KNOWN_SLUGS.bluevine]: { apy_default: 0.013, apy_max: 0.03 },
+  [KNOWN_SLUGS.bluevine]: { apy_default: 0.013, apy_max: 0.033 },
 } as const
 
 export const APY_SLUGS: string[] = Object.keys(APY_EXPECTED)
@@ -54,14 +54,14 @@ type ExpectedListing = {
 export const EXPECTED: Record<string, ExpectedListing> = {
   [KNOWN_SLUGS.mercury]: {
     monthly_fee: 0,
-    rtp_supported: false,
+    rtp_supported: true, // rtp_network 'both' since migration 071
     // No sole_prop -- the fixture for entity_types_accepted exclusion tests.
     entity_types_accepted: ['llc', 's_corp', 'c_corp', 'partnership'],
   },
   [KNOWN_SLUGS.bluevine]: {
     monthly_fee: 0,
     rtp_supported: false,
-    entity_types_accepted: ['sole_prop', 'partnership', 'llc', 'c_corp', 's_corp'],
+    entity_types_accepted: ['sole_prop', 'partnership', 'llc', 'c_corp', 's_corp', 'nonprofit'],
   },
   [KNOWN_SLUGS.novo]: {
     monthly_fee: 0,
@@ -74,7 +74,7 @@ export const EXPECTED: Record<string, ExpectedListing> = {
     // else in the known set is 0 -- the fixture for monthly_fee_max tests.
     monthly_fee: 15,
     rtp_supported: true,
-    entity_types_accepted: ['llc', 'sole_prop', 'c_corp', 's_corp'],
+    entity_types_accepted: ['llc', 'sole_prop', 'c_corp', 's_corp', 'nonprofit'],
   },
 } as const
 
@@ -89,9 +89,9 @@ export const REST_FILTER_CASES: Array<{ name: string; query: string; mcp: Record
   { name: 'minimum_opening_deposit_max=0', query: 'minimum_opening_deposit_max=0', mcp: { minimum_opening_deposit_max: 0 },
     slugs: ALL_KNOWN_SLUGS.filter((s) => s !== K.citibank && s !== K.grasshopper) },
   { name: 'entity_types_accepted=sole_prop', query: 'entity_types_accepted=sole_prop', mcp: { entity_types_accepted: ['sole_prop'] },
-    slugs: ALL_KNOWN_SLUGS.filter((s) => s !== K.mercury && s !== K.rho) },
+    slugs: ALL_KNOWN_SLUGS.filter((s) => s !== K.mercury && s !== K.rho && s !== K.ramp) },
   { name: 'entity_types_accepted=sole_prop,nonprofit (all-of)', query: 'entity_types_accepted=sole_prop,nonprofit',
-    mcp: { entity_types_accepted: ['sole_prop', 'nonprofit'] }, slugs: [K.citibank, K.found, K.lili, K.novo, K.ramp, K.relay] },
+    mcp: { entity_types_accepted: ['sole_prop', 'nonprofit'] }, slugs: [K.bluevine, K.chase, K.citibank, K.found, K.lili, K.novo, K.relay] },
   { name: 'insurance_type=fdic', query: 'insurance_type=fdic', mcp: { insurance_type: 'fdic' }, slugs: ALL_KNOWN_SLUGS },
   { name: 'insurance_type=ncua', query: 'insurance_type=ncua', mcp: { insurance_type: 'ncua' }, slugs: [] },
   { name: 'accounting_integration_available=true', query: 'accounting_integration_available=true', mcp: { accounting_integration_available: true },
@@ -100,12 +100,12 @@ export const REST_FILTER_CASES: Array<{ name: string; query: string; mcp: Record
   { name: 'sub_accounts_supported=true', query: 'sub_accounts_supported=true', mcp: { sub_accounts_supported: true },
     slugs: [K.bluevine, K.found, K.mercury, K.ramp, K.relay, K.rho] },
   { name: 'cash_deposit_available=true', query: 'cash_deposit_available=true', mcp: { cash_deposit_available: true },
-    slugs: [K.citibank, K.found, K.chase, K.lili, K.relay] },
+    slugs: [K.bluevine, K.citibank, K.found, K.chase, K.lili, K.relay] },
   { name: 'free_transactions_min=20', query: 'free_transactions_min=20', mcp: { free_transactions_min: 20 }, slugs: [K.citibank, K.chase] },
   { name: 'apy_min=0.02', query: 'apy_min=0.02', mcp: { apy_min: 0.02 }, slugs: [K.ramp, K.found, K.bluevine] },
   { name: 'rtp_network=fednow', query: 'rtp_network=fednow', mcp: { rtp_network: 'fednow' }, slugs: [K.found, K.grasshopper] },
-  { name: 'rtp_network=both', query: 'rtp_network=both', mcp: { rtp_network: 'both' }, slugs: [K.chase] },
+  { name: 'rtp_network=both', query: 'rtp_network=both', mcp: { rtp_network: 'both' }, slugs: [K.chase, K.mercury] },
   { name: 'combo: fee 0 + interest_bearing + nonprofit', query: 'monthly_fee_max=0&interest_bearing=true&entity_types_accepted=nonprofit',
-    mcp: { monthly_fee_max: 0, interest_bearing: true, entity_types_accepted: ['nonprofit'] }, slugs: [K.found, K.ramp] },
-  { name: 'matches nothing', query: 'monthly_fee_max=0&rtp_network=both', mcp: { monthly_fee_max: 0, rtp_network: 'both' }, slugs: [] },
+    mcp: { monthly_fee_max: 0, interest_bearing: true, entity_types_accepted: ['nonprofit'] }, slugs: [K.bluevine, K.found, K.ramp] },
+  { name: 'matches nothing', query: 'monthly_fee_max=0&rtp_network=both', mcp: { monthly_fee_max: 0, rtp_network: 'both' }, slugs: [K.mercury] },
 ]

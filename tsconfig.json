@@ -18,6 +18,8 @@
     // same reason *.test.ts is excluded above — that module only resolves
     // inside the Vitest pool, not under this root tsconfig.
     "src/__tests__/integration/db-helpers.ts",
+    "src/__tests__/integration/v2-helpers.ts",
+    "src/__tests__/v2-unit-helpers.ts",
     // Dead code, unrouted in src/index.ts pending deletion — built against a schema
     // predating the hybrid-schema redesign and no longer compiles against the typed
     // Supabase client. Do not fix in place; delete these alongside their handlers.

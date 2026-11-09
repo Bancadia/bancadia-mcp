@@ -119,7 +119,18 @@ info:
 
     ## Available tools
 
-    Two tools are currently routed:
+    Two tool profiles exist, chosen per session at `initialize` (header
+    `X-Bancadia-Profile: v2` or `?profile=v2`; default is the server's
+    `MCP_PROFILE`, currently `legacy`). The `v2` profile exposes four
+    token-efficient tools instead of the two below: `list_business_checking`
+    (slim, paged rows with `total_matches`/`next_offset`), `search_facts`
+    (full-text search of fee/feature details), `fees_by_type` (compare specific
+    fees) and `get_listing` (1-4 listings, chosen sections). Their schemas are
+    returned by `tools/list`; results are JSON text like the legacy tools, and
+    every bank row carries a tracked `application_url`. A tool name outside the
+    session's profile returns `-32601 Unknown tool`.
+
+    The `legacy` profile routes two tools:
 
     - **`query_business_checking`** — broad, filterable list query over active
       business checking listings. Returns every matching listing at a
@@ -776,9 +787,12 @@ components:
         name:
           type: string
           description: >-
-            Only these two tools are currently routed; any other value
-            returns the `-32601 Unknown tool` error.
-          enum: [query_business_checking, get_business_checking_listing]
+            Only the tools of the session's profile are routed; any other value
+            returns the `-32601 Unknown tool` error. `legacy` profile:
+            query_business_checking, get_business_checking_listing. `v2`
+            profile: list_business_checking, search_facts, fees_by_type,
+            get_listing (arguments per `tools/list`).
+          enum: [query_business_checking, get_business_checking_listing, list_business_checking, search_facts, fees_by_type, get_listing]
         arguments:
           description: >-
             Shape depends on `name` — `BusinessCheckingQueryArguments` for

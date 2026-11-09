@@ -1,3 +1,5 @@
+import { TOOLS_V2 } from './tools-v2'
+import type { Profile } from './profile'
 import { TARGET_INDUSTRY_SCHEMA, TARGET_BUSINESS_PROFILE_SCHEMA } from './target-segments'
 
 export const TOOLS = [
@@ -109,6 +111,8 @@ export const TOOLS = [
   },
 ]
 
-export function getToolManifest() {
-  return { tools: TOOLS }
+export const getTools = (profile: Profile = 'legacy') => (profile === 'v2' ? TOOLS_V2 : TOOLS)
+
+export function getToolManifest(profile: Profile = 'legacy') {
+  return { tools: getTools(profile) }
 }

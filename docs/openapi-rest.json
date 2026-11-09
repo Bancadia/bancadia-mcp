@@ -1,0 +1,2496 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Bancadia Business Checking API",
+    "version": "2.0.0",
+    "summary": "Compare U.S. business checking accounts with structured filters.",
+    "description": "Read-only JSON API over Bancadia's registry of verified business checking account products. No API key is required; an optional bearer token raises rate limits and attributes usage to your developer account. Responses are slim: a missing field means not offered or not published. Use - in place of {listing_slug} to read across all listings. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+    "contact": {
+      "name": "Bancadia",
+      "email": "hello@bancadia.com",
+      "url": "https://bancadia.com"
+    }
+  },
+  "servers": [
+    {
+      "url": "https://api.bancadia.com/v1"
+    }
+  ],
+  "externalDocs": {
+    "description": "REST API documentation",
+    "url": "https://bancadia.com/docs/rest-api"
+  },
+  "tags": [
+    {
+      "name": "Business checking",
+      "description": "Business checking account listings."
+    }
+  ],
+  "security": [
+    {},
+    {
+      "bearerAuth": []
+    }
+  ],
+  "paths": {
+    "/business-checking-listings": {
+      "get": {
+        "operationId": "listBusinessCheckingListings",
+        "summary": "List business checking listings",
+        "description": "Find business checking accounts matching filter criteria. Returns up to limit rows (default 7, max 20, clamped; the effective limit is in meta.limit); page with offset and meta.next_offset. data is an array of rows; paging and extras (total_matches, matches_overview, excluded_by, possible_matches) are in meta. Select more columns with fields. Array parameters are comma-separated. Unknown parameters return 400. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "monthly_fee_max",
+            "in": "query",
+            "required": false,
+            "description": "Max monthly fee, USD",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minimum_opening_deposit_max",
+            "in": "query",
+            "required": false,
+            "description": "Max opening deposit, USD",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "entity_types_accepted",
+            "in": "query",
+            "required": false,
+            "description": "Must accept ALL: llc, s_corp, c_corp, sole_prop, partnership, nonprofit",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "available_states",
+            "in": "query",
+            "required": false,
+            "description": "Two-letter codes; must serve ALL",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "insurance_type",
+            "in": "query",
+            "required": false,
+            "description": "fdic, ncua or uninsured",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cash_deposit_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sub_accounts_supported",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "rtp_supported",
+            "in": "query",
+            "required": false,
+            "description": "Any real-time payment rail",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "rtp_network",
+            "in": "query",
+            "required": false,
+            "description": "fednow, rtp_network, both or none",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accounting_integration_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tax_integration_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "expense_integration_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "interest_bearing",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "has_active_promotion",
+            "in": "query",
+            "required": false,
+            "description": "true: only listings with a current promotion (rows include promotions); false: none. Recorded for some banks only",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "free_transactions_min",
+            "in": "query",
+            "required": false,
+            "description": "Min free transactions per month",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "apy_min",
+            "in": "query",
+            "required": false,
+            "description": "Min best-case rate (apy_max) as a decimal, 0.02 = 2%. apy_default is the standard rate",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "integrations_any",
+            "in": "query",
+            "required": false,
+            "description": "Integrates with ANY of these, e.g. quickbooks, xero, gusto, stripe, plaid (aliases like qbo work)",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "integrations_all",
+            "in": "query",
+            "required": false,
+            "description": "Integrates with ALL of these",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "min_limits",
+            "in": "query",
+            "required": false,
+            "description": "Needs value >= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rank_industries",
+            "in": "query",
+            "required": false,
+            "description": "RANK ONLY, never excludes. ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "rank_profiles",
+            "in": "query",
+            "required": false,
+            "description": "RANK ONLY, never excludes. early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "monthly_fee_asc, monthly_fee_desc, apy_max_desc, apy_default_desc, minimum_opening_deposit_asc, free_transactions_desc, product_name_asc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "required": false,
+            "description": "Replaces the defaults (institution_name, product_name, monthly_fee, minimum_opening_deposit, insurance_type, apy_max, apy_default, free_transactions_per_month). Others: plan_tiers, promotions, entity_types_accepted, available_states, cash_deposit_fee_per_100, outgoing_domestic_wire_fee, rtp_network, atm_network, apy_tiers. A bad name returns all valid names",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Rows per page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Rows to skip",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching listings.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "listing_slug": "found-online-business-checking",
+                      "institution_name": "Indie Technologies, Inc. dba Found",
+                      "product_name": "Found Business Checking",
+                      "monthly_fee": 0,
+                      "minimum_opening_deposit": 0,
+                      "insurance_type": "fdic",
+                      "apy_max": 0.0125,
+                      "apy_default": 0.0125,
+                      "free_transactions_per_month": 0,
+                      "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000"
+                    }
+                  ],
+                  "meta": {
+                    "count": 1,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {
+                      "monthly_fee_max": 0,
+                      "limit": 1
+                    },
+                    "total_matches": 13,
+                    "returned": 1,
+                    "limit": 1,
+                    "next_offset": 1,
+                    "notes": "Absent field = not offered or not published.",
+                    "hint": "Free-text fee and feature details are searchable: call search_facts(query, slugs) or get_listing(slugs, sections).",
+                    "excluded_by": {},
+                    "matches_overview": [
+                      {
+                        "slug": "found-online-business-checking",
+                        "name": "Indie Technologies, Inc. dba Found"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business-checking-listings/-/facts": {
+      "get": {
+        "operationId": "searchBusinessCheckingFacts",
+        "summary": "Search fee and feature details across all listings",
+        "description": "Full-text search of fee and feature details across banks (e.g. 'zelle', 'overdraft'). Returns the best snippets per bank with application_url. Terms are ANDed; 'or', \"quotes\", -exclude work. data is the hits array; scanned, banks_matched, no_match and unknown_slugs are in meta. Use - in place of {listing_slug} to read across all listings. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "query",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "slugs",
+            "in": "query",
+            "required": false,
+            "description": "Only these listing_slugs; banks without a hit go in no_match",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "topic",
+            "in": "query",
+            "required": false,
+            "description": "fees, payment_rails, cash_handling, cards_and_atm, online_banking, fraud_protection, account_management, platform_integrations or other",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "per_bank",
+            "in": "query",
+            "required": false,
+            "description": "Snippets per bank, 1-5, default 2",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "max_banks",
+            "in": "query",
+            "required": false,
+            "description": "Banks returned, 1-20, default 10",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "max_chars",
+            "in": "query",
+            "required": false,
+            "description": "Snippet length, 40-600, default 220",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Banks with matching facts.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FactsResponse"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "slug": "found-online-business-checking",
+                      "name": "Indie Technologies, Inc. dba Found",
+                      "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000",
+                      "facts": [
+                        {
+                          "topic": "fees",
+                          "plan": "all plans",
+                          "snippet": "One free cash deposit each month; after that a $2.00 fee ...",
+                          "source_url": "https://found.com/help/can-i-deposit-cash",
+                          "as_of": "2026-11-09"
+                        }
+                      ]
+                    }
+                  ],
+                  "meta": {
+                    "count": 1,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {},
+                    "scanned": 13,
+                    "banks_matched": 1
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business-checking-listings/-/fees": {
+      "get": {
+        "operationId": "compareBusinessCheckingFees",
+        "summary": "Compare specific fees across all listings",
+        "description": "Compare specific fees across banks. Returns each bank's fee rows (amount, unit, free allowance, waiver, tiers). data is an array of banks. Use - in place of {listing_slug} to read across all listings. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "fee_types",
+            "in": "query",
+            "required": true,
+            "description": "1-3 of: monthly_maintenance, overdraft, non_sufficient_funds, account_opening, account_closing, minimum_balance, excess_transaction, atm_foreign, wire_domestic_outgoing, wire_domestic_incoming, wire_international_outgoing, wire_international_incoming, cash_deposit, paper_statement, dormancy, returned_item, stop_payment, card_replacement, foreign_transaction, other",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "slugs",
+            "in": "query",
+            "required": false,
+            "description": "Limit to these listing_slugs",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "plan",
+            "in": "query",
+            "required": false,
+            "description": "Plan name; default is the default plan",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Banks with their matching fee rows.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FeesResponse"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "slug": "found-online-business-checking",
+                      "name": "Indie Technologies, Inc. dba Found",
+                      "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000",
+                      "fees": [
+                        {
+                          "fee_type": "cash_deposit",
+                          "plan": "all plans",
+                          "amount": 2,
+                          "amount_status": "set",
+                          "fee_unit": "per_transaction",
+                          "description": "Cash deposit fee"
+                        }
+                      ]
+                    }
+                  ],
+                  "meta": {
+                    "count": 1,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business-checking-listings/{listing_slug}": {
+      "get": {
+        "operationId": "getBusinessCheckingListing",
+        "summary": "Get one business checking listing",
+        "description": "Detail on one listing by its listing_slug; choose sections (summary, tiers, fees, features, promotions). Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "listing_slug",
+            "in": "path",
+            "required": true,
+            "description": "The listing's stable public identifier, as returned by the list route. The literal - is not a slug (it is the all-listings wildcard).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sections",
+            "in": "query",
+            "required": false,
+            "description": "summary, tiers, fees, features, promotions. Default summary, tiers",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailResponse"
+                },
+                "example": {
+                  "data": {
+                    "slug": "found-online-business-checking",
+                    "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000",
+                    "detail_has": [
+                      "tiers:1",
+                      "fees:17"
+                    ],
+                    "tiers": [
+                      {
+                        "plan_name": "Standard",
+                        "monthly_fee": 0,
+                        "is_default": true
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "count": 1,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing with that listing_slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business-checking-listings/{listing_slug}/fees": {
+      "get": {
+        "operationId": "getBusinessCheckingListingFees",
+        "summary": "Get a listing's fees",
+        "description": "Returns only the fees section of one listing (the same rows as get_listing sections=fees). Takes no query parameters. data is that section's array (empty when the listing has none); meta.listing carries listing_slug and its tracked application_url. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "listing_slug",
+            "in": "path",
+            "required": true,
+            "description": "The listing's stable public identifier, as returned by the list route. The literal - is not a slug (it is the all-listings wildcard).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing's fees.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionResponse"
+                },
+                "example": {
+                  "data": [],
+                  "meta": {
+                    "count": 0,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {},
+                    "listing": {
+                      "listing_slug": "found-online-business-checking",
+                      "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing with that listing_slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business-checking-listings/{listing_slug}/features": {
+      "get": {
+        "operationId": "getBusinessCheckingListingFeatures",
+        "summary": "Get a listing's features",
+        "description": "Returns only the features section of one listing (the same rows as get_listing sections=features). Takes no query parameters. data is that section's array (empty when the listing has none); meta.listing carries listing_slug and its tracked application_url. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "listing_slug",
+            "in": "path",
+            "required": true,
+            "description": "The listing's stable public identifier, as returned by the list route. The literal - is not a slug (it is the all-listings wildcard).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing's features.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionResponse"
+                },
+                "example": {
+                  "data": [],
+                  "meta": {
+                    "count": 0,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {},
+                    "listing": {
+                      "listing_slug": "found-online-business-checking",
+                      "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing with that listing_slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business-checking-listings/{listing_slug}/promotions": {
+      "get": {
+        "operationId": "getBusinessCheckingListingPromotions",
+        "summary": "Get a listing's promotions",
+        "description": "Returns only the promotions section of one listing (the same rows as get_listing sections=promotions). Takes no query parameters. data is that section's array (empty when the listing has none); meta.listing carries listing_slug and its tracked application_url. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "listing_slug",
+            "in": "path",
+            "required": true,
+            "description": "The listing's stable public identifier, as returned by the list route. The literal - is not a slug (it is the all-listings wildcard).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing's promotions.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionResponse"
+                },
+                "example": {
+                  "data": [],
+                  "meta": {
+                    "count": 0,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {},
+                    "listing": {
+                      "listing_slug": "found-online-business-checking",
+                      "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing with that listing_slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business-checking-listings/{listing_slug}/plans": {
+      "get": {
+        "operationId": "getBusinessCheckingListingPlans",
+        "summary": "Get a listing's plans",
+        "description": "Returns only the plans section of one listing (the same rows as get_listing sections=tiers). Takes no query parameters. data is that section's array (empty when the listing has none); meta.listing carries listing_slug and its tracked application_url. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "listing_slug",
+            "in": "path",
+            "required": true,
+            "description": "The listing's stable public identifier, as returned by the list route. The literal - is not a slug (it is the all-listings wildcard).",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing's plans.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SectionResponse"
+                },
+                "example": {
+                  "data": [],
+                  "meta": {
+                    "count": 0,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {},
+                    "listing": {
+                      "listing_slug": "found-online-business-checking",
+                      "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing with that listing_slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/business-checking": {
+      "get": {
+        "operationId": "listBusinessCheckingAccounts",
+        "summary": "List business checking listings (deprecated alias)",
+        "description": "Deprecated: use GET /business-checking-listings. Behaves exactly like it and sends Deprecation: true and a successor-version Link header. Find business checking accounts matching filter criteria. Returns up to limit rows (default 7, max 20, clamped; the effective limit is in meta.limit); page with offset and meta.next_offset. data is an array of rows; paging and extras (total_matches, matches_overview, excluded_by, possible_matches) are in meta. Select more columns with fields. Array parameters are comma-separated. Unknown parameters return 400. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "monthly_fee_max",
+            "in": "query",
+            "required": false,
+            "description": "Max monthly fee, USD",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "minimum_opening_deposit_max",
+            "in": "query",
+            "required": false,
+            "description": "Max opening deposit, USD",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "entity_types_accepted",
+            "in": "query",
+            "required": false,
+            "description": "Must accept ALL: llc, s_corp, c_corp, sole_prop, partnership, nonprofit",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "available_states",
+            "in": "query",
+            "required": false,
+            "description": "Two-letter codes; must serve ALL",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "insurance_type",
+            "in": "query",
+            "required": false,
+            "description": "fdic, ncua or uninsured",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cash_deposit_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "sub_accounts_supported",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "rtp_supported",
+            "in": "query",
+            "required": false,
+            "description": "Any real-time payment rail",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "rtp_network",
+            "in": "query",
+            "required": false,
+            "description": "fednow, rtp_network, both or none",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "accounting_integration_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "tax_integration_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "expense_integration_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "interest_bearing",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "has_active_promotion",
+            "in": "query",
+            "required": false,
+            "description": "true: only listings with a current promotion (rows include promotions); false: none. Recorded for some banks only",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "free_transactions_min",
+            "in": "query",
+            "required": false,
+            "description": "Min free transactions per month",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "apy_min",
+            "in": "query",
+            "required": false,
+            "description": "Min best-case rate (apy_max) as a decimal, 0.02 = 2%. apy_default is the standard rate",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
+            "name": "integrations_any",
+            "in": "query",
+            "required": false,
+            "description": "Integrates with ANY of these, e.g. quickbooks, xero, gusto, stripe, plaid (aliases like qbo work)",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "integrations_all",
+            "in": "query",
+            "required": false,
+            "description": "Integrates with ALL of these",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "min_limits",
+            "in": "query",
+            "required": false,
+            "description": "Needs value >= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "rank_industries",
+            "in": "query",
+            "required": false,
+            "description": "RANK ONLY, never excludes. ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "rank_profiles",
+            "in": "query",
+            "required": false,
+            "description": "RANK ONLY, never excludes. early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "required": false,
+            "description": "monthly_fee_asc, monthly_fee_desc, apy_max_desc, apy_default_desc, minimum_opening_deposit_asc, free_transactions_desc, product_name_asc",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fields",
+            "in": "query",
+            "required": false,
+            "description": "Replaces the defaults (institution_name, product_name, monthly_fee, minimum_opening_deposit, insurance_type, apy_max, apy_default, free_transactions_per_month). Others: plan_tiers, promotions, entity_types_accepted, available_states, cash_deposit_fee_per_100, outgoing_domestic_wire_fee, rtp_network, atm_network, apy_tiers. A bad name returns all valid names",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "description": "Rows per page",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "description": "Rows to skip",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Matching listings.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ListResponse"
+                },
+                "example": {
+                  "data": [
+                    {
+                      "listing_slug": "found-online-business-checking",
+                      "institution_name": "Indie Technologies, Inc. dba Found",
+                      "product_name": "Found Business Checking",
+                      "monthly_fee": 0,
+                      "minimum_opening_deposit": 0,
+                      "insurance_type": "fdic",
+                      "apy_max": 0.0125,
+                      "apy_default": 0.0125,
+                      "free_transactions_per_month": 0,
+                      "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000"
+                    }
+                  ],
+                  "meta": {
+                    "count": 1,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {
+                      "monthly_fee_max": 0,
+                      "limit": 1
+                    },
+                    "total_matches": 13,
+                    "returned": 1,
+                    "limit": 1,
+                    "next_offset": 1,
+                    "notes": "Absent field = not offered or not published.",
+                    "hint": "Free-text fee and feature details are searchable: call search_facts(query, slugs) or get_listing(slugs, sections).",
+                    "excluded_by": {},
+                    "matches_overview": [
+                      {
+                        "slug": "found-online-business-checking",
+                        "name": "Indie Technologies, Inc. dba Found"
+                      }
+                    ]
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": true
+      }
+    },
+    "/business-checking/{listing_slug}": {
+      "get": {
+        "operationId": "getBusinessCheckingAccount",
+        "summary": "Get one business checking listing (deprecated alias)",
+        "description": "Deprecated: use GET /business-checking-listings/{listing_slug}. Behaves exactly like it and sends Deprecation: true and a successor-version Link header. Detail on one listing by its listing_slug; choose sections (summary, tiers, fees, features, promotions). Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "tags": [
+          "Business checking"
+        ],
+        "parameters": [
+          {
+            "name": "listing_slug",
+            "in": "path",
+            "required": true,
+            "description": "The listing's stable public identifier, as returned by the list route. The literal - is not a slug (it is the all-listings wildcard).",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "sections",
+            "in": "query",
+            "required": false,
+            "description": "summary, tiers, fees, features, promotions. Default summary, tiers",
+            "schema": {
+              "type": "array",
+              "items": {
+                "type": "string"
+              }
+            },
+            "style": "form",
+            "explode": false
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "The listing.",
+            "headers": {
+              "X-Request-Id": {
+                "description": "Unique id for this request.",
+                "schema": {
+                  "type": "string"
+                }
+              },
+              "RateLimit-Limit": {
+                "description": "Requests allowed in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Remaining": {
+                "description": "Requests left in the current window.",
+                "schema": {
+                  "type": "integer"
+                }
+              },
+              "RateLimit-Reset": {
+                "description": "Seconds until the window resets.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DetailResponse"
+                },
+                "example": {
+                  "data": {
+                    "slug": "found-online-business-checking",
+                    "application_url": "https://bancadia.com/go/found/online-business-checking?src=rest&qr=00000000-0000-4000-8000-000000000000",
+                    "detail_has": [
+                      "tiers:1",
+                      "fees:17"
+                    ],
+                    "tiers": [
+                      {
+                        "plan_name": "Standard",
+                        "monthly_fee": 0,
+                        "is_default": true
+                      }
+                    ]
+                  },
+                  "meta": {
+                    "count": 1,
+                    "request_id": "00000000-0000-4000-8000-000000000000",
+                    "filters": {}
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad or unknown parameter. The detail lists the valid values.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "An Authorization header was sent but the token is invalid or revoked. Omit it to call anonymously.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "No listing with that listing_slug.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          },
+          "429": {
+            "description": "Rate limit exceeded.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            },
+            "headers": {
+              "Retry-After": {
+                "description": "Seconds to wait before retrying.",
+                "schema": {
+                  "type": "integer"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Database or internal failure. Safe to retry.",
+            "content": {
+              "application/problem+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Problem"
+                }
+              }
+            }
+          }
+        },
+        "deprecated": true
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "description": "Optional. A developer token attributes your usage and uses your own rate limit instead of the shared per-IP one. Get one at https://bancadia.com/developer/signup."
+      }
+    },
+    "schemas": {
+      "BankRow": {
+        "type": "object",
+        "description": "A listing row. Slim: null, false, empty and missing values are omitted. Columns depend on the fields parameter; the default set is shown.",
+        "required": [
+          "listing_slug",
+          "application_url"
+        ],
+        "additionalProperties": true,
+        "properties": {
+          "listing_slug": {
+            "type": "string",
+            "description": "Stable public identifier."
+          },
+          "institution_name": {
+            "type": "string"
+          },
+          "product_name": {
+            "type": "string"
+          },
+          "monthly_fee": {
+            "type": "number"
+          },
+          "minimum_opening_deposit": {
+            "type": "number"
+          },
+          "insurance_type": {
+            "type": "string"
+          },
+          "apy_max": {
+            "type": "number",
+            "description": "Best rate the account can pay, as a decimal (0.02 = 2%)."
+          },
+          "apy_default": {
+            "type": "number",
+            "description": "Standard rate, as a decimal."
+          },
+          "free_transactions_per_month": {
+            "type": "integer"
+          },
+          "matched": {
+            "type": "array",
+            "description": "Present with an integrations filter.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "matched_limits": {
+            "type": "array",
+            "description": "Present with min_limits.",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "application_url": {
+            "type": "string",
+            "description": "Tracked Bancadia link to apply. Give it to the user exactly as returned, including its query string."
+          }
+        }
+      },
+      "FactHit": {
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "application_url",
+          "facts"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "application_url": {
+            "type": "string"
+          },
+          "facts": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "topic": {
+                  "type": "string"
+                },
+                "plan": {
+                  "type": "string"
+                },
+                "snippet": {
+                  "type": "string"
+                },
+                "source_url": {
+                  "type": "string"
+                },
+                "as_of": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FeeBank": {
+        "type": "object",
+        "required": [
+          "slug",
+          "name",
+          "application_url",
+          "fees"
+        ],
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "application_url": {
+            "type": "string"
+          },
+          "fees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true,
+              "properties": {
+                "fee_type": {
+                  "type": "string"
+                },
+                "plan": {
+                  "type": "string"
+                },
+                "amount": {
+                  "type": "number"
+                },
+                "fee_unit": {
+                  "type": "string"
+                },
+                "description": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "Listing": {
+        "type": "object",
+        "required": [
+          "slug",
+          "application_url",
+          "detail_has"
+        ],
+        "additionalProperties": true,
+        "description": "Only the requested sections are present; detail_has counts every non-empty section.",
+        "properties": {
+          "slug": {
+            "type": "string"
+          },
+          "application_url": {
+            "type": "string"
+          },
+          "detail_has": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "summary": {
+            "type": "object",
+            "additionalProperties": true
+          },
+          "tiers": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "fees": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "features": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "promotions": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          }
+        }
+      },
+      "ListResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/BankRow"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "required": [
+              "count",
+              "request_id",
+              "filters",
+              "total_matches",
+              "returned",
+              "limit",
+              "next_offset",
+              "notes"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "description": "Number of items in data."
+              },
+              "request_id": {
+                "type": "string"
+              },
+              "filters": {
+                "type": "object",
+                "description": "The parsed arguments that were applied.",
+                "additionalProperties": true
+              },
+              "total_matches": {
+                "type": "integer",
+                "description": "All listings matching the filters."
+              },
+              "returned": {
+                "type": "integer"
+              },
+              "limit": {
+                "type": "integer",
+                "description": "Effective page size after clamping (1-20)."
+              },
+              "next_offset": {
+                "type": [
+                  "integer",
+                  "null"
+                ],
+                "description": "Offset of the next page, null on the last page."
+              },
+              "notes": {
+                "type": "string"
+              },
+              "hint": {
+                "type": "string"
+              },
+              "excluded_by": {
+                "type": "object",
+                "description": "Per filter, how many listings it excludes on its own.",
+                "additionalProperties": {
+                  "type": "integer"
+                }
+              },
+              "matches_overview": {
+                "type": "array",
+                "description": "Every match (slug, name) in order; only when total_matches > returned.",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "slug": {
+                      "type": "string"
+                    },
+                    "name": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "possible_matches": {
+                "type": "array",
+                "description": "Only with an integrations filter.",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              }
+            }
+          }
+        }
+      },
+      "FactsResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FactHit"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "required": [
+              "count",
+              "request_id",
+              "filters"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "description": "Number of items in data."
+              },
+              "request_id": {
+                "type": "string"
+              },
+              "filters": {
+                "type": "object",
+                "description": "The parsed arguments that were applied.",
+                "additionalProperties": true
+              },
+              "scanned": {
+                "type": "integer"
+              },
+              "banks_matched": {
+                "type": "integer"
+              },
+              "no_match": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "additionalProperties": true
+                }
+              },
+              "unknown_slugs": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              }
+            }
+          }
+        }
+      },
+      "FeesResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FeeBank"
+            }
+          },
+          "meta": {
+            "type": "object",
+            "required": [
+              "count",
+              "request_id",
+              "filters"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "description": "Number of items in data."
+              },
+              "request_id": {
+                "type": "string"
+              },
+              "filters": {
+                "type": "object",
+                "description": "The parsed arguments that were applied.",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "SectionResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": true
+            }
+          },
+          "meta": {
+            "type": "object",
+            "required": [
+              "count",
+              "request_id",
+              "filters",
+              "listing"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "description": "Number of items in data."
+              },
+              "request_id": {
+                "type": "string"
+              },
+              "filters": {
+                "type": "object",
+                "description": "The parsed arguments that were applied.",
+                "additionalProperties": true
+              },
+              "listing": {
+                "type": "object",
+                "required": [
+                  "listing_slug",
+                  "application_url"
+                ],
+                "properties": {
+                  "listing_slug": {
+                    "type": "string"
+                  },
+                  "application_url": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "DetailResponse": {
+        "type": "object",
+        "required": [
+          "data",
+          "meta"
+        ],
+        "properties": {
+          "data": {
+            "$ref": "#/components/schemas/Listing"
+          },
+          "meta": {
+            "type": "object",
+            "required": [
+              "count",
+              "request_id",
+              "filters"
+            ],
+            "properties": {
+              "count": {
+                "type": "integer",
+                "description": "Number of items in data."
+              },
+              "request_id": {
+                "type": "string"
+              },
+              "filters": {
+                "type": "object",
+                "description": "The parsed arguments that were applied.",
+                "additionalProperties": true
+              }
+            }
+          }
+        }
+      },
+      "Problem": {
+        "type": "object",
+        "description": "RFC 9457 problem details.",
+        "required": [
+          "type",
+          "title",
+          "status",
+          "detail"
+        ],
+        "properties": {
+          "type": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "status": {
+            "type": "integer"
+          },
+          "detail": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
