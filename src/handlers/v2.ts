@@ -25,5 +25,5 @@ export const V2_HANDLERS: Record<string, (args: Args, env: Env) => Promise<RpcRe
       p_query: a.query, p_slugs: a.slugs, p_topic: a.topic, p_per_bank: a.per_bank, p_max_banks: a.max_banks, p_max_chars: a.max_chars,
     }),
   fees_by_type: (a, env) => rpc(env, 'fees_by_type', { p_fee_types: a.fee_types, p_slugs: a.slugs, p_plan: a.plan }),
-  get_listing: (a, env) => rpc(env, 'get_listing_sections', { p_slugs: a.slugs, p_sections: a.sections }),
+  get_listing: (a, env) => rpc(env, 'get_listing_sections', { p_slugs: a.slugs, p_sections: a.sections, p_query: a.query }),
 }

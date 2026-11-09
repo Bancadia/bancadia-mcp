@@ -1,8 +1,8 @@
 // Prints the v2 token budgets (docs/v2-tool-spec.md section 8) for a running Worker.
 // Usage: node scripts/measure-tokens.mjs [baseUrl]   (default http://localhost:8787, e.g. `npm run dev`)
-// tokens ~= chars / 2.6 (calibrated on the legacy manifest = 2.7k tokens).
+// tokens ~= chars / 2.16 (real counts: go-to-market/demo-benchmark `npm run -s exp:tokcount -- <file>`).
 const base = process.argv[2] ?? 'http://localhost:8787'
-const approx = (s) => Math.ceil(s.length / 2.6)
+const approx = (s) => Math.ceil(s.length / 2.16)
 const post = (body, headers = {}) =>
   fetch(base, { method: 'POST', headers: { 'Content-Type': 'application/json', ...headers }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, ...body }) })
 
@@ -13,7 +13,7 @@ const h = { 'Mcp-Session-Id': session }
 
 const list = (await (await post({ method: 'tools/list' }, h)).json()).result.tools
 const schemaChars = JSON.stringify(list).length
-console.log(`v2 tools/list: ${schemaChars} chars = ${approx(JSON.stringify(list))} tokens (budget 2200)`)
+console.log(`v2 tools/list: ${schemaChars} chars = ${approx(JSON.stringify(list))} tokens (budget 3400)`)
 
 const call = await (await post({ method: 'tools/call', params: { name: 'list_business_checking', arguments: {} } }, h)).json()
 const text = call.result.content[0].text

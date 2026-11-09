@@ -25,8 +25,9 @@ says what the Worker does on top of it. Tests that encode this file live in `src
 The exact JSON Schemas are in `docs/v2-tool-manifest.json`. No JSON-Schema `enum`s are used (they would break case-insensitivity and cost tokens); valid values are in descriptions and in the DB error text.
 
 ### list_business_checking -> `rpc('list_business_checking', { p_filters, p_fields, p_limit, p_offset })`
-- `p_filters` gets only the keys the caller sent. Mapping: same name for `monthly_fee_max, minimum_opening_deposit_max, entity_types_accepted, available_states, insurance_type, rtp_network, cash_deposit_available, sub_accounts_supported, rtp_supported, accounting_integration_available, tax_integration_available, expense_integration_available, interest_bearing, has_active_promotion, free_transactions_min, apy_min, integrations_any, integrations_all, min_limits, sort`; **`rank_industries` -> `target_industries`, `rank_profiles` -> `target_business_profiles`** (rank only; the DB never excludes on them). `fields` -> `p_fields`; `limit` -> `p_limit`; `offset` -> `p_offset`. Omit `p_fields`/`p_limit`/`p_offset` when not sent (DB defaults: default fields, 7, 0).
+- `p_filters` gets only the keys the caller sent. Mapping: same name for `monthly_fee_max, minimum_opening_deposit_max, entity_types_accepted, available_states, insurance_type, rtp_network, cash_deposit_available, sub_accounts_supported, rtp_supported, accounting_integration_available, tax_integration_available, expense_integration_available, interest_bearing, has_active_promotion, remote_deposit_capture, check_writing_available, multicurrency_support, bill_pay_available, virtual_cards_available, corporate_card_available, physical_debit_card_available, min_insured_usd, free_transactions_min, apy_min, integrations_any, integrations_all, min_limits, sort`; **`rank_industries` -> `target_industries`, `rank_profiles` -> `target_business_profiles`** (rank only; the DB never excludes on them). `fields` -> `p_fields`; `limit` -> `p_limit`; `offset` -> `p_offset`. Omit `p_fields`/`p_limit`/`p_offset` when not sent (DB defaults: default fields, 7, 0).
 - `has_active_promotion` (boolean; DB migration 078): true = at least one active promotion (`expiry_date` null or >= today), false = none; rows then include `promotions` (active only) even when `fields` omits it; counts in `excluded_by`. A non-boolean is `invalid_args` (Worker type check, or DB 22023). When it is sent (true or false) the list `notes` gets the extra sentence `Promotions are recorded for only some banks; no promotion listed may mean not recorded.` (absence of promotions means not recorded, not none exist).
+- DB migration 079: the 7 new booleans behave like `cash_deposit_available`; `min_insured_usd` (USD) matches on the best of standard and extended limit and adds the three insurance fields to rows. A non-boolean/non-number is `invalid_args` (Worker type check, or DB 22023). Keys named in `fields`, plus columns of boolean filters in use, keep `false`/`null` (rows stay slim otherwise); `apy_max_condition` and `outgoing_domestic_wire_fee_note` are not selectable and appear next to their parent value.
 - Clamping is the DB's: limit < 1 -> 1, limit > 20 -> 20, response `limit` is the effective one. The Worker never clamps or post-filters.
 - `rank_*` have no exclusion semantics; `available_states: ["ALL"]` is accepted (matches listings that are nationwide).
 
@@ -34,17 +35,17 @@ The exact JSON Schemas are in `docs/v2-tool-manifest.json`. No JSON-Schema `enum
 `query` required (empty string passes the Worker and is rejected by the DB: `p_query must not be empty`), `slugs`, `topic`, `per_bank` (1-5, default 2), `max_banks` (1-20, default 10), `max_chars` (40-600, default 220). Omit unsent params.
 
 ### fees_by_type -> `rpc('fees_by_type', { p_fee_types, p_slugs, p_plan })`
-`fee_types` required (1-3), `slugs`, `plan` (default `default`). The DB returns `{results, returned_ids}`.
+`fee_types` required (1-5), `slugs`, `plan` (default `default`). The DB returns `{results, returned_ids}`; at most 6 rows per bank, per-bank `fees_omitted: n` when capped; `description` is dropped when `amount_note` exists.
 
-### get_listing -> `rpc('get_listing_sections', { p_slugs, p_sections })`
-`slugs` required (1-4), `sections` (default `summary, tiers`, i.e. omit `p_sections`).
+### get_listing -> `rpc('get_listing_sections', { p_slugs, p_sections, p_query })`
+`slugs` required (1-4), `sections` (default `summary, tiers`, i.e. omit `p_sections`), `query` (passed as `p_query`, never case-folded: only matching features). Features are capped (8, 200 chars each): per listing `features_shown`, and `features_truncated: true` when rows or text were cut.
 
 ### Normalization (module `src/lib/normalize-args.ts`, `normalizeArgs(toolName, args)`)
 Pure, returns a new args object, run after `validateArgs` and before the DB call:
 - lower-cased (and trimmed): `insurance_type, rtp_network, sort, entity_types_accepted[], integrations_any[], integrations_all[], rank_industries[], rank_profiles[], fields[], min_limits` keys, `topic`, `fee_types[]`, `sections[]`, `slugs[]` (all tools).
 - upper-cased (and trimmed): `available_states[]`.
 - `plan` is passed trimmed, not case-changed (the DB compares case-insensitively).
-- `query`, numbers and booleans untouched.
+- `query` (both tools), numbers and booleans untouched.
 - Worker-side state validation: each `available_states` item must be `ALL` or one of the 50 states, DC, PR, VI, GU, AS, MP; otherwise `invalid_args` with message `Unknown state: ZZ. Valid states: AL, AK, ...` (DB gap: the DB accepts any string).
 
 ### Type checks (`validateArgs`, extend for the new schema types)
@@ -69,7 +70,7 @@ Rows are JSON objects. Slim: null/false/`[]`/`{}`/`""` are omitted by the DB; ab
   "hint": "Free-text fee and feature details are searchable: call search_facts(query, slugs) or get_listing(slugs, sections)."
 }
 ```
-- `next_offset` is `null` on the last page. `excluded_by` (per filter, how many listings it fails on its own; only non-zero keys; may be `{}`), `matches_overview` (**only when `total_matches > returned`**, `{slug,name}` only, no `application_url`, same order as the unpaginated result), `possible_matches` (`[{slug,name,snippet}]`, only when an integrations filter was used) are passed through from the DB. Rows with an integrations filter carry `matched[]` (`{integration, connection_method?, plan, note}`), with `min_limits` `matched_limits[]` (`{key, value, plan}`).
+- `next_offset` is `null` on the last page. `excluded_by` (per filter, how many listings it fails on its own; only non-zero keys; may be `{}`), `matches_overview` (**only when `total_matches > returned`**, `{slug,name}` only, no `application_url`, same order as the unpaginated result), `possible_matches` (`[{slug,name,application_url,snippet}]`, when an integrations filter or `min_insured_usd` was used; insurance entries mean extended coverage offered, amount not published) are passed through from the DB. Rows with an integrations filter carry `matched[]` (`{integration, connection_method?, plan, note}`), with `min_limits` `matched_limits[]` (`{key, value, plan}`).
 - `notes`: always present, a single-line string (no `\n`, <= 300 chars) containing the words "Absent" and "not published". `hint`: present iff `returned > 0`; one line containing `search_facts`.
 - Sort (DB): hard filters exclude, then client `sort`, then target-segment rank score, then affiliate-tracked first, then monthly fee, then id.
 
@@ -83,7 +84,7 @@ Rows are JSON objects. Slim: null/false/`[]`/`{}`/`""` are omitted by the DB; ab
  "no_match": [{"slug": "...", "name": "...", "application_url": "...tagged..."}],
  "unknown_slugs": ["nope"]}
 ```
-`no_match` only when `slugs` was sent; `unknown_slugs` only when some slug is not an active checking listing. Each bank appears once in `hits` (link once per bank, however many facts). `application_url` on every hit and every `no_match` entry.
+`relaxed: true` appears when a zero-hit multi-term AND query was retried as OR. `no_match` only when `slugs` was sent; `unknown_slugs` only when some slug is not an active checking listing. Each bank appears once in `hits` (link once per bank, however many facts). `application_url` on every hit and every `no_match` entry.
 
 ### fees_by_type
 MCP result text is the **bare array** (`.results` of the DB value; `returned_ids` removed):
@@ -112,12 +113,12 @@ After the DB returns (and after `returned_ids` is removed) `runTool` runs the po
 
 | tool | paths |
 |---|---|
-| list_business_checking | `rows[]` (NOT `matches_overview[]`, NOT `possible_matches[]`) |
+| list_business_checking | `rows[]`, `possible_matches[]` (NOT `matches_overview[]`: link-free by design) |
 | search_facts | `hits[]`, `no_match[]` |
 | fees_by_type | each element of the (unwrapped) array |
 | get_listing | `listings[]` |
 
-Then `assertAllTagged(toolName, payload): void` throws `Error` (message starts `untagged application_url`) if any bank-bearing row lacks a string `application_url` that starts with `https://bancadia.com/`, has no `src`, or has no `qr`. `runTool` treats the throw as a server error (`status: 'error'`, logged as `error`; the client gets the generic internal error, never an untagged payload). `application_url` is always present on those rows, including under `fields` selection, paging and multi-slug; `matches_overview` never carries one. Legacy keeps `applyApplicationUrlHost`.
+Then `assertAllTagged(toolName, payload): void` throws `Error` (message starts `untagged application_url`) if any bank-bearing row lacks a string `application_url` that starts with `https://bancadia.com/`, has no `src`, or has no `qr`. `runTool` treats the throw as a server error (`status: 'error'`, logged as `error`; the client gets the generic internal error, never an untagged payload). `application_url` is always present on those rows, including under `fields` selection, paging and multi-slug; `possible_matches` entries are tagged and asserted like rows; `matches_overview` never carries one (by design). Legacy keeps `applyApplicationUrlHost`.
 
 ## 5. Errors
 
@@ -161,9 +162,9 @@ All routes: same auth/rate-limit/CORS/headers as today; query params are exactly
 
 ## 8. Token budgets
 
-Approximation: `tokens ~= chars / 2.6` (the divisor is calibrated so the unchanged legacy manifest, 6,982 chars, reads 2.7k tokens, which is what a real tokenizer reports for it). Do not use chars/4 (it hides the cost of JSON-heavy text).
-- v2 `tools/list` payload `JSON.stringify(tools)` <= **2,200** tokens (current manifest: 5,667 chars = 2,180). Do not shorten unit hints (e.g. the `apy_min` decimal note).
-- Default list response (no args, 7 rows, fully tagged, as the MCP text) <= **5,000** tokens (about 13,000 chars; the current DB output is about 5,000 chars).
+Guard: `tokens ~= chars / 2.16` (a fixed ratio measured on the real tokenizer for this JSON; the old chars/2.6 under-counted by about 20%). Do not use chars/4. For real counts run `cd go-to-market/demo-benchmark && npm run -s exp:tokcount -- /abs/path/file.json` (it uses that project's own key and prints only the count).
+- v2 `tools/list` payload `JSON.stringify(tools)` <= **3,400** tokens (manifest: 7,134 chars; 3,197 real tokens, up from 2,649 for 5,718 chars before the 079 filters, the full `fields` list and `query`). Do not shorten unit hints (e.g. the `apy_min` decimal note).
+- Default list response (no args, 7 rows, fully tagged, as the MCP text) <= **5,000** tokens (about 10,800 chars; the current output is about 4,000 chars).
 - `scripts/measure-tokens.mjs` prints both numbers for a running Worker or the local DB; the tests assert the same bounds.
 
 ## 9. Files 2B is expected to change or add

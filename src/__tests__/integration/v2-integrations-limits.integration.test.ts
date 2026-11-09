@@ -10,7 +10,7 @@ vi.mock('@upstash/ratelimit', () => {
 })
 // No vi.mock('../../lib/supabase'): real local Supabase, like the sibling suites.
 
-import { mcpOk, mcpErr, rpc, db, activeListings, K } from './v2-helpers'
+import { mcpOk, mcpErr, rpc, db, activeListings, expectTaggedUrl, K } from './v2-helpers'
 
 
 const list = (args: Record<string, unknown> = {}) => mcpOk('list_business_checking', { limit: 20, ...args }).then((r) => r.data)
@@ -82,12 +82,12 @@ describe('v2 integrations filters', () => {
     const d = await list({ integrations_any: ['stripe'] })
     const direct = await rpc('list_business_checking', { p_filters: { integrations_any: ['stripe'] }, p_limit: 20, p_offset: 0 })
     expect(Array.isArray(d.possible_matches)).toBe(true)
-    expect(d.possible_matches).toEqual(direct.possible_matches)
+    expect(d.possible_matches.map(({ application_url, ...p }: any) => p)).toEqual(direct.possible_matches.map(({ application_url, ...p }: any) => p))
     expect(d.possible_matches.length).toBeGreaterThan(0) // Ramp mentions Stripe in untagged text
     for (const p of d.possible_matches) {
-      expect(Object.keys(p).sort()).toEqual(['name', 'slug', 'snippet'])
+      expect(Object.keys(p).sort()).toEqual(['application_url', 'name', 'slug', 'snippet'])
       expect(slugs(d)).not.toContain(p.slug)
-      expect(p.application_url).toBeUndefined()
+      expectTaggedUrl(p.application_url, 'mcp')
     }
     expect(d.possible_matches.length).toBeLessThanOrEqual(3)
   })

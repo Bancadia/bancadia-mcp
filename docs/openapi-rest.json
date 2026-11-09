@@ -117,7 +117,7 @@
             "name": "rtp_supported",
             "in": "query",
             "required": false,
-            "description": "Any real-time payment rail",
+            "description": "Any real-time rail",
             "schema": {
               "type": "boolean"
             }
@@ -156,6 +156,63 @@
             }
           },
           {
+            "name": "remote_deposit_capture",
+            "in": "query",
+            "required": false,
+            "description": "Mobile check deposit",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "check_writing_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "multicurrency_support",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "bill_pay_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "virtual_cards_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "corporate_card_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "physical_debit_card_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "interest_bearing",
             "in": "query",
             "required": false,
@@ -167,7 +224,7 @@
             "name": "has_active_promotion",
             "in": "query",
             "required": false,
-            "description": "true: only listings with a current promotion (rows include promotions); false: none. Recorded for some banks only",
+            "description": "true: only current promotions (rows include promotions); false: none. Recorded for some banks only",
             "schema": {
               "type": "boolean"
             }
@@ -182,10 +239,19 @@
             }
           },
           {
+            "name": "min_insured_usd",
+            "in": "query",
+            "required": false,
+            "description": "Min total FDIC/extended coverage in USD; extended coverage with unpublished amount goes to possible_matches",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
             "name": "apy_min",
             "in": "query",
             "required": false,
-            "description": "Min best-case rate (apy_max) as a decimal, 0.02 = 2%. apy_default is the standard rate",
+            "description": "Min best-case rate (apy_max), decimal: 0.02 = 2%. apy_default is the standard rate",
             "schema": {
               "type": "number"
             }
@@ -194,7 +260,7 @@
             "name": "integrations_any",
             "in": "query",
             "required": false,
-            "description": "Integrates with ANY of these, e.g. quickbooks, xero, gusto, stripe, plaid (aliases like qbo work)",
+            "description": "Integrates with ANY, e.g. quickbooks, xero, stripe (aliases like qbo work)",
             "schema": {
               "type": "array",
               "items": {
@@ -208,7 +274,7 @@
             "name": "integrations_all",
             "in": "query",
             "required": false,
-            "description": "Integrates with ALL of these",
+            "description": "Integrates with ALL",
             "schema": {
               "type": "array",
               "items": {
@@ -222,7 +288,7 @@
             "name": "min_limits",
             "in": "query",
             "required": false,
-            "description": "Needs value >= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
+            "description": "Value >= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
             "schema": {
               "type": "string"
             }
@@ -231,7 +297,7 @@
             "name": "rank_industries",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes. ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
+            "description": "RANK ONLY, never excludes. e.g. ecommerce, restaurant_food_service, saas_tech",
             "schema": {
               "type": "array",
               "items": {
@@ -245,7 +311,7 @@
             "name": "rank_profiles",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes. early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
+            "description": "RANK ONLY, never excludes. e.g. early_stage_startup, vc_backed, established_smb, side_hustle",
             "schema": {
               "type": "array",
               "items": {
@@ -268,7 +334,7 @@
             "name": "fields",
             "in": "query",
             "required": false,
-            "description": "Replaces the defaults (institution_name, product_name, monthly_fee, minimum_opening_deposit, insurance_type, apy_max, apy_default, free_transactions_per_month). Others: plan_tiers, promotions, entity_types_accepted, available_states, cash_deposit_fee_per_100, outgoing_domestic_wire_fee, rtp_network, atm_network, apy_tiers. A bad name returns all valid names",
+            "description": "Replaces the defaults (institution_name, product_name, monthly_fee, minimum_opening_deposit, insurance_type, apy_max, apy_default, free_transactions_per_month). Also: institution_display_name, institution_website_url, institution_type, monthly_fee_waiver_condition, entity_types_accepted, available_states, target_industries, target_business_profiles, deposit_insurance_limit, deposit_insurance_extended, deposit_insurance_extended_limit, per_transaction_fee_after_limit, outgoing_domestic_wire_fee, free_domestic_wires_per_month, outgoing_international_wire_fee, incoming_domestic_wire_fee, incoming_international_wire_fee, cash_deposit_available, cash_deposit_fee_per_100, monthly_cash_deposit_limit, interest_bearing, apy_tiers, rtp_supported, rtp_network, physical_debit_card_available, virtual_cards_available, corporate_card_available, atm_fee_reimbursement, atm_fee_reimbursement_limit, atm_network, sub_accounts_supported, check_writing_available, bill_pay_available, remote_deposit_capture, positive_pay_available, overdraft_protection_available, overdraft_line_of_credit_available, ach_debit_block_available, multicurrency_support, daily_debit_limit, accounting_integration_available, tax_integration_available, expense_integration_available, plan_tiers, promotions, last_modified, last_verified, is_verified",
             "schema": {
               "type": "array",
               "items": {
@@ -426,7 +492,7 @@
       "get": {
         "operationId": "searchBusinessCheckingFacts",
         "summary": "Search fee and feature details across all listings",
-        "description": "Full-text search of fee and feature details across banks (e.g. 'zelle', 'overdraft'). Returns the best snippets per bank with application_url. Terms are ANDed; 'or', \"quotes\", -exclude work. data is the hits array; scanned, banks_matched, no_match and unknown_slugs are in meta. Use - in place of {listing_slug} to read across all listings. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "description": "Full-text search of fee and feature details across banks (e.g. 'zelle'). Best snippets per bank with application_url. Terms are ANDed; 'or', \"quotes\", -exclude work; long queries with no hit fall back to any-term matching (relaxed: true). data is the hits array; scanned, banks_matched, no_match and unknown_slugs are in meta. Use - in place of {listing_slug} to read across all listings. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
         "tags": [
           "Business checking"
         ],
@@ -443,7 +509,7 @@
             "name": "slugs",
             "in": "query",
             "required": false,
-            "description": "Only these listing_slugs; banks without a hit go in no_match",
+            "description": "Only these slugs; misses go in no_match",
             "schema": {
               "type": "array",
               "items": {
@@ -607,7 +673,7 @@
       "get": {
         "operationId": "compareBusinessCheckingFees",
         "summary": "Compare specific fees across all listings",
-        "description": "Compare specific fees across banks. Returns each bank's fee rows (amount, unit, free allowance, waiver, tiers). data is an array of banks. Use - in place of {listing_slug} to read across all listings. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
+        "description": "Compare specific fees across banks: each bank's fee rows (amount, unit, allowance, waiver, tiers). data is an array of banks. Use - in place of {listing_slug} to read across all listings. Every bank row's application_url is a tracked Bancadia link: give it to the user exactly as returned, including its query string.",
         "tags": [
           "Business checking"
         ],
@@ -616,7 +682,7 @@
             "name": "fee_types",
             "in": "query",
             "required": true,
-            "description": "1-3 of: monthly_maintenance, overdraft, non_sufficient_funds, account_opening, account_closing, minimum_balance, excess_transaction, atm_foreign, wire_domestic_outgoing, wire_domestic_incoming, wire_international_outgoing, wire_international_incoming, cash_deposit, paper_statement, dormancy, returned_item, stop_payment, card_replacement, foreign_transaction, other",
+            "description": "1-5 of: monthly_maintenance, overdraft, non_sufficient_funds, account_opening, account_closing, minimum_balance, excess_transaction, atm_foreign, wire_domestic_outgoing, wire_domestic_incoming, wire_international_outgoing, wire_international_incoming, cash_deposit, paper_statement, dormancy, returned_item, stop_payment, card_replacement, foreign_transaction, other",
             "schema": {
               "type": "array",
               "items": {
@@ -630,7 +696,7 @@
             "name": "slugs",
             "in": "query",
             "required": false,
-            "description": "Limit to these listing_slugs",
+            "description": "Only these listing_slugs",
             "schema": {
               "type": "array",
               "items": {
@@ -644,7 +710,7 @@
             "name": "plan",
             "in": "query",
             "required": false,
-            "description": "Plan name; default is the default plan",
+            "description": "Plan name (default plan if omitted)",
             "schema": {
               "type": "string"
             }
@@ -1515,7 +1581,7 @@
             "name": "rtp_supported",
             "in": "query",
             "required": false,
-            "description": "Any real-time payment rail",
+            "description": "Any real-time rail",
             "schema": {
               "type": "boolean"
             }
@@ -1554,6 +1620,63 @@
             }
           },
           {
+            "name": "remote_deposit_capture",
+            "in": "query",
+            "required": false,
+            "description": "Mobile check deposit",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "check_writing_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "multicurrency_support",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "bill_pay_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "virtual_cards_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "corporate_card_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "physical_debit_card_available",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
             "name": "interest_bearing",
             "in": "query",
             "required": false,
@@ -1565,7 +1688,7 @@
             "name": "has_active_promotion",
             "in": "query",
             "required": false,
-            "description": "true: only listings with a current promotion (rows include promotions); false: none. Recorded for some banks only",
+            "description": "true: only current promotions (rows include promotions); false: none. Recorded for some banks only",
             "schema": {
               "type": "boolean"
             }
@@ -1580,10 +1703,19 @@
             }
           },
           {
+            "name": "min_insured_usd",
+            "in": "query",
+            "required": false,
+            "description": "Min total FDIC/extended coverage in USD; extended coverage with unpublished amount goes to possible_matches",
+            "schema": {
+              "type": "number"
+            }
+          },
+          {
             "name": "apy_min",
             "in": "query",
             "required": false,
-            "description": "Min best-case rate (apy_max) as a decimal, 0.02 = 2%. apy_default is the standard rate",
+            "description": "Min best-case rate (apy_max), decimal: 0.02 = 2%. apy_default is the standard rate",
             "schema": {
               "type": "number"
             }
@@ -1592,7 +1724,7 @@
             "name": "integrations_any",
             "in": "query",
             "required": false,
-            "description": "Integrates with ANY of these, e.g. quickbooks, xero, gusto, stripe, plaid (aliases like qbo work)",
+            "description": "Integrates with ANY, e.g. quickbooks, xero, stripe (aliases like qbo work)",
             "schema": {
               "type": "array",
               "items": {
@@ -1606,7 +1738,7 @@
             "name": "integrations_all",
             "in": "query",
             "required": false,
-            "description": "Integrates with ALL of these",
+            "description": "Integrates with ALL",
             "schema": {
               "type": "array",
               "items": {
@@ -1620,7 +1752,7 @@
             "name": "min_limits",
             "in": "query",
             "required": false,
-            "description": "Needs value >= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
+            "description": "Value >= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
             "schema": {
               "type": "string"
             }
@@ -1629,7 +1761,7 @@
             "name": "rank_industries",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes. ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
+            "description": "RANK ONLY, never excludes. e.g. ecommerce, restaurant_food_service, saas_tech",
             "schema": {
               "type": "array",
               "items": {
@@ -1643,7 +1775,7 @@
             "name": "rank_profiles",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes. early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
+            "description": "RANK ONLY, never excludes. e.g. early_stage_startup, vc_backed, established_smb, side_hustle",
             "schema": {
               "type": "array",
               "items": {
@@ -1666,7 +1798,7 @@
             "name": "fields",
             "in": "query",
             "required": false,
-            "description": "Replaces the defaults (institution_name, product_name, monthly_fee, minimum_opening_deposit, insurance_type, apy_max, apy_default, free_transactions_per_month). Others: plan_tiers, promotions, entity_types_accepted, available_states, cash_deposit_fee_per_100, outgoing_domestic_wire_fee, rtp_network, atm_network, apy_tiers. A bad name returns all valid names",
+            "description": "Replaces the defaults (institution_name, product_name, monthly_fee, minimum_opening_deposit, insurance_type, apy_max, apy_default, free_transactions_per_month). Also: institution_display_name, institution_website_url, institution_type, monthly_fee_waiver_condition, entity_types_accepted, available_states, target_industries, target_business_profiles, deposit_insurance_limit, deposit_insurance_extended, deposit_insurance_extended_limit, per_transaction_fee_after_limit, outgoing_domestic_wire_fee, free_domestic_wires_per_month, outgoing_international_wire_fee, incoming_domestic_wire_fee, incoming_international_wire_fee, cash_deposit_available, cash_deposit_fee_per_100, monthly_cash_deposit_limit, interest_bearing, apy_tiers, rtp_supported, rtp_network, physical_debit_card_available, virtual_cards_available, corporate_card_available, atm_fee_reimbursement, atm_fee_reimbursement_limit, atm_network, sub_accounts_supported, check_writing_available, bill_pay_available, remote_deposit_capture, positive_pay_available, overdraft_protection_available, overdraft_line_of_credit_available, ach_debit_block_available, multicurrency_support, daily_debit_limit, accounting_integration_available, tax_integration_available, expense_integration_available, plan_tiers, promotions, last_modified, last_verified, is_verified",
             "schema": {
               "type": "array",
               "items": {

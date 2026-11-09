@@ -3,9 +3,9 @@ import { tagApplicationUrl, toAbsoluteApplicationUrl, APPLICATION_BASE_URL, type
 type Row = Record<string, unknown>
 type Payload = any // eslint-disable-line @typescript-eslint/no-explicit-any
 
-// Bank-bearing rows per tool (matches_overview / possible_matches are deliberately not included).
+// Bank-bearing rows per tool (matches_overview is deliberately not included: no links by design).
 const ROW_KEYS: Record<string, string[]> = {
-  list_business_checking: ['rows'],
+  list_business_checking: ['rows', 'possible_matches'],
   search_facts: ['hits', 'no_match'],
   get_listing: ['listings'],
 }

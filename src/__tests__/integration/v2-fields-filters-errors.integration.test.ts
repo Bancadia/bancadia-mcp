@@ -17,13 +17,15 @@ const list = (args: Record<string, unknown> = {}, opts: Parameters<typeof mcp>[2
   mcpOk('list_business_checking', { limit: 20, ...args }, opts).then((r) => r.data)
 const slugs = (d: any) => d.rows.map((r: any) => r.listing_slug) as string[]
 const DEFAULTS = ['institution_name', 'product_name', 'monthly_fee', 'minimum_opening_deposit', 'insurance_type', 'apy_max', 'apy_default', 'free_transactions_per_month']
+// Not selectable; appears automatically next to its parent when data exists.
+const AUTO = ['apy_max_condition', 'outgoing_domestic_wire_fee_note']
 
 // Proves: `fields` selects columns (listing_slug and application_url always stay), default rows are slim, and
 // unit-bearing values like 0 survive slimming.
 describe('v2 fields and slim rows', () => {
   it('default rows only use the default field set plus listing_slug and application_url', async () => {
     const d = await list()
-    for (const row of d.rows) for (const k of Object.keys(row)) expect([...DEFAULTS, 'listing_slug', 'application_url']).toContain(k)
+    for (const row of d.rows) for (const k of Object.keys(row)) expect([...DEFAULTS, ...AUTO, 'listing_slug', 'application_url']).toContain(k)
   })
 
   it('fields replaces the defaults but listing_slug and application_url are always present', async () => {
@@ -31,7 +33,7 @@ describe('v2 fields and slim rows', () => {
     for (const row of d.rows) {
       expect(row.listing_slug).toBeTruthy()
       expect(row.application_url).toBeTruthy()
-      for (const k of Object.keys(row)) expect(['listing_slug', 'application_url', 'apy_max', 'monthly_fee']).toContain(k)
+      for (const k of Object.keys(row)) expect(['listing_slug', 'application_url', 'apy_max', 'monthly_fee', ...AUTO]).toContain(k)
     }
   })
 
@@ -47,8 +49,8 @@ describe('v2 fields and slim rows', () => {
     expect(relay.plan_tiers.every((t: any) => typeof t.plan_name === 'string')).toBe(true)
   })
 
-  it('rows are slim: no null, false, empty string, empty array or empty object values anywhere', async () => {
-    const d = await list({ fields: ['plan_tiers', 'promotions', 'entity_types_accepted', 'cash_deposit_available', 'rtp_supported', 'apy_tiers'] })
+  it('default rows are slim: no null, false, empty string, empty array or empty object values anywhere (requested fields keep false/null by design)', async () => {
+    const d = await list()
     const bad: string[] = []
     const walk = (v: any, path: string) => {
       if (v === null || v === false || v === '' || (Array.isArray(v) && v.length === 0) || (v && typeof v === 'object' && !Array.isArray(v) && Object.keys(v).length === 0)) bad.push(path)
@@ -56,6 +58,9 @@ describe('v2 fields and slim rows', () => {
       else if (v && typeof v === 'object') for (const [k, x] of Object.entries(v)) walk(x, `${path}.${k}`)
     }
     walk(d.rows, 'rows')
+    expect(bad).toEqual([])
+    const nested = await list({ fields: ['plan_tiers', 'entity_types_accepted'] })
+    walk(nested.rows.flatMap((r: any) => r.plan_tiers ?? []), 'nested')
     expect(bad).toEqual([])
   })
 

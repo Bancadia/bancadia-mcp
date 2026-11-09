@@ -178,7 +178,7 @@ describe('v2 REST errors are 4xx problem+json with the valid values', () => {
     ['fractional limit', '/business-checking-listings?limit=2.5', /limit/],
     ['unknown parameter', '/business-checking-listings?nope=1', /nope/],
     ['bad fee type', '/business-checking-listings/-/fees?fee_types=zzz', /cash_deposit/],
-    ['too many fee types', '/business-checking-listings/-/fees?fee_types=cash_deposit,overdraft,dormancy,other', /At most 3/],
+    ['too many fee types', '/business-checking-listings/-/fees?fee_types=cash_deposit,overdraft,dormancy,other,returned_item,stop_payment', /At most 5/],
     ['missing fee_types', '/business-checking-listings/-/fees', /fee_types/],
     ['missing query', '/business-checking-listings/-/facts', /query/],
     ['bad topic', '/business-checking-listings/-/facts?query=fee&topic=zzz', /payment_rails/],
