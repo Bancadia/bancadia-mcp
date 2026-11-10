@@ -8,7 +8,7 @@ const SHAPES: Record<string, () => any> = {
   list_business_checking: () => ({
     rows: [{ listing_slug: 'a', application_url: '/go/a/x' }, { listing_slug: 'b', application_url: '/go/b/x' }],
     matches_overview: [{ slug: 'a', name: 'A' }, { slug: 'c', name: 'C' }],
-    possible_matches: [{ slug: 'd', name: 'D', snippet: 's' }],
+    possible_matches: [{ slug: 'd', name: 'D', application_url: '/go/d/x', snippet: 's' }],
   }),
   search_facts: () => ({
     hits: [{ slug: 'a', application_url: '/go/a/x', facts: [] }],
@@ -18,7 +18,7 @@ const SHAPES: Record<string, () => any> = {
   get_listing: () => ({ listings: [{ slug: 'a', application_url: '/go/a/x' }, { slug: 'b', application_url: '/go/b/x' }] }),
 }
 const rowsOf = (tool: string, p: any): any[] =>
-  tool === 'list_business_checking' ? p.rows : tool === 'search_facts' ? [...p.hits, ...p.no_match] : tool === 'fees_by_type' ? p : p.listings
+  tool === 'list_business_checking' ? [...p.rows, ...(p.possible_matches ?? [])] : tool === 'search_facts' ? [...p.hits, ...p.no_match] : tool === 'fees_by_type' ? p : p.listings
 
 // Proves: tagResponse host-prefixes and tags every bank-bearing row of every v2 response shape, and only those.
 describe('tagResponse: every response shape', () => {
@@ -35,11 +35,11 @@ describe('tagResponse: every response shape', () => {
     }
   })
 
-  it('list: matches_overview and possible_matches entries get no application_url', async () => {
+  it('list: possible_matches entries are tagged, matches_overview stays link-free', async () => {
     const { tagResponse } = await mod()
     const out = tagResponse('list_business_checking', SHAPES.list_business_checking!(), tags)
     expect(JSON.stringify(out.matches_overview)).not.toContain('application_url')
-    expect(JSON.stringify(out.possible_matches)).not.toContain('application_url')
+    expect(out.possible_matches[0].application_url).toBe(tagged('d/x'))
     expect(out.matches_overview).toEqual(SHAPES.list_business_checking!().matches_overview)
   })
 
@@ -81,7 +81,7 @@ describe('assertAllTagged (runtime assert)', () => {
     return p
   }
 
-  it.each(Object.keys(SHAPES))('%s: passes when every row is tagged (overview/possible_matches need no url)', async (tool) => {
+  it.each(Object.keys(SHAPES))('%s: passes when every row is tagged (overview needs no url)', async (tool) => {
     const { assertAllTagged } = await mod()
     expect(() => assertAllTagged(tool, okFor(tool))).not.toThrow()
   })
@@ -111,6 +111,13 @@ describe('assertAllTagged (runtime assert)', () => {
     const { assertAllTagged } = await mod()
     const p = okFor('list_business_checking')
     p.rows.push({ listing_slug: 'z' })
+    expect(() => assertAllTagged('list_business_checking', p)).toThrow(/untagged application_url/)
+  })
+
+  it('throws when a possible_matches entry has no application_url', async () => {
+    const { assertAllTagged } = await mod()
+    const p = okFor('list_business_checking')
+    delete p.possible_matches[0].application_url
     expect(() => assertAllTagged('list_business_checking', p)).toThrow(/untagged application_url/)
   })
 

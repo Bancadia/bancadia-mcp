@@ -56,6 +56,38 @@ describe('v2 argument to RPC mapping', () => {
     expect((db.rpc.mock.calls.at(-1)![1] as Json).p_filters).toEqual({ has_active_promotion: true })
   })
 
+  const NEW_BOOLS = ['remote_deposit_capture', 'check_writing_available', 'multicurrency_support', 'bill_pay_available', 'virtual_cards_available', 'corporate_card_available', 'physical_debit_card_available']
+  it.each(NEW_BOOLS)('new filter %s passes through to p_filters (false kept) and rejects non-booleans', async (k) => {
+    const db = setupDb({ list_business_checking: { data: listPayload() } })
+    await callMcp('list_business_checking', { [k]: false, rank_industries: ['ecommerce'] })
+    expect((db.rpc.mock.calls[0]![1] as Json).p_filters).toEqual({ [k]: false, target_industries: ['ecommerce'] })
+    const bad = await callMcp('list_business_checking', { [k]: 'yes' })
+    expect(bad).toMatchObject({ ok: false, code: -32602 })
+    expect(!bad.ok && bad.message).toMatch(new RegExp(k))
+  })
+
+  it('min_insured_usd passes through as a number and rejects strings', async () => {
+    const db = setupDb({ list_business_checking: { data: listPayload() } })
+    await callMcp('list_business_checking', { min_insured_usd: 300000 })
+    expect((db.rpc.mock.calls[0]![1] as Json).p_filters).toEqual({ min_insured_usd: 300000 })
+    const bad = await callMcp('list_business_checking', { min_insured_usd: '300000' })
+    expect(bad).toMatchObject({ ok: false, code: -32602 })
+  })
+
+  it('possible_matches entries are tagged and matches_overview stays link-free', async () => {
+    setupDb({ list_business_checking: { data: listPayload({ possible_matches: [{ slug: 'k', name: 'K', application_url: '/go/k/x', snippet: 's' }] }) } })
+    const r = await callMcp('list_business_checking', { min_insured_usd: 1 })
+    if (!r.ok) throw new Error(r.message)
+    expect(new URL(r.data.possible_matches[0].application_url).searchParams.get('src')).toBe('mcp')
+    expect(JSON.stringify(r.data.matches_overview)).not.toContain('application_url')
+  })
+
+  it('get_listing passes query as p_query untouched (no case folding)', async () => {
+    const db = setupDb({ get_listing_sections: { data: listingPayload() } })
+    await callMcp('get_listing', { slugs: ['A'], sections: ['features'], query: 'Zelle OR "Same Day"' })
+    expect(db.rpc.mock.calls[0]).toEqual(['get_listing_sections', { p_slugs: ['a'], p_sections: ['features'], p_query: 'Zelle OR "Same Day"' }])
+  })
+
   it('list_business_checking with no args sends only an empty filter object (DB defaults apply)', async () => {
     const db = setupDb({ list_business_checking: { data: listPayload() } })
     await callMcp('list_business_checking', {})

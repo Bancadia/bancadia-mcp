@@ -10,7 +10,7 @@ export type Json = any // eslint-disable-line @typescript-eslint/no-explicit-any
 export const db = realSupabase()
 export const K = KNOWN_SLUGS
 // approximation from docs/v2-tool-spec.md section 8
-export const approxTokens = (s: string) => Math.ceil(s.length / 2.6)
+export const approxTokens = (s: string) => Math.ceil(s.length / 2.16)
 
 export type McpResult =
   | { ok: true; data: Json; text: string; status: number }
@@ -123,10 +123,10 @@ export function deepKeys(v: Json, out: string[] = []): string[] {
 }
 export const affiliateKeys = (v: Json) => deepKeys(v).filter((k) => /^(is_affiliate|tracker_url|affiliate_)/.test(k))
 
-// Bank-bearing rows per tool (spec section 4). matches_overview / possible_matches are NOT bank-bearing.
+// Bank-bearing rows per tool (spec section 4). matches_overview is NOT bank-bearing (no links by design).
 export function bankRows(tool: string, payload: Json): Json[] {
   switch (tool) {
-    case 'list_business_checking': return payload.rows ?? []
+    case 'list_business_checking': return [...(payload.rows ?? []), ...(payload.possible_matches ?? [])]
     case 'search_facts': return [...(payload.hits ?? []), ...(payload.no_match ?? [])]
     case 'fees_by_type': return Array.isArray(payload) ? payload : payload.results ?? []
     case 'get_listing': return payload.listings ?? []

@@ -56,11 +56,11 @@ describe('v2 fees_by_type', () => {
     expect(r.fees[0].plan).toBe('all plans')
   })
 
-  it('accepts 3 fee types, rejects 4 and 0', async () => {
-    expect((await fees({ fee_types: ['cash_deposit', 'overdraft', 'dormancy'], slugs: four })).length).toBe(4)
-    const e4 = await mcpErr('fees_by_type', { fee_types: ['cash_deposit', 'overdraft', 'dormancy', 'other'] })
-    expect(e4.code).toBe(-32602)
-    expect(e4.message).toMatch(/At most 3/)
+  it('accepts 5 fee types, rejects 6 and 0', async () => {
+    expect((await fees({ fee_types: ['cash_deposit', 'overdraft', 'dormancy', 'other', 'returned_item'], slugs: four })).length).toBe(4)
+    const e6 = await mcpErr('fees_by_type', { fee_types: ['cash_deposit', 'overdraft', 'dormancy', 'other', 'returned_item', 'stop_payment'] })
+    expect(e6.code).toBe(-32602)
+    expect(e6.message).toMatch(/At most 5/)
     expect((await mcpErr('fees_by_type', { fee_types: [] })).code).toBe(-32602)
   })
 
