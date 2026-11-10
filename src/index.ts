@@ -10,6 +10,7 @@ import { createSession, validateSession, deleteSession, SESSION_HEADER } from '.
 import { type QueryMeta } from './lib/analytics'
 import { runTool, isKnownTool } from './lib/run-tool'
 import rest from './rest/router'
+import chatgpt from './chatgpt/route'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -56,6 +57,9 @@ function sendJsonRpc(
 
 // Public REST API (no session, optional bearer token)
 app.route('/v1', rest)
+
+// ChatGPT App (stateless MCP + widget resource); own tool surface, see src/chatgpt/
+app.route('/chatgpt', chatgpt)
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok' }))
