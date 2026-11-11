@@ -1510,6 +1510,7 @@ export type Database = {
           tool_name: string
           total_matches: number | null
           user_agent: string | null
+          chat_conversation_id: string | null
         }
         Insert: {
           channel?: string
@@ -1527,6 +1528,7 @@ export type Database = {
           tool_name: string
           total_matches?: number | null
           user_agent?: string | null
+          chat_conversation_id?: string | null
         }
         Update: {
           channel?: string
@@ -1544,6 +1546,7 @@ export type Database = {
           tool_name?: string
           total_matches?: number | null
           user_agent?: string | null
+          chat_conversation_id?: string | null
         }
         Relationships: [
           {

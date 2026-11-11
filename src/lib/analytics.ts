@@ -14,6 +14,9 @@ export type QueryMeta = {
   // appended as `qr` to each returned application_url, so a /go click can be
   // joined back to the exact tool call that surfaced the link.
   requestId: string
+  // Chatbot host's conversation id (ChatGPT: _meta["openai/session"]) -> query_events.chat_conversation_id.
+  // Omitted from the insert when unset so the row shape for every other call is unchanged.
+  chatConversationId?: string | null
 }
 
 export type MatchedListing = {
@@ -55,6 +58,7 @@ export async function recordQueryEvent(
       channel: meta.channel,
       user_agent: meta.userAgent?.slice(0, 512) ?? null,
       developer_id: meta.developerId,
+      ...(meta.chatConversationId ? { chat_conversation_id: meta.chatConversationId } : {}),
       query_filters: args as Json,
       status: outcome.status,
       profile: profileOfTool(meta.toolName),
