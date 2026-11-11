@@ -4,7 +4,7 @@
 // The resource URI is a cache key: bump the version suffix on breaking changes.
 export const WIDGET_URI = 'ui://widget/business-checking-v1.html'
 export const WIDGET_MIME = 'text/html;profile=mcp-app'
-// Cards shown; the model still receives every returned row and covers the rest in its writeup.
+// Cards shown before "Show N more"; the model receives every returned row and covers all of them in its writeup.
 export const CARDS_SHOWN = 3
 
 export const WIDGET_HTML = `<!doctype html>
@@ -14,14 +14,16 @@ export const WIDGET_HTML = `<!doctype html>
 @media (prefers-color-scheme:dark){:root{--bg:#1f2937;--fg:#f9fafb;--muted:#9ca3af;--line:#374151;--accent:#4ebe7a;--on-accent:#111827}}
 body{margin:0;padding:8px;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,sans-serif}
 .row{display:flex;gap:8px;overflow-x:auto}
+.row.open{flex-wrap:wrap;overflow-x:visible}
 .card{flex:0 0 220px;border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
 .inst{color:var(--muted);font-size:12px}.name{font-weight:600}
 .fee{font-size:18px;font-weight:700}
 .meta{color:var(--muted);font-size:12px}
 button{margin-top:auto;border:0;border-radius:8px;padding:8px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:600;cursor:pointer}
+button.more{margin-top:8px;background:transparent;color:var(--fg);border:1px solid var(--line)}
 button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 .foot{margin-top:6px;color:var(--muted);font-size:12px}
-</style></head><body><div id="root" role="list" class="row"></div><div id="foot" class="foot"></div>
+</style></head><body><div id="root" role="list" class="row"></div><div id="more"></div><div id="foot" class="foot"></div>
 <script>
 (function(){
 var APPLY_PREFIX='https://bancadia.com/go/';
@@ -34,30 +36,47 @@ function openApply(url){
   if(window.openai&&window.openai.openExternal){window.openai.openExternal({href:url});}
   else{rpc('ui/open-link',{url:url}).catch(function(){});}
 }
+function card(r){
+  var c=el('div','card');c.setAttribute('role','listitem');
+  c.appendChild(el('div','inst',r.institution_display_name||r.institution_name||''));
+  c.appendChild(el('div','name',r.product_name||''));
+  c.appendChild(el('div','fee',r.monthly_fee_display||'Fee not published'));
+  if(r.minimum_opening_deposit_display)c.appendChild(el('div','meta',r.minimum_opening_deposit_display));
+  if(r.apy_display)c.appendChild(el('div','meta',r.apy_display));
+  if(r.insurance_display)c.appendChild(el('div','meta',r.insurance_display));
+  if(r.last_verified)c.appendChild(el('div','meta','Verified '+String(r.last_verified).slice(0,10)));
+  var b=el('button',null,'Learn More');b.setAttribute('aria-label','Learn more about '+(r.product_name||'this account'));
+  b.addEventListener('click',function(){openApply(r.application_url);});
+  c.appendChild(b);return c;
+}
+function resize(){
+  var h=document.documentElement.scrollHeight;
+  if(window.openai&&window.openai.notifyIntrinsicHeight)window.openai.notifyIntrinsicHeight(h);
+  notify('ui/notifications/size-changed',{height:h});
+}
+var expanded=false,last=null;
 function render(data){
-  var root=document.getElementById('root'),foot=document.getElementById('foot');
-  root.textContent='';foot.textContent='';
-  var all=(data&&data.rows)||[];var rows=all.slice(0,${CARDS_SHOWN});
-  if(!rows.length){root.appendChild(el('div','meta','No matching accounts.'));return;}
-  rows.forEach(function(r){
-    var c=el('div','card');c.setAttribute('role','listitem');
-    c.appendChild(el('div','inst',r.institution_display_name||r.institution_name||''));
-    c.appendChild(el('div','name',r.product_name||''));
-    c.appendChild(el('div','fee',r.monthly_fee_display||'Fee not published'));
-    if(r.minimum_opening_deposit_display)c.appendChild(el('div','meta',r.minimum_opening_deposit_display));
-    if(r.apy_display)c.appendChild(el('div','meta',r.apy_display));
-    if(r.insurance_display)c.appendChild(el('div','meta',r.insurance_display));
-    if(r.last_verified)c.appendChild(el('div','meta','Verified '+String(r.last_verified).slice(0,10)));
-    var b=el('button',null,'Learn More');b.setAttribute('aria-label','Learn more about '+(r.product_name||'this account'));
-    b.addEventListener('click',function(){openApply(r.application_url);});
-    c.appendChild(b);root.appendChild(c);
-  });
-  if(data.total_matches>rows.length)foot.textContent='Showing '+rows.length+' of '+data.total_matches+' matches';
+  last=data;
+  var root=document.getElementById('root'),more=document.getElementById('more'),foot=document.getElementById('foot');
+  root.textContent='';more.textContent='';foot.textContent='';
+  var all=(data&&data.rows)||[];
+  if(!all.length){root.className='row';root.appendChild(el('div','meta','No matching accounts.'));resize();return;}
+  var n=expanded?all.length:Math.min(all.length,${CARDS_SHOWN});
+  root.className='row'+(expanded?' open':'');
+  all.slice(0,n).forEach(function(r){root.appendChild(card(r));});
+  if(all.length>${CARDS_SHOWN}){
+    var t=el('button','more',expanded?'Show fewer':'Show '+(all.length-${CARDS_SHOWN})+' more');
+    t.setAttribute('aria-expanded',String(expanded));
+    t.addEventListener('click',function(){expanded=!expanded;render(last);});
+    more.appendChild(t);
+  }
+  if(data.total_matches>n)foot.textContent='Showing '+n+' of '+data.total_matches+' matches';
+  resize();
 }
 window.addEventListener('message',function(e){
   if(e.source!==parent)return;var m=e.data;if(!m||m.jsonrpc!=='2.0')return;
   if(m.id!==undefined&&!m.method){var p=pending[m.id];if(p){delete pending[m.id];m.error?p.rej(m.error):p.res(m.result);}return;}
-  if(m.method==='ui/notifications/tool-result'&&m.params)render(m.params.structuredContent);
+  if(m.method==='ui/notifications/tool-result'&&m.params){expanded=false;render(m.params.structuredContent);}
 });
 rpc('ui/initialize',{appInfo:{name:'bancadia-business-checking',version:'0.1.0'},appCapabilities:{},protocolVersion:'2026-01-26'})
   .then(function(){notify('ui/notifications/initialized',{});}).catch(function(){});

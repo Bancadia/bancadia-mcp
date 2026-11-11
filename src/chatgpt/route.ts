@@ -30,11 +30,11 @@ const CONTEXT_FIELDS = [
 ]
 
 const GROUNDING =
-  'Search US business checking accounts by the customer\'s needs. The user sees cards (name, fee, opening deposit, APY, insurance, Learn More button) for only the first ' + CARDS_SHOWN + ' returned rows; you receive every returned row (up to ' + MAX_LIMIT + '). ' +
+  'Search US business checking accounts by the customer\'s needs. The user sees cards (name, fee, opening deposit, APY, insurance, Learn More button) for the first ' + CARDS_SHOWN + ' returned rows, with the remaining rows behind a Show more button; you receive every returned row (up to ' + MAX_LIMIT + '). ' +
   'RESPONSE STYLE: never list or restate the cards, and never write or repeat application_url or any link (the Learn More buttons handle it). ' +
-  'Write 2-4 sentences of analysis the cards cannot give: what actually separates these options in the returned fields (e.g. which pay APY and what unlocks it, extended deposit insurance, cash-deposit limits or fees, transaction limits, integrations), naming a bank only where a difference matters, and cover the rows without a card by name too when they differ (they have no card, so do not imply they matter less, and never call any result top, best or leading). ' +
+  'Write 2-4 sentences of analysis the cards cannot give: what actually separates these options in the returned fields (e.g. which pay APY and what unlocks it, extended deposit insurance, cash-deposit limits or fees, transaction limits, integrations), naming a bank only where a difference matters, and cover the rows behind Show more by name too when they differ (they are one click away, so do not imply they matter less, and never call any result top, best or leading). ' +
   'If the user stated their circumstances (entity type, state, industry, cash use, balance, priorities), say which results fit best and why in terms of those circumstances, citing the fields. ' +
-  'If they did not, do not pick a winner: end by asking up to 4 short questions about what most changes the answer (business entity type, whether they deposit cash, top priority, typical balance), each answerable with a filter of this tool, offered as choices. ' +
+  'If they did not, do not pick a winner; help them narrow the options by asking what most changes the answer. ' +
   'GROUNDING: use ONLY values in the returned data; never state a rate, fee, limit, feature, promotion or eligibility rule that is not in it, never fill gaps from general knowledge, never mention banks that were not returned. ' +
   'An absent field means the data does not show it (not offered or not published): say so. If nothing matches, say so and suggest loosening filters. Do not imply ranking or preference. ' +
   'Units: when you mention a fee, deposit or APY, quote the row\'s monthly_fee_display / minimum_opening_deposit_display / apy_display / insurance_display strings (monthly_fee and minimum_opening_deposit are US dollars, never percentages; apy_* are fractions, 0.033 = 3.3%). ' +
@@ -155,7 +155,7 @@ chatgpt.post('/mcp', async (c) => {
         structuredContent: structured,
         content: [{
           type: 'text',
-          text: `${n} of ${String(structured.total_matches)} matching accounts shown as cards. Do not list or restate the cards or write any links. Add analysis of what separates the options, using only fields in structuredContent; if the customer's circumstances are unknown, ask up to 4 narrowing questions instead of picking a winner.`,
+          text: `${n} of ${String(structured.total_matches)} matching accounts shown as cards. Do not list or restate the cards or write any links. Add analysis of what separates the options, using only fields in structuredContent; if the customer's circumstances are unknown, do not pick a winner; help them narrow the options.`,
         }],
       })
     }
