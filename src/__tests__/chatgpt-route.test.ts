@@ -73,6 +73,10 @@ describe('chatgpt MCP surface', () => {
     expect(tool.description).toMatch(/default 8, max 8/)
     expect(tool.description).not.toMatch(/\$\{/) // no un-interpolated template text
     expect(WIDGET_HTML).toContain('all.slice(0,3)')
+    expect(WIDGET_HTML).toContain("'Learn More'")
+    expect(WIDGET_HTML).toContain('--accent:#4ebe7a') // Bancadia logo green; keep dark button text (white is 2.3:1 on it, fails WCAG AA)
+    expect(WIDGET_HTML).toContain('color:var(--on-accent)')
+    expect(tool.description).toMatch(/Learn More buttons handle it/)
     expect(limit.description).toMatch(/Omit unless the user asks/)
   })
 

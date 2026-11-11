@@ -10,15 +10,15 @@ export const CARDS_SHOWN = 3
 export const WIDGET_HTML = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
-:root{--bg:#fff;--fg:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#0f766e}
-@media (prefers-color-scheme:dark){:root{--bg:#1f2937;--fg:#f9fafb;--muted:#9ca3af;--line:#374151;--accent:#2dd4bf}}
+:root{--bg:#fff;--fg:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#4ebe7a;--on-accent:#111827}
+@media (prefers-color-scheme:dark){:root{--bg:#1f2937;--fg:#f9fafb;--muted:#9ca3af;--line:#374151;--accent:#4ebe7a;--on-accent:#111827}}
 body{margin:0;padding:8px;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,sans-serif}
 .row{display:flex;gap:8px;overflow-x:auto}
 .card{flex:0 0 220px;border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
 .inst{color:var(--muted);font-size:12px}.name{font-weight:600}
 .fee{font-size:18px;font-weight:700}
 .meta{color:var(--muted);font-size:12px}
-button{margin-top:auto;border:0;border-radius:8px;padding:8px;background:var(--accent);color:#fff;font:inherit;font-weight:600;cursor:pointer}
+button{margin-top:auto;border:0;border-radius:8px;padding:8px;background:var(--accent);color:var(--on-accent);font:inherit;font-weight:600;cursor:pointer}
 button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 .foot{margin-top:6px;color:var(--muted);font-size:12px}
 </style></head><body><div id="root" role="list" class="row"></div><div id="foot" class="foot"></div>
@@ -48,7 +48,7 @@ function render(data){
     if(r.apy_display)c.appendChild(el('div','meta',r.apy_display));
     if(r.insurance_display)c.appendChild(el('div','meta',r.insurance_display));
     if(r.last_verified)c.appendChild(el('div','meta','Verified '+String(r.last_verified).slice(0,10)));
-    var b=el('button',null,'Apply');b.setAttribute('aria-label','Apply for '+(r.product_name||'this account'));
+    var b=el('button',null,'Learn More');b.setAttribute('aria-label','Learn more about '+(r.product_name||'this account'));
     b.addEventListener('click',function(){openApply(r.application_url);});
     c.appendChild(b);root.appendChild(c);
   });

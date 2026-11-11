@@ -34,14 +34,14 @@ describe('presentRow', () => {
   it('formats dollars so a $0 fee can never read as 0%, and keeps raw values', () => {
     const r = presentRow({ monthly_fee: 0, minimum_opening_deposit: 0, apy_max: null })
     expect(r.monthly_fee_display).toBe('$0/month')
-    expect(r.minimum_opening_deposit_display).toBe('$0 to open')
+    expect(r.minimum_opening_deposit_display).toBe('$0 minimum deposit to open')
     expect(r.apy_display).toBeUndefined()
     expect(r.monthly_fee).toBe(0)
   })
   it('formats cents and thousands', () => {
     const r = presentRow({ monthly_fee: 14.5, minimum_opening_deposit: 1500 })
     expect(r.monthly_fee_display).toBe('$14.5/month')
-    expect(r.minimum_opening_deposit_display).toBe('$1,500 to open')
+    expect(r.minimum_opening_deposit_display).toBe('$1,500 minimum deposit to open')
   })
   it('omits fee/deposit/APY strings for unpublished values instead of inventing them', () => {
     const r = presentRow({ product_name: 'X' })

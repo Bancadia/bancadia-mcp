@@ -38,7 +38,7 @@ export function presentRow(r: Row): Row {
   return {
     ...r,
     ...(fee !== null ? { monthly_fee_display: `${usd(fee)}/month` } : {}),
-    ...(dep !== null ? { minimum_opening_deposit_display: `${usd(dep)} to open` } : {}),
+    ...(dep !== null ? { minimum_opening_deposit_display: `${usd(dep)} minimum deposit to open` } : {}),
     ...(apy ? { apy_display: apy } : {}),
     insurance_display: insuranceDisplay(r.insurance_type, r.deposit_insurance_extended, r.deposit_insurance_extended_limit),
   }
