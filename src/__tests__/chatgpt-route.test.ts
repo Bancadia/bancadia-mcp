@@ -14,6 +14,7 @@ import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:
 import app from '../index'
 import { setupDb, callMcp, listPayload, type Json } from './v2-unit-helpers'
 import { TOOLS_V2 } from '../lib/tools-v2'
+import { WIDGET_HTML } from '../chatgpt/widget'
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -65,6 +66,14 @@ describe('chatgpt MCP surface', () => {
     expect(rest).toEqual(v2Rest) // no filter dropped, none changed
     expect(limit.maximum).toBe(8)
     expect(tool.description).toMatch(/ONLY values in the returned data/)
+    expect(tool.description).toMatch(/never percentages/)
+    expect(tool.description).toMatch(/never list or restate the cards, and never write or repeat application_url/i)
+    expect(tool.description).toMatch(/do not pick a winner/)
+    expect(tool.description).toMatch(/only the first 3 returned rows; you receive every returned row \(up to 8\)/)
+    expect(tool.description).toMatch(/default 8, max 8/)
+    expect(tool.description).not.toMatch(/\$\{/) // no un-interpolated template text
+    expect(WIDGET_HTML).toContain('all.slice(0,3)')
+    expect(limit.description).toMatch(/Omit unless the user asks/)
   })
 
   it('resources/read serves the widget as mcp-app html; unknown uri errors', async () => {
@@ -77,16 +86,18 @@ describe('chatgpt MCP surface', () => {
     expect(missing.body.error.code).toBe(-32002)
   })
 
-  it('tools/call: defaults limit to 4, always requests card fields, returns structuredContent, logs channel=chatgpt without a session', async () => {
+  it('tools/call: defaults limit to 8 (cards show 3, writeup covers the rest), always requests card fields, returns structuredContent, logs channel=chatgpt without a session', async () => {
     const db = setupDb({ list_business_checking: { data: listPayload() } })
     const { body } = await rpc('tools/call', { name: 'search_business_checking', arguments: { monthly_fee_max: 0, fields: ['apy_tiers'] } })
     const call = db.rpc.mock.calls[0]!
-    expect(call[1].p_limit).toBe(4)
+    expect(call[1].p_limit).toBe(8)
     expect(call[1].p_fields).toEqual(expect.arrayContaining(['monthly_fee', 'last_verified', 'product_name', 'apy_tiers']))
     expect(body.result.structuredContent.rows).toHaveLength(2)
     expect(body.result.structuredContent.hint).toBeUndefined()
+    expect(body.result.structuredContent.rows[0].monthly_fee_display).toBeUndefined() // fixture row has no fee: nothing invented
     expect(body.result.structuredContent.rows[0].application_url).toMatch(/^https:\/\/bancadia\.com\/go\/.*[?&]src=chatgpt&/)
-    expect(body.result.content[0].text).toMatch(/do not restate the table/)
+    expect(body.result.content[0].text).toMatch(/Do not list or restate the cards or write any links/)
+    expect(call[1].p_fields).toEqual(expect.arrayContaining(['apy_default', 'deposit_insurance_extended', 'cash_deposit_available', 'outgoing_domestic_wire_fee'])) // card + model-context fields
     expect(db.eventInsert.mock.calls[0]![0]).toMatchObject({ channel: 'chatgpt', session_id: null, tool_name: 'list_business_checking' })
   })
 

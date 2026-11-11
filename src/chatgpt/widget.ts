@@ -4,6 +4,8 @@
 // The resource URI is a cache key: bump the version suffix on breaking changes.
 export const WIDGET_URI = 'ui://widget/business-checking-v1.html'
 export const WIDGET_MIME = 'text/html;profile=mcp-app'
+// Cards shown; the model still receives every returned row and covers the rest in its writeup.
+export const CARDS_SHOWN = 3
 
 export const WIDGET_HTML = `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
@@ -26,7 +28,6 @@ var APPLY_PREFIX='https://bancadia.com/go/';
 var nextId=1,pending={};
 function rpc(method,params){return new Promise(function(res,rej){var id=nextId++;pending[id]={res:res,rej:rej};parent.postMessage({jsonrpc:'2.0',id:id,method:method,params:params},'*');});}
 function notify(method,params){parent.postMessage({jsonrpc:'2.0',method:method,params:params},'*');}
-function money(n){return '$'+Number(n).toLocaleString('en-US',{maximumFractionDigits:2});}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}
 function openApply(url){
   if(typeof url!=='string'||url.indexOf(APPLY_PREFIX)!==0)return;
@@ -36,16 +37,16 @@ function openApply(url){
 function render(data){
   var root=document.getElementById('root'),foot=document.getElementById('foot');
   root.textContent='';foot.textContent='';
-  var rows=(data&&data.rows)||[];
+  var all=(data&&data.rows)||[];var rows=all.slice(0,${CARDS_SHOWN});
   if(!rows.length){root.appendChild(el('div','meta','No matching accounts.'));return;}
   rows.forEach(function(r){
     var c=el('div','card');c.setAttribute('role','listitem');
     c.appendChild(el('div','inst',r.institution_display_name||r.institution_name||''));
     c.appendChild(el('div','name',r.product_name||''));
-    c.appendChild(el('div','fee',r.monthly_fee===0?'No monthly fee':(r.monthly_fee==null?'Fee not published':money(r.monthly_fee)+'/mo')));
-    if(r.minimum_opening_deposit!=null)c.appendChild(el('div','meta',r.minimum_opening_deposit===0?'No minimum to open':money(r.minimum_opening_deposit)+' to open'));
-    if(r.apy_max)c.appendChild(el('div','meta','Up to '+r.apy_max+'% APY'));
-    if(r.insurance_type)c.appendChild(el('div','meta',String(r.insurance_type).toUpperCase()+' insured'));
+    c.appendChild(el('div','fee',r.monthly_fee_display||'Fee not published'));
+    if(r.minimum_opening_deposit_display)c.appendChild(el('div','meta',r.minimum_opening_deposit_display));
+    if(r.apy_display)c.appendChild(el('div','meta',r.apy_display));
+    if(r.insurance_display)c.appendChild(el('div','meta',r.insurance_display));
     if(r.last_verified)c.appendChild(el('div','meta','Verified '+String(r.last_verified).slice(0,10)));
     var b=el('button',null,'Apply');b.setAttribute('aria-label','Apply for '+(r.product_name||'this account'));
     b.addEventListener('click',function(){openApply(r.application_url);});

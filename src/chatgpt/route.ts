@@ -5,34 +5,47 @@ import { runTool } from '../lib/run-tool'
 import { rateLimit } from '../lib/rate-limit'
 import { validateOrigin } from '../lib/origin'
 import type { QueryMeta } from '../lib/analytics'
-import { WIDGET_URI, WIDGET_MIME, WIDGET_HTML } from './widget'
+import { WIDGET_URI, WIDGET_MIME, WIDGET_HTML, CARDS_SHOWN } from './widget'
+import { presentRow } from './present'
 
 // ChatGPT App surface: stateless MCP over plain JSON (no Mcp-Session-Id), noauth,
 // read-only. Reuses the v2 list handler via runTool, so query logic is not duplicated.
 const PROTOCOL_VERSIONS = ['2025-06-18', '2025-03-26', '2024-11-05']
 const TOOL_NAME = 'search_business_checking'
 const V2_NAME = 'list_business_checking'
-const DEFAULT_LIMIT = 4
+const DEFAULT_LIMIT = 8 // cards show CARDS_SHOWN; the writeup covers the remaining rows
 const MAX_LIMIT = 8
 // The card always needs these, whatever `fields` the model asks for (v2 `fields` replaces defaults).
 const CARD_FIELDS = [
   'institution_name', 'institution_display_name', 'product_name', 'monthly_fee',
-  'minimum_opening_deposit', 'insurance_type', 'apy_max', 'last_verified',
+  'minimum_opening_deposit', 'insurance_type', 'deposit_insurance_extended', 'deposit_insurance_extended_limit',
+  'apy_max', 'apy_default', 'last_verified',
+]
+// Not on the card: gives the model something to say that the card can't. Without these it can only
+// restate the card. Requested (not defaulted) so false = not offered and null = not published.
+const CONTEXT_FIELDS = [
+  'free_transactions_per_month', 'per_transaction_fee_after_limit', 'cash_deposit_available',
+  'cash_deposit_fee_per_100', 'monthly_cash_deposit_limit', 'outgoing_domestic_wire_fee',
+  'physical_debit_card_available', 'atm_fee_reimbursement', 'accounting_integration_available',
 ]
 
 const GROUNDING =
-  'Search US business checking accounts by the customer\'s needs. A card carousel of the results is shown to the user, so do NOT restate the table. ' +
-  'Instead, explain briefly why each recommended bank fits THIS customer\'s stated circumstances, citing the specific returned fields that support it, plus the main trade-off. ' +
-  'Use ONLY values in the returned data: never state a rate, fee, limit, feature, promotion or eligibility rule that is not in it, never fill gaps from general knowledge, and never mention banks that were not returned. ' +
-  'An absent field means the data does not show it (not offered or not published): say so. If nothing matches, say so and suggest loosening filters. ' +
-  'Do not imply ranking or preference among banks. Give application_url to the user exactly as returned. Returns up to `limit` rows (default 4, max 8); use next_offset as offset for more.'
+  'Search US business checking accounts by the customer\'s needs. The user sees cards (name, fee, opening deposit, APY, insurance, Apply button) for only the first ' + CARDS_SHOWN + ' returned rows; you receive every returned row (up to ' + MAX_LIMIT + '). ' +
+  'RESPONSE STYLE: never list or restate the cards, and never write or repeat application_url or any link (the Apply buttons handle it). ' +
+  'Write 2-4 sentences of analysis the cards cannot give: what actually separates these options in the returned fields (e.g. which pay APY and what unlocks it, extended deposit insurance, cash-deposit limits or fees, transaction limits, integrations), naming a bank only where a difference matters, and cover the rows without a card by name too when they differ (they have no card, so do not imply they matter less, and never call any result top, best or leading). ' +
+  'If the user stated their circumstances (entity type, state, industry, cash use, balance, priorities), say which results fit best and why in terms of those circumstances, citing the fields. ' +
+  'If they did not, do not pick a winner: end by asking up to 4 short questions about what most changes the answer (business entity type, whether they deposit cash, top priority, typical balance), each answerable with a filter of this tool, offered as choices. ' +
+  'GROUNDING: use ONLY values in the returned data; never state a rate, fee, limit, feature, promotion or eligibility rule that is not in it, never fill gaps from general knowledge, never mention banks that were not returned. ' +
+  'An absent field means the data does not show it (not offered or not published): say so. If nothing matches, say so and suggest loosening filters. Do not imply ranking or preference. ' +
+  'Units: when you mention a fee, deposit or APY, quote the row\'s monthly_fee_display / minimum_opening_deposit_display / apy_display / insurance_display strings (monthly_fee and minimum_opening_deposit are US dollars, never percentages; apy_* are fractions, 0.033 = 3.3%). ' +
+  'Omit `limit` unless the user asks for fewer or more results (default ' + DEFAULT_LIMIT + ', max ' + MAX_LIMIT + '); use next_offset as offset for more.'
 
 const base = TOOLS_V2.find((t) => t.name === V2_NAME)!
 const inputSchema = {
   ...base.inputSchema,
   properties: {
     ...base.inputSchema.properties,
-    limit: { type: 'integer', minimum: 1, maximum: MAX_LIMIT, description: `Rows per page (default ${DEFAULT_LIMIT}, max ${MAX_LIMIT})` },
+    limit: { type: 'integer', minimum: 1, maximum: MAX_LIMIT, description: `Rows per page. Omit unless the user asks for fewer or more (default ${DEFAULT_LIMIT}, max ${MAX_LIMIT})` },
   },
 }
 
@@ -116,7 +129,7 @@ chatgpt.post('/mcp', async (c) => {
 
       const args = { ...((params.arguments as Record<string, unknown>) ?? {}) }
       args.limit = Math.min(Math.max(Number(args.limit) || DEFAULT_LIMIT, 1), MAX_LIMIT)
-      args.fields = [...new Set([...CARD_FIELDS, ...((args.fields as string[] | undefined) ?? [])])]
+      args.fields = [...new Set([...CARD_FIELDS, ...CONTEXT_FIELDS, ...((args.fields as string[] | undefined) ?? [])])]
 
       const meta: QueryMeta = {
         toolName: V2_NAME,
@@ -132,13 +145,17 @@ chatgpt.post('/mcp', async (c) => {
         return ok({ isError: true, content: [{ type: 'text', text }] })
       }
       // `hint` points at v2 tools this surface does not expose.
-      const { hint: _hint, ...structured } = r.results as Record<string, unknown>
-      const n = (structured.rows as unknown[]).length
+      const { hint: _hint, ...rest } = r.results as Record<string, unknown>
+      const structured: Record<string, unknown> & { rows: Record<string, unknown>[] } = {
+        ...rest,
+        rows: (rest.rows as Record<string, unknown>[]).map(presentRow),
+      }
+      const n = structured.rows.length
       return ok({
         structuredContent: structured,
         content: [{
           type: 'text',
-          text: `${n} of ${String(structured.total_matches)} matching accounts shown as cards. Explain why each fits the customer using only fields in structuredContent; do not restate the table or add facts not in the data.`,
+          text: `${n} of ${String(structured.total_matches)} matching accounts shown as cards. Do not list or restate the cards or write any links. Add analysis of what separates the options, using only fields in structuredContent; if the customer's circumstances are unknown, ask up to 4 narrowing questions instead of picking a winner.`,
         }],
       })
     }
