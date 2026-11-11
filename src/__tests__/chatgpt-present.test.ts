@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { apyDisplay, insuranceDisplay, presentRow } from '../chatgpt/present'
+import { unknownFieldNames, shapeData } from '../chatgpt/tools'
 
 // Cases are real production rows (APY is stored as a fraction: 0.033 = 3.3%).
 describe('apyDisplay', () => {
@@ -46,5 +47,24 @@ describe('presentRow', () => {
   it('omits fee/deposit/APY strings for unpublished values instead of inventing them', () => {
     const r = presentRow({ product_name: 'X' })
     expect(Object.keys(r).sort()).toEqual(['insurance_display', 'product_name'])
+  })
+})
+
+describe('unknownFieldNames', () => {
+  it('reads the offenders from the v2 error text (as logged in prod)', () => {
+    expect(unknownFieldNames('Unknown field: monthly_fee_display, minimum_opening_deposit_display, apy_display, integrations. Valid fields: institution_name, product_name')).toEqual(
+      ['monthly_fee_display', 'minimum_opening_deposit_display', 'apy_display', 'integrations'])
+    expect(unknownFieldNames('Unknown field: integrations_any, integrations_all. Valid fields: a')).toEqual(['integrations_any', 'integrations_all'])
+  })
+  it('ignores other messages', () => {
+    expect(unknownFieldNames('Unknown sort: bogus')).toEqual([])
+    expect(unknownFieldNames('Missing required argument: slugs')).toEqual([])
+  })
+})
+
+describe('shapeData', () => {
+  it('wraps a bare array and removes application_url at any depth', () => {
+    expect(shapeData([{ slug: 'a', application_url: 'https://x', fees: [{ amount: 1 }] }])).toEqual({ results: [{ slug: 'a', fees: [{ amount: 1 }] }] })
+    expect(shapeData({ hits: [{ application_url: 'u', no: { application_url: 'v', keep: 1 } }] })).toEqual({ hits: [{ no: { keep: 1 } }] })
   })
 })

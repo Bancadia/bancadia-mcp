@@ -19,6 +19,13 @@ export type QueryMeta = {
   chatConversationId?: string | null
 }
 
+// The one place a call's QueryMeta is assembled (MCP, REST and ChatGPT). requestId defaults to a fresh
+// UUID; REST passes the one it already put in the X-Request-Id header.
+export const newQueryMeta = (
+  req: Request,
+  m: Omit<QueryMeta, 'requestId' | 'userAgent'> & { requestId?: string }
+): QueryMeta => ({ ...m, userAgent: req.headers.get('User-Agent'), requestId: m.requestId ?? crypto.randomUUID() })
+
 export type MatchedListing = {
   listingId: string
   institutionId: string | null

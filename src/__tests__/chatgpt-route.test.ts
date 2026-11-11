@@ -12,9 +12,10 @@ vi.mock('../lib/supabase', () => ({ createSupabaseClient: vi.fn() }))
 
 import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:test'
 import app from '../index'
-import { setupDb, callMcp, listPayload, listingPayload, type Json } from './v2-unit-helpers'
+import { setupDb, callMcp, listPayload, listingPayload, factsPayload, feesPayload, type Json } from './v2-unit-helpers'
 import { TOOLS_V2 } from '../lib/tools-v2'
 import { WIDGET_HTML } from '../chatgpt/widget'
+import { LISTING_SLUGS } from '../chatgpt/tools'
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -79,7 +80,7 @@ describe('chatgpt MCP surface', () => {
     const { body } = await rpc('tools/list')
     for (const t of body.result.tools) expect(t.description).not.toMatch(/question|pick a winner|offered as choices/i)
     setupDb({ list_business_checking: { data: listPayload() } })
-    const call = await rpc('tools/call', { name: 'search_business_checking', arguments: {} })
+    const call = await rpc('tools/call', { name: 'list_business_checking', arguments: {} })
     expect(call.body.result.content[0].text).not.toMatch(/question|pick a winner/i)
   })
 
@@ -106,7 +107,7 @@ describe('chatgpt MCP surface', () => {
 
   it('tools/call: defaults limit to 5, always requests card fields, returns structuredContent, logs channel=chatgpt without a session', async () => {
     const db = setupDb({ list_business_checking: { data: listPayload() } })
-    const { body } = await rpc('tools/call', { name: 'search_business_checking', arguments: { monthly_fee_max: 0, fields: ['apy_tiers'] } })
+    const { body } = await rpc('tools/call', { name: 'list_business_checking', arguments: { monthly_fee_max: 0, fields: ['apy_tiers'] } })
     const call = db.rpc.mock.calls[0]!
     expect(call[1].p_limit).toBe(5)
     expect(call[1].p_fields).toEqual(expect.arrayContaining(['monthly_fee', 'last_verified', 'product_name', 'apy_tiers']))
@@ -122,13 +123,13 @@ describe('chatgpt MCP surface', () => {
 
   it('tools/call: limit is clamped to 5', async () => {
     const db = setupDb({ list_business_checking: { data: listPayload() } })
-    await rpc('tools/call', { name: 'search_business_checking', arguments: { limit: 20 } })
+    await rpc('tools/call', { name: 'list_business_checking', arguments: { limit: 20 } })
     expect(db.rpc.mock.calls[0]![1].p_limit).toBe(5)
   })
 
   it('tools/call: invalid args come back as an isError result, not a transport error', async () => {
     setupDb({ list_business_checking: { data: listPayload() } })
-    const { body } = await rpc('tools/call', { name: 'search_business_checking', arguments: { monthly_fee_max: 'free' } })
+    const { body } = await rpc('tools/call', { name: 'list_business_checking', arguments: { monthly_fee_max: 'free' } })
     expect(body.result.isError).toBe(true)
     expect(body.result.content[0].text).toMatch(/monthly_fee_max/)
   })
@@ -177,7 +178,7 @@ describe('chatgpt MCP surface', () => {
   it('records ChatGPT\'s conversation id on search AND get_listing so the two can be joined', async () => {
     const db = setupDb({ list_business_checking: { data: listPayload() }, get_listing_sections: { data: listingPayload() } })
     const _meta = { 'openai/session': 'conv-abc-123', 'openai/subject': 'user-xyz' }
-    await rpc('tools/call', { name: 'search_business_checking', arguments: {}, _meta })
+    await rpc('tools/call', { name: 'list_business_checking', arguments: {}, _meta })
     await rpc('tools/call', { name: 'get_listing', arguments: { slugs: ['a-bank'] }, _meta })
     const rows = db.eventInsert.mock.calls.map((c) => c[0])
     expect(rows.map((r: Json) => [r.tool_name, r.chat_conversation_id])).toEqual([
@@ -189,11 +190,92 @@ describe('chatgpt MCP surface', () => {
 
   it('conversation id is untrusted input: non-strings are ignored, long values are capped at 200 chars', async () => {
     const db = setupDb({ list_business_checking: { data: listPayload() } })
-    await rpc('tools/call', { name: 'search_business_checking', arguments: {}, _meta: { 'openai/session': { nested: true } } })
-    await rpc('tools/call', { name: 'search_business_checking', arguments: {}, _meta: { 'openai/session': 'x'.repeat(500) } })
+    await rpc('tools/call', { name: 'list_business_checking', arguments: {}, _meta: { 'openai/session': { nested: true } } })
+    await rpc('tools/call', { name: 'list_business_checking', arguments: {}, _meta: { 'openai/session': 'x'.repeat(500) } })
     const [a, b] = db.eventInsert.mock.calls.map((c) => c[0])
     expect(a).not.toHaveProperty('chat_conversation_id')
     expect(b.chat_conversation_id).toHaveLength(200)
+  })
+
+  it('every pass-through tool keeps its v2 input schema (same properties and required), links off, read-only', async () => {
+    const { body } = await rpc('tools/list')
+    expect(body.result.tools.map((t: Json) => t.name)).toEqual(['list_business_checking', 'get_listing', 'search_facts', 'fees_by_type'])
+    for (const name of ['get_listing', 'search_facts', 'fees_by_type']) {
+      const t = body.result.tools.find((x: Json) => x.name === name)
+      const v2 = TOOLS_V2.find((x) => x.name === name)!.inputSchema as Json
+      expect(Object.keys(t.inputSchema.properties), name).toEqual(Object.keys(v2.properties)) // drift guard: nothing dropped
+      expect(t.inputSchema.required, name).toEqual(v2.required)
+      expect(t.annotations, name).toEqual({ readOnlyHint: true, destructiveHint: false, openWorldHint: false })
+      expect(t._meta.ui, name).toBeUndefined()
+      expect(t.description, name).toMatch(/ONLY values in the returned data/)
+      expect(t.description, name).not.toMatch(/application_url/) // links are stripped on this surface
+    }
+    expect(TOOLS_V2.find((x) => x.name === 'search_facts')!.description).toMatch(/application_url/) // v2 wording is adapted, not edited
+  })
+
+  it('known slugs are listed once, in get_listing, as plain text (not an enum), so a bank named cold needs no list call', async () => {
+    const { body } = await rpc('tools/list')
+    const tool = (n: string) => body.result.tools.find((t: Json) => t.name === n)
+    const desc = tool('get_listing').inputSchema.properties.slugs.description as string
+    for (const slug of LISTING_SLUGS) expect(desc).toContain(slug)
+    expect(desc).toMatch(/call list_business_checking and read its rows or matches_overview/)
+    for (const n of ['search_facts', 'fees_by_type']) {
+      const d = tool(n).inputSchema.properties.slugs.description as string
+      expect(d).toMatch(/same listing_slugs as get_listing/)
+      expect(d).not.toContain(LISTING_SLUGS[0]) // listed once, not tripled
+    }
+    for (const n of ['get_listing', 'search_facts', 'fees_by_type']) expect(tool(n).inputSchema.properties.slugs.items.enum).toBeUndefined() // an enum would block new listings
+    expect([...LISTING_SLUGS].sort()).toEqual([...LISTING_SLUGS]) // sorted, so the drift diff is readable
+    expect(new Set(LISTING_SLUGS).size).toBe(LISTING_SLUGS.length)
+    expect(LISTING_SLUGS.every((s) => /^[a-z0-9-]+$/.test(s))).toBe(true)
+  })
+
+  it('search_facts and fees_by_type reach the shared v2 handlers, return object structuredContent, strip links, log with the conversation id', async () => {
+    const db = setupDb({ search_listing_facts: { data: factsPayload() }, fees_by_type: { data: feesPayload() } })
+    const _meta = { 'openai/session': 'conv-facts' }
+    const facts = await rpc('tools/call', { name: 'search_facts', arguments: { query: 'zelle' }, _meta })
+    const fees = await rpc('tools/call', { name: 'fees_by_type', arguments: { fee_types: ['cash_deposit'] }, _meta })
+    expect(db.rpc.mock.calls.map((c) => c[0])).toEqual(['search_listing_facts', 'fees_by_type'])
+    expect(facts.body.result.structuredContent.hits[0].facts[0].topic).toBe('fees')
+    expect(Array.isArray(fees.body.result.structuredContent)).toBe(false) // v2 returns a bare array; wrapped for structuredContent
+    expect(fees.body.result.structuredContent.results[0].fees[0].fee_type).toBe('cash_deposit')
+    expect(JSON.stringify([facts.body.result, fees.body.result])).not.toMatch(/application_url|bancadia\.com\/go/)
+    expect(db.eventInsert.mock.calls.map((c) => [c[0].tool_name, c[0].channel, c[0].chat_conversation_id])).toEqual([
+      ['search_facts', 'chatgpt', 'conv-facts'],
+      ['fees_by_type', 'chatgpt', 'conv-facts'],
+    ])
+  })
+
+  it('search: *_display names are never requested as columns, so the model asking for them cannot fail the call', async () => {
+    const db = setupDb({ list_business_checking: { data: listPayload() } })
+    const { body } = await rpc('tools/call', { name: 'list_business_checking', arguments: { fields: ['monthly_fee_display', 'apy_display', 'apy_tiers'] } })
+    expect(db.rpc).toHaveBeenCalledTimes(1)
+    const sent = db.rpc.mock.calls[0]![1].p_fields
+    expect(sent).toContain('apy_tiers')
+    expect(sent.filter((f: string) => f.endsWith('_display'))).toEqual([])
+    expect(body.result.isError).toBeUndefined()
+  })
+
+  it('search: when v2 rejects unknown field names (filters or invented columns), they are dropped and the call retried once', async () => {
+    const db = setupDb({ list_business_checking: { data: listPayload() } })
+    db.rpc.mockResolvedValueOnce({ data: null, error: { code: '22023', message: 'Unknown field: integrations, integrations_any. Valid fields: institution_name, product_name' } })
+    const { body } = await rpc('tools/call', { name: 'list_business_checking', arguments: { fields: ['integrations', 'integrations_any', 'apy_tiers'] } })
+    expect(db.rpc).toHaveBeenCalledTimes(2)
+    const [first, second] = db.rpc.mock.calls.map((c) => c[1].p_fields as string[])
+    expect(first).toEqual(expect.arrayContaining(['integrations', 'integrations_any', 'apy_tiers']))
+    expect(second).toContain('apy_tiers') // valid extras are kept
+    expect(second).not.toContain('integrations')
+    expect(second).not.toContain('integrations_any')
+    expect(body.result.isError).toBeUndefined()
+    expect(body.result.structuredContent.rows).toHaveLength(2)
+  })
+
+  it('search: a rejection that is not about unknown fields is returned as is, with no retry', async () => {
+    const db = setupDb({ list_business_checking: { data: listPayload() } })
+    db.rpc.mockResolvedValueOnce({ data: null, error: { code: '22023', message: 'Unknown sort: bogus' } })
+    const { body } = await rpc('tools/call', { name: 'list_business_checking', arguments: { sort: 'bogus' } })
+    expect(db.rpc).toHaveBeenCalledTimes(1)
+    expect(body.result.isError).toBe(true)
   })
 
   it('does not disturb the existing endpoint', async () => {

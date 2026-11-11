@@ -7,8 +7,9 @@ import { authenticate } from './lib/auth'
 import { rateLimit } from './lib/rate-limit'
 import { validateOrigin } from './lib/origin'
 import { createSession, validateSession, deleteSession, SESSION_HEADER } from './lib/session'
-import { type QueryMeta } from './lib/analytics'
-import { runTool, isKnownTool } from './lib/run-tool'
+import { newQueryMeta } from './lib/analytics'
+import { runTool, isKnownTool, failureMessage } from './lib/run-tool'
+import { SUPPORTED_PROTOCOL_VERSIONS, negotiateProtocolVersion } from './lib/mcp-protocol'
 import rest from './rest/router'
 import chatgpt from './chatgpt/route'
 
@@ -16,10 +17,6 @@ const app = new Hono<{ Bindings: Env }>()
 
 const SERVER_NAME = 'Bancadia MCP'
 const SERVER_VERSION = '2.0.0'
-
-// MCP protocol lifecycle versions this server understands, newest first.
-const LATEST_PROTOCOL_VERSION = '2025-06-18'
-const SUPPORTED_PROTOCOL_VERSIONS = [LATEST_PROTOCOL_VERSION, '2025-03-26', '2024-11-05']
 
 const PROTOCOL_VERSION_HEADER = 'MCP-Protocol-Version'
 
@@ -145,8 +142,7 @@ app.post('/', async (c) => {
   // initialize — first call in the MCP lifecycle, no auth required
   if (method === 'initialize') {
     const requested = (params as { protocolVersion?: string } | undefined)?.protocolVersion
-    const protocolVersion =
-      requested && SUPPORTED_PROTOCOL_VERSIONS.includes(requested) ? requested : LATEST_PROTOCOL_VERSION
+    const protocolVersion = negotiateProtocolVersion(requested)
 
     const sessionId = await createSession(c.env, protocolVersion, resolveProfile(c.req.raw, c.env))
     c.header(SESSION_HEADER, sessionId)
@@ -209,21 +205,10 @@ app.post('/', async (c) => {
       // logged as query_events.request_id (via meta) and appended as `qr` to
       // every returned application_url. `sessionId` is always set here:
       // tools/call only runs after the session check above.
-      const requestId = crypto.randomUUID()
-      const meta: QueryMeta = {
-        toolName: name,
-        developerId,
-        channel: 'mcp',
-        sessionId: sessionId as string,
-        userAgent: c.req.header('User-Agent') ?? null,
-        requestId,
-      }
+      const meta = newQueryMeta(c.req.raw, { toolName: name, developerId, channel: 'mcp', sessionId: sessionId as string })
       const r = await runTool(name, args, meta, c.env, c.executionCtx)
-      if (r.status === 'invalid_args') return sendJsonRpc(c, id, { error: { code: -32602, message: r.message } })
-      if (r.status === 'error') {
-        return sendJsonRpc(c, id, {
-          error: { code: -32603, message: 'Internal error while querying listings. Please retry.' },
-        })
+      if (r.status !== 'ok') {
+        return sendJsonRpc(c, id, { error: { code: r.status === 'invalid_args' ? -32602 : -32603, message: failureMessage(r) } })
       }
       return sendJsonRpc(c, id, {
         result: {

@@ -29,6 +29,10 @@ export type RunToolResult =
   | { status: 'invalid_args'; message: string }
   | { status: 'error' }
 
+// Client-facing text for a failed run, shared by MCP, REST and ChatGPT (each maps it to its own error shape).
+export const failureMessage = (r: Exclude<RunToolResult, { status: 'ok' }>): string =>
+  r.status === 'invalid_args' ? r.message : 'Internal error while querying listings. Please retry.'
+
 export const isKnownTool = (name: string, profile: Profile = 'legacy'): boolean =>
   profile === 'v2' ? V2_TOOL_NAMES.has(name) : name in toolHandlers
 

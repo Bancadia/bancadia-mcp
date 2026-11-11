@@ -3,8 +3,8 @@ import { cors } from 'hono/cors'
 import type { Env } from '../types'
 import { authenticate } from '../lib/auth'
 import { rateLimit } from '../lib/rate-limit'
-import { recordQueryEvent, type QueryMeta } from '../lib/analytics'
-import { runTool, type RunToolResult } from '../lib/run-tool'
+import { recordQueryEvent, newQueryMeta, type QueryMeta } from '../lib/analytics'
+import { runTool, failureMessage, type RunToolResult } from '../lib/run-tool'
 import { TOOLS_V2 } from '../lib/tools-v2'
 import { parseQueryParams } from './params'
 import { problem } from './problem'
@@ -68,20 +68,11 @@ async function gate(c: import('hono').Context<{ Bindings: Env; Variables: Vars }
 }
 
 function metaFor(c: import('hono').Context<{ Bindings: Env; Variables: Vars }>, toolName: string, developerId: string | null): QueryMeta {
-  return {
-    toolName,
-    developerId,
-    channel: 'rest',
-    sessionId: null,
-    userAgent: c.req.header('User-Agent') ?? null,
-    requestId: c.get('requestId'),
-  }
+  return newQueryMeta(c.req.raw, { toolName, developerId, channel: 'rest', sessionId: null, requestId: c.get('requestId') })
 }
 
 function failure(c: import('hono').Context<{ Bindings: Env; Variables: Vars }>, r: Exclude<RunToolResult, { status: 'ok' }>) {
-  return r.status === 'invalid_args'
-    ? problem(c, 400, r.message)
-    : problem(c, 500, 'Internal error while querying listings. Please retry.')
+  return problem(c, r.status === 'invalid_args' ? 400 : 500, failureMessage(r))
 }
 
 // Static document: no auth or rate limit, same /v1 headers and CORS as the data routes.
