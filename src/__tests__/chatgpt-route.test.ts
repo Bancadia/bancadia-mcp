@@ -230,6 +230,22 @@ describe('chatgpt MCP surface', () => {
     expect(LISTING_SLUGS.every((s) => /^[a-z0-9-]+$/.test(s))).toBe(true)
   })
 
+  it('segment fit: full vocabularies reach ChatGPT through the v2 schema, the tool steers to them, rows carry the tags', async () => {
+    const SEGMENTS = ['ecommerce', 'retail_storefront', 'restaurant_food_service', 'content_creator_solopreneur', 'professional_services', 'real_estate', 'healthcare_practice', 'construction_trades', 'trucking_logistics', 'agriculture', 'saas_tech', 'nonprofit', 'small_business_digital_first', 'early_stage_startup', 'vc_backed', 'bootstrapped_solopreneur', 'established_smb', 'high_growth', 'side_hustle']
+    const { body } = await rpc('tools/list')
+    const t = body.result.tools.find((x: Json) => x.name === 'list_business_checking')
+    const ind = t.inputSchema.properties.rank_industries.description as string
+    const prof = t.inputSchema.properties.rank_profiles.description as string
+    for (const v of SEGMENTS) expect(ind + prof, v).toContain(v)
+    expect(ind).toMatch(/RANK ONLY, never excludes/)
+    expect(ind).toMatch(/after any explicit sort/) // precedence is stated: explicit sort wins, segments break ties
+    expect(t.description).toMatch(/pass the matching rank_industries \/ rank_profiles values/)
+    const db = setupDb({ list_business_checking: { data: listPayload() } })
+    await rpc('tools/call', { name: 'list_business_checking', arguments: { rank_industries: ['content_creator_solopreneur'] } })
+    expect(db.rpc.mock.calls[0]![1].p_filters.target_industries).toEqual(['content_creator_solopreneur'])
+    expect(db.rpc.mock.calls[0]![1].p_fields).toEqual(expect.arrayContaining(['target_industries', 'target_business_profiles']))
+  })
+
   it('search_facts and fees_by_type reach the shared v2 handlers, return object structuredContent, strip links, log with the conversation id', async () => {
     const db = setupDb({ search_listing_facts: { data: factsPayload() }, fees_by_type: { data: feesPayload() } })
     const _meta = { 'openai/session': 'conv-facts' }

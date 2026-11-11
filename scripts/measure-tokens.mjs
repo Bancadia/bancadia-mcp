@@ -13,7 +13,7 @@ const h = { 'Mcp-Session-Id': session }
 
 const list = (await (await post({ method: 'tools/list' }, h)).json()).result.tools
 const schemaChars = JSON.stringify(list).length
-console.log(`v2 tools/list: ${schemaChars} chars = ${approx(JSON.stringify(list))} tokens (budget 3400)`)
+console.log(`v2 tools/list: ${schemaChars} chars = ${approx(JSON.stringify(list))} tokens (budget 3600)`)
 
 const call = await (await post({ method: 'tools/call', params: { name: 'list_business_checking', arguments: {} } }, h)).json()
 const text = call.result.content[0].text

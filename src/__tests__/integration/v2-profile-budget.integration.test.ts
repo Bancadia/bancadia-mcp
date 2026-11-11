@@ -71,7 +71,7 @@ describe('v2 token budgets', () => {
     expect(approx(r.text)).toBeLessThanOrEqual(10000)
   })
 
-  it('the checked-in manifest itself is within the 3,400 token schema budget', () => {
-    expect(approx(JSON.stringify(v2Manifest.tools))).toBeLessThanOrEqual(3400)
+  it('the checked-in manifest itself is within the 3,600 token schema budget', () => {
+    expect(approx(JSON.stringify(v2Manifest.tools))).toBeLessThanOrEqual(3600)
   })
 })

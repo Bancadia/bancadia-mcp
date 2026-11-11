@@ -163,7 +163,7 @@ All routes: same auth/rate-limit/CORS/headers as today; query params are exactly
 ## 8. Token budgets
 
 Guard: `tokens ~= chars / 2.16` (a fixed ratio measured on the real tokenizer for this JSON; the old chars/2.6 under-counted by about 20%). Do not use chars/4. For real counts run `cd go-to-market/demo-benchmark && npm run -s exp:tokcount -- /abs/path/file.json` (it uses that project's own key and prints only the count).
-- v2 `tools/list` payload `JSON.stringify(tools)` <= **3,400** tokens (manifest: 7,134 chars; 3,197 real tokens, up from 2,649 for 5,718 chars before the 079 filters, the full `fields` list and `query`). Do not shorten unit hints (e.g. the `apy_min` decimal note).
+- v2 `tools/list` payload `JSON.stringify(tools)` <= **3,600** tokens (raised from 3,400 to carry the full `rank_industries` / `rank_profiles` vocabularies, ~160 tokens; this is a project guard from the benchmark, where the tool schema was ~37% of input billed every turn, not a protocol limit. Errors do list valid values but a failed call costs a whole turn, ~5k tokens in the benchmark, so naming the values is cheaper than guessing wrong. Earlier: manifest 7,134 chars; 3,197 real tokens, up from 2,649 for 5,718 chars before the 079 filters, the full `fields` list and `query`). Do not shorten unit hints (e.g. the `apy_min` decimal note).
 - Default list response (no args, 7 rows, fully tagged, as the MCP text) <= **5,000** tokens (about 10,800 chars; the current output is about 4,000 chars).
 - `scripts/measure-tokens.mjs` prints both numbers for a running Worker or the local DB; the tests assert the same bounds.
 

@@ -297,7 +297,7 @@
             "name": "rank_industries",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes. e.g. ecommerce, restaurant_food_service, saas_tech",
+            "description": "RANK ONLY, never excludes: orders by how many of these segments a bank is tagged for, after any explicit sort. Values: ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
             "schema": {
               "type": "array",
               "items": {
@@ -311,7 +311,7 @@
             "name": "rank_profiles",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes. e.g. early_stage_startup, vc_backed, established_smb, side_hustle",
+            "description": "RANK ONLY, never excludes (ordering as rank_industries). Values: early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
             "schema": {
               "type": "array",
               "items": {
@@ -1761,7 +1761,7 @@
             "name": "rank_industries",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes. e.g. ecommerce, restaurant_food_service, saas_tech",
+            "description": "RANK ONLY, never excludes: orders by how many of these segments a bank is tagged for, after any explicit sort. Values: ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
             "schema": {
               "type": "array",
               "items": {
@@ -1775,7 +1775,7 @@
             "name": "rank_profiles",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes. e.g. early_stage_startup, vc_backed, established_smb, side_hustle",
+            "description": "RANK ONLY, never excludes (ordering as rank_industries). Values: early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
             "schema": {
               "type": "array",
               "items": {

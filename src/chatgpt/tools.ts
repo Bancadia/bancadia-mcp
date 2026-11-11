@@ -19,6 +19,7 @@ export const CONTEXT_FIELDS = [
   'free_transactions_per_month', 'per_transaction_fee_after_limit', 'cash_deposit_available',
   'cash_deposit_fee_per_100', 'monthly_cash_deposit_limit', 'outgoing_domestic_wire_fee',
   'physical_debit_card_available', 'atm_fee_reimbursement', 'accounting_integration_available',
+  'target_industries', 'target_business_profiles', // lets the model say which returned accounts are tagged for the user's segment
 ]
 
 const ANNOTATIONS = { readOnlyHint: true, destructiveHint: false, openWorldHint: false }
@@ -39,6 +40,7 @@ const SEARCH_TEXT =
   'RESPONSE STYLE: never list or restate the cards, and never write or repeat application_url or any link. ' +
   'Write 2-4 sentences of analysis the cards cannot give: what actually separates these options in the returned fields (e.g. which pay APY and what unlocks it, extended deposit insurance, cash-deposit limits or fees, transaction limits, integrations), naming a bank only where a difference matters (never call any result top, best or leading). ' +
   'If the user stated their circumstances (entity type, state, industry, cash use, balance, priorities), say which results fit best and why in terms of those circumstances, citing the fields. ' +
+  'When the ask is about who an account is built for (content creator, ecommerce seller, restaurant, startup, side hustle...), pass the matching rank_industries / rank_profiles values: they rank and never exclude, and an explicit sort comes first, so omit sort for a fit ask. Then say which returned accounts are tagged for that segment (target_industries / target_business_profiles) and which are not. ' +
   GROUND + ' If nothing matches, say so and suggest loosening filters. ' +
   'Units: when you mention a fee, deposit or APY, quote the row\'s monthly_fee_display / minimum_opening_deposit_display / apy_display / insurance_display strings. ' + UNITS + ' ' +
   '`fields` takes database column names only: the *_display strings are always included, and filter parameters (integrations_any, integrations_all, ...) are never fields. ' +
