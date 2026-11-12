@@ -14,7 +14,7 @@ UPSTASH_REDIS_REST_TOKEN = "test-token"
 SESSION_TTL_SECONDS = "1800"
 ALLOWED_ORIGINS = "https://bancadia.com,https://app.bancadia.com"
 # legacy | v2: default MCP tool profile (REST is always v2). Override per session with X-Bancadia-Profile or ?profile=.
-MCP_PROFILE = "legacy"
+MCP_PROFILE = "v2"
 
 [env.staging]
 name = "bancadia-mcp-staging"

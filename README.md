@@ -35,7 +35,7 @@ See `src/lib/tools.ts` for the full JSON Schema of each tool's arguments, or que
 
 ### Profiles (`legacy` and `v2`)
 
-The MCP tool set is chosen per session. The default is `MCP_PROFILE` (`wrangler.toml`, currently `legacy`); a client opts in at `initialize` with the header `X-Bancadia-Profile: v2` or the URL query `?profile=v2` (header wins; read once, stored on the session). A tool name outside the session's profile is `-32601 Unknown tool`.
+The MCP tool set is chosen per session. The default is `MCP_PROFILE` (`wrangler.toml`, currently `v2`); a client opts into the old two-tool set at `initialize` with the header `X-Bancadia-Profile: legacy` or the URL query `?profile=legacy` (header wins; read once, stored on the session). A tool name outside the session's profile is `-32601 Unknown tool`.
 
 | Profile | Tools |
 | ------- | ----- |
