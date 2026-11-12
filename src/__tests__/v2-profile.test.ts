@@ -26,7 +26,7 @@ async function rpc(body: object, opts: { headers?: Record<string, string>; url?:
   return res
 }
 const toolsList = (profile: 'legacy' | 'v2' | undefined, envOverride?: Record<string, string>) => {
-  mockRedis({ sessionProfile: profile })
+  mockRedis({ sessionProfile: profile ?? 'none' })
   return rpc({ jsonrpc: '2.0', id: 1, method: 'tools/list' }, { headers: withSession(), env: envOverride })
 }
 const initialize = (opts: Parameters<typeof rpc>[1] = {}) =>
@@ -82,15 +82,15 @@ describe('legacy tools/list', () => {
   })
 })
 
-// Proves: the effective profile = session profile, else env MCP_PROFILE, else legacy.
+// Proves: the effective profile = session profile, else env MCP_PROFILE, else v2.
 describe('profile selection at tools/list', () => {
   const names = async (res: Response) => (await res.json<{ result: { tools: Array<{ name: string }> } }>()).result.tools.map((t) => t.name)
 
   it('a session without a stored profile follows env MCP_PROFILE=v2', async () => {
     expect(await names(await toolsList(undefined, { MCP_PROFILE: 'v2' }))).toEqual(V2_NAMES)
   })
-  it('a session without a stored profile and no env var is legacy', async () => {
-    expect(await names(await toolsList(undefined, { MCP_PROFILE: undefined as never }))).toEqual(LEGACY_NAMES)
+  it('a session without a stored profile and no env var is v2', async () => {
+    expect(await names(await toolsList(undefined, { MCP_PROFILE: undefined as never }))).toEqual(V2_NAMES)
   })
   it('the stored session profile wins over the env default', async () => {
     expect(await names(await toolsList('legacy', { MCP_PROFILE: 'v2' }))).toEqual(LEGACY_NAMES)
@@ -136,13 +136,13 @@ describe('profile override at initialize', () => {
     expect(storedProfile(r2.set)).toBe('legacy')
   })
 
-  it('without an override the stored profile is the env default (v2 when MCP_PROFILE=v2, else legacy)', async () => {
+  it('without an override the stored profile is the env default (v2 when MCP_PROFILE=v2 or unset)', async () => {
     const r1 = mockRedis()
     await initialize({ env: { MCP_PROFILE: 'v2' } })
     expect(storedProfile(r1.set)).toBe('v2')
     const r2 = mockRedis()
     await initialize({ env: { MCP_PROFILE: undefined as never } })
-    expect(storedProfile(r2.set)).toBe('legacy')
+    expect(storedProfile(r2.set)).toBe('v2')
   })
 
   it('an unknown profile value is ignored (falls back to the env default)', async () => {

@@ -15,8 +15,8 @@ interface MockRedisOptions {
   tokenDeveloperId?: string | null
   /** Whether `session:*` keys resolve to a valid record. Default `true`. */
   sessionValid?: boolean
-  /** `profile` stored on the session record (v2 spec §1). Omitted = an old session without a profile. */
-  sessionProfile?: 'legacy' | 'v2'
+  /** `profile` stored on the session record (v2 spec §1). Omitted = legacy (the pre-v2 handler tests); 'none' = an old session without a profile. */
+  sessionProfile?: 'legacy' | 'v2' | 'none'
   set?: ReturnType<typeof vi.fn>
   expire?: ReturnType<typeof vi.fn>
   del?: ReturnType<typeof vi.fn>
@@ -35,14 +35,14 @@ export function mockRedis(options: MockRedisOptions = {}) {
     tokenValid = true,
     tokenDeveloperId = TEST_DEVELOPER_ID,
     sessionValid = true,
-    sessionProfile,
+    sessionProfile = 'legacy',
     set = vi.fn().mockResolvedValue('OK'),
     expire = vi.fn().mockResolvedValue(1),
     del = vi.fn().mockResolvedValue(1),
   } = options
 
   const get = vi.fn().mockImplementation((key: string) => {
-    if (key.startsWith('session:')) return Promise.resolve(sessionValid ? { ...TEST_SESSION_RECORD, ...(sessionProfile ? { profile: sessionProfile } : {}) } : null)
+    if (key.startsWith('session:')) return Promise.resolve(sessionValid ? { ...TEST_SESSION_RECORD, ...(sessionProfile !== 'none' ? { profile: sessionProfile } : {}) } : null)
     if (key.startsWith('token:')) {
       if (tokenValid === null) return Promise.resolve(null)
       return Promise.resolve({ valid: tokenValid, developerId: tokenValid ? tokenDeveloperId : null })

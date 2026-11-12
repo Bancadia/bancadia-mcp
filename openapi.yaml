@@ -121,7 +121,7 @@ info:
 
     Two tool profiles exist, chosen per session at `initialize` (header
     `X-Bancadia-Profile: v2` or `?profile=v2`; default is the server's
-    `MCP_PROFILE`, currently `legacy`). The `v2` profile exposes four
+    `MCP_PROFILE`, currently `v2`). The `v2` profile exposes four
     token-efficient tools instead of the two below: `list_business_checking`
     (slim, paged rows with `total_matches`/`next_offset`), `search_facts`
     (full-text search of fee/feature details), `fees_by_type` (compare specific

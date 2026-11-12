@@ -9,7 +9,7 @@ const parse = (v: unknown): Profile | null => {
   return s === 'legacy' || s === 'v2' ? s : null
 }
 
-export const envProfile = (env: Env): Profile => parse(env.MCP_PROFILE) ?? 'legacy'
+export const envProfile = (env: Env): Profile => parse(env.MCP_PROFILE) ?? 'v2'
 
 // Read once at initialize: header wins over ?profile=; invalid values are ignored (env default).
 export function resolveProfile(req: Request, env: Env): Profile {
