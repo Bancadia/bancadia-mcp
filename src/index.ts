@@ -61,6 +61,11 @@ app.route('/chatgpt', chatgpt)
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok' }))
 
+// OpenAI apps domain verification (public challenge token, not a secret)
+app.get('/.well-known/openai-apps-challenge', (c) =>
+  c.text('DBkimlGN4cK9KTi9FyNmbqd1EmM1QaP5OMK0UbVg5Dc'),
+)
+
 // Story 6.1: public MCP discovery
 app.get('/.well-known/mcp', (c) =>
   c.json({

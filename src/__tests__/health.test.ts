@@ -14,3 +14,19 @@ describe('GET /health', () => {
     expect(body).toEqual({ status: 'ok' })
   })
 })
+
+describe('GET /.well-known/openai-apps-challenge', () => {
+  it('returns the challenge token as plain text', async () => {
+    const ctx = createExecutionContext()
+    const response = await app.fetch(
+      new Request('http://localhost/.well-known/openai-apps-challenge'),
+      env,
+      ctx,
+    )
+    await waitOnExecutionContext(ctx)
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('content-type')).toContain('text/plain')
+    expect(await response.text()).toBe('DBkimlGN4cK9KTi9FyNmbqd1EmM1QaP5OMK0UbVg5Dc')
+  })
+})
