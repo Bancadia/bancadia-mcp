@@ -5,7 +5,7 @@ import { WIDGET_URI } from './widget'
 // shared runTool/V2_HANDLERS path. This file only adapts descriptions, defaults and output shape.
 export const V2_LIST = 'list_business_checking' // exposed under its v2 name: the same tool on every surface
 export const DEFAULT_LIMIT = 5 // one horizontally scrolling card per row
-export const MAX_LIMIT = 5
+export const MAX_LIMIT = 8
 
 // The card always needs these, whatever `fields` the model asks for (v2 `fields` replaces defaults).
 export const CARD_FIELDS = [
@@ -45,7 +45,8 @@ const SEARCH_TEXT =
   'Units: when you mention a fee, deposit or APY, quote the row\'s monthly_fee_display / minimum_opening_deposit_display / apy_display / insurance_display strings. ' + UNITS + ' ' +
   '`fields` takes database column names only: the *_display strings are always included, and filter parameters (integrations_any, integrations_all, ...) are never fields. ' +
   'When the user asks to learn more about an account, call get_listing with that account\'s listing_slug in slugs; for a free-text lookup of a fee or feature across banks call search_facts; to compare specific fees across banks call fees_by_type. ' +
-  'Omit `limit` unless the user asks for fewer results (default ' + DEFAULT_LIMIT + ', max ' + MAX_LIMIT + '); use next_offset as offset if they ask for more.'
+  'Omit `limit` unless the user asks for fewer or more results (default ' + DEFAULT_LIMIT + ', max ' + MAX_LIMIT + '). ' +
+  'NEVER page on your own: each call draws another card widget under the first. When total_matches exceeds the rows shown, matches_overview names every match, so mention the rest by name or fetch them with get_listing (up to 4 slugs per call). Use next_offset as offset only when the user asks to see more.'
 
 const listBase = v2(V2_LIST)
 const LIST_TOOL = {
@@ -56,7 +57,7 @@ const LIST_TOOL = {
     ...listBase.inputSchema,
     properties: {
       ...listBase.inputSchema.properties,
-      limit: { type: 'integer', minimum: 1, maximum: MAX_LIMIT, description: `Rows per page. Omit unless the user asks for fewer (default ${DEFAULT_LIMIT}, max ${MAX_LIMIT})` },
+      limit: { type: 'integer', minimum: 1, maximum: MAX_LIMIT, description: `Rows per page. Omit unless the user asks for fewer or more (default ${DEFAULT_LIMIT}, max ${MAX_LIMIT})` },
     },
   },
   outputSchema: {
@@ -124,7 +125,7 @@ export const DATA_TOOLS: Record<string, DataTool> = {
     defaults: { sections: SECTIONS },
     empty: 'No active listing found for those listing_slugs. Use listing_slugs from list_business_checking.',
     patch: (s) => {
-      const t = slugsDesc(s, () => `1-4 listing_slugs. Known: ${LISTING_SLUGS.join(', ')}. For any other bank call list_business_checking and read its rows or matches_overview.`)
+      const t = slugsDesc(s, () => `1-4 listing_slugs. Known: ${LISTING_SLUGS.join(', ')}. A bank not in this list is not in the registry: say so, do not search for it.`)
       return { ...t, properties: { ...t.properties, sections: { ...t.properties.sections, description: 'summary, tiers, fees, features, promotions. Omit for all five' } } }
     },
   },
