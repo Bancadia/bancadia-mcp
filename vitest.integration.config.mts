@@ -13,6 +13,8 @@ export default defineConfig({
     // shared tables (query_match_events) — keep them serialized rather than
     // introducing per-test isolation machinery for a handful of files.
     fileParallelism: false,
+    // Tests make sequential round-trips to a hosted Supabase project; the 5s default is too tight.
+    testTimeout: 30_000,
   },
   plugins: [
     cloudflareTest({

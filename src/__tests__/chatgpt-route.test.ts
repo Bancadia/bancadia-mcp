@@ -55,7 +55,7 @@ describe('chatgpt MCP surface', () => {
     expect(res.status).toBe(202)
   })
 
-  it('tools/list: read-only annotations, widget template, full v2 filter set, limit capped at 5', async () => {
+  it('tools/list: read-only annotations, widget template, full v2 filter set, limit capped at 8', async () => {
     const { body } = await rpc('tools/list')
     const [tool] = body.result.tools
     expect(tool.annotations).toEqual({ readOnlyHint: true, destructiveHint: false, openWorldHint: false })
@@ -65,8 +65,8 @@ describe('chatgpt MCP surface', () => {
     const { limit: _l, ...v2Rest } = v2
     const { limit, ...rest } = tool.inputSchema.properties
     expect(rest).toEqual(v2Rest) // no filter dropped, none changed
-    expect(limit.maximum).toBe(5)
-    expect(limit.description).toMatch(/Omit unless the user asks for fewer \(default 5, max 5\)/)
+    expect(limit.maximum).toBe(8)
+    expect(limit.description).toMatch(/Omit unless the user asks for fewer or more \(default 5, max 8\)/)
     expect(tool.description).toMatch(/ONLY values in the returned data/)
     expect(tool.description).toMatch(/never percentages/)
     expect(tool.description).toMatch(/never list or restate the cards, and never write or repeat application_url/i)
@@ -121,10 +121,18 @@ describe('chatgpt MCP surface', () => {
     expect(db.eventInsert.mock.calls[0]![0]).not.toHaveProperty('chat_conversation_id')
   })
 
-  it('tools/call: limit is clamped to 5', async () => {
+  it('tools/call: limit is clamped to 8', async () => {
     const db = setupDb({ list_business_checking: { data: listPayload() } })
     await rpc('tools/call', { name: 'list_business_checking', arguments: { limit: 20 } })
-    expect(db.rpc.mock.calls[0]![1].p_limit).toBe(5)
+    expect(db.rpc.mock.calls[0]![1].p_limit).toBe(8)
+  })
+
+  it('search text forbids unrequested paging and points at matches_overview instead', async () => {
+    const { body } = await rpc('tools/list')
+    const d = body.result.tools[0].description as string
+    expect(d).toMatch(/NEVER page on your own/)
+    expect(d).toMatch(/matches_overview names every match/)
+    expect(d).toMatch(/offset only when the user asks to see more/)
   })
 
   it('tools/call: invalid args come back as an isError result, not a transport error', async () => {
@@ -218,7 +226,8 @@ describe('chatgpt MCP surface', () => {
     const tool = (n: string) => body.result.tools.find((t: Json) => t.name === n)
     const desc = tool('get_listing').inputSchema.properties.slugs.description as string
     for (const slug of LISTING_SLUGS) expect(desc).toContain(slug)
-    expect(desc).toMatch(/call list_business_checking and read its rows or matches_overview/)
+    expect(desc).toMatch(/not in the registry: say so, do not search for it/)
+    expect(desc).not.toMatch(/matches_overview/) // no limit:1 lookup path: it would draw a one-card widget
     for (const n of ['search_facts', 'fees_by_type']) {
       const d = tool(n).inputSchema.properties.slugs.description as string
       expect(d).toMatch(/same listing_slugs as get_listing/)
