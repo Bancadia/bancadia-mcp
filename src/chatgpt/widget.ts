@@ -11,7 +11,7 @@ export const WIDGET_HTML = `<!doctype html>
 :root{--bg:#fff;--fg:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#4ebe7a;--on-accent:#111827}
 @media (prefers-color-scheme:dark){:root{--bg:#1f2937;--fg:#f9fafb;--muted:#9ca3af;--line:#374151;--accent:#4ebe7a;--on-accent:#111827}}
 body{margin:0;padding:8px;background:var(--bg);color:var(--fg);font:14px/1.4 system-ui,sans-serif}
-.head{font-weight:600;margin:0 0 8px;min-height:20px}
+.head{font-weight:600;margin:0 0 8px}
 .row{display:flex;gap:8px;overflow-x:auto;scroll-snap-type:x proximity;padding-bottom:4px}
 .card{flex:0 0 220px;scroll-snap-align:start;border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px}
 .inst{color:var(--muted);font-size:12px}.name{font-weight:600}
@@ -21,12 +21,7 @@ button{margin-top:auto;border:0;border-radius:8px;padding:8px;background:var(--a
 button:disabled{opacity:.6;cursor:default}
 button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 .foot{margin-top:6px;color:var(--muted);font-size:12px}
-.sk{flex:0 0 220px;box-sizing:border-box;height:210px;border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px}
-.sk i{display:block;height:12px;border-radius:6px;background:var(--line);animation:pulse 1.4s ease-in-out infinite}
-.sk i:nth-child(1){width:40%}.sk i:nth-child(2){width:70%}.sk i:nth-child(3){width:50%;height:18px}.sk i:nth-child(4){width:60%}.sk i:last-child{width:100%;height:34px;margin-top:auto;border-radius:8px}
-@keyframes pulse{50%{opacity:.4}}
-@media (prefers-reduced-motion:reduce){.sk i{animation:none}}
-</style></head><body><div id="head" class="head"></div><div id="root" role="list" class="row" aria-busy="true"><div class="sk" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div class="sk" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div><div class="sk" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i></div></div><div id="foot" class="foot"></div>
+</style></head><body><div id="head" class="head"></div><div id="root" role="list" class="row"></div><div id="foot" class="foot"></div>
 <script>
 (function(){
 var nextId=1,pending={};
@@ -63,15 +58,13 @@ function resize(){
   notify('ui/notifications/size-changed',{height:h});
 }
 if(window.ResizeObserver)new ResizeObserver(resize).observe(document.body);
-// The frame mounts before the result exists, so it starts as skeleton cards. A result, an error or a cancel replaces them; if none arrives the skeleton gives way to a message.
 var head=document.getElementById('head'),root=document.getElementById('root'),foot=document.getElementById('foot');
-var lastKey='',settled=false;
-var timer=setTimeout(function(){fail('Results are unavailable. Ask me to search again.');},25000);
-function settle(){settled=true;clearTimeout(timer);root.removeAttribute('aria-busy');head.textContent='';root.textContent='';foot.textContent='';}
-function fail(msg){if(settled&&lastKey)return;settle();root.appendChild(el('div','meta',msg));resize();}
+var lastKey=''; // ChatGPT creates this frame only once the result exists, so there is no loading state to draw
+function clear(){head.textContent='';root.textContent='';foot.textContent='';}
+function fail(msg){if(lastKey)return;clear();root.appendChild(el('div','meta',msg));resize();} // an error never replaces cards already shown
 function render(data){
   var key=JSON.stringify(data);if(key===lastKey)return;lastKey=key; // toolOutput and tool-result both deliver the same data: render it once
-  settle();
+  clear();
   var rows=(data&&data.rows)||[];
   if(!rows.length){root.appendChild(el('div','meta','No matching accounts.'));resize();return;}
   var total=data.total_matches>rows.length?data.total_matches:rows.length;

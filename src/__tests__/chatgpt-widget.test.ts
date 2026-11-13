@@ -1,28 +1,26 @@
 import { describe, it, expect } from 'vitest'
 import { WIDGET_HTML } from '../chatgpt/widget'
 
-// The widget is one HTML string with no browser here, so these pin the loading behavior's contract. Rendering was checked in Chrome with a postMessage harness.
-describe('widget loading state', () => {
+// The widget is one HTML string with no browser here, so these pin its message handling. Rendering was checked in Chrome with a postMessage harness.
+describe('widget result handling', () => {
   const script = WIDGET_HTML.split('<script>')[1]!.split('</script>')[0]!
 
   it('inline script is valid JavaScript', () => {
     expect(() => new Function(script)).not.toThrow()
   })
 
-  it('starts as three skeleton cards, busy, with motion off for reduced-motion users', () => {
-    expect(WIDGET_HTML.match(/class="sk"/g)).toHaveLength(3)
-    expect(WIDGET_HTML).toContain('aria-busy="true"')
-    expect(WIDGET_HTML).toMatch(/prefers-reduced-motion:reduce\)\{\.sk i\{animation:none\}/)
+  it('has no loading skeleton: ChatGPT creates the frame only when the result exists', () => {
+    expect(WIDGET_HTML).not.toMatch(/class="sk"|aria-busy/)
   })
 
-  it('leaves the skeleton on a result, error, cancel, set_globals or after 25 seconds', () => {
-    expect(script).toContain('},25000)')
-    expect(script).toContain("m.params.isError")
+  it('shows a message on an error result or a cancel instead of "No matching accounts"', () => {
+    expect(script).toContain('m.params.isError')
     expect(script).toContain('ui/notifications/tool-cancelled')
-    expect(script).toContain('openai:set_globals')
+    expect(script).toMatch(/function fail\(msg\)\{if\(lastKey\)return/) // never replaces cards already shown
   })
 
-  it('renders identical data once', () => {
+  it('renders identical data once and picks up a late toolOutput', () => {
     expect(script).toMatch(/if\(key===lastKey\)return/)
+    expect(script).toContain('openai:set_globals')
   })
 })
