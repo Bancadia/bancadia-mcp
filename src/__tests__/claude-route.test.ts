@@ -69,6 +69,20 @@ describe('claude MCP surface', () => {
     expect(db.eventInsert.mock.calls[0]![0]).toMatchObject({ channel: 'claude', session_id: SESSION })
   })
 
+  it('serves the claude build of the widget; /chatgpt serves its own', async () => {
+    mockRedis({})
+    const read = async (path: string) => {
+      const res = await app.fetch(
+        new Request(`http://localhost${path}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'resources/read', params: { uri: TOOL_LIST[0]!._meta.ui.resourceUri } }) }),
+        env,
+        createExecutionContext()
+      )
+      return ((await res.json()) as Json).result.contents[0].text as string
+    }
+    expect(await read('/claude/mcp')).toContain("var HOST='claude'")
+    expect(await read('/chatgpt/mcp')).toContain("var HOST='chatgpt'")
+  })
+
   it('data tool call: data is in the text block too', async () => {
     mockRedis({})
     setupDb({ get_listing_sections: { data: listingPayload() } })
