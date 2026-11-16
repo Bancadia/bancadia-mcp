@@ -2,10 +2,14 @@
 // Speaks the MCP Apps bridge (JSON-RPC over postMessage) and falls back to
 // window.openai.toolOutput. Replaced by the built React bundle in web/ later.
 // The resource URI is a cache key: bump the version suffix on breaking changes.
-export const WIDGET_URI = 'ui://widget/business-checking-v1.html'
+export const WIDGET_URI = 'ui://widget/business-checking-v2.html'
 export const WIDGET_MIME = 'text/html;profile=mcp-app'
 
-export const WIDGET_HTML = `<!doctype html>
+// The host is fixed by the route that serves the widget (/chatgpt/mcp or /claude/mcp); it picks how
+// Learn More sends its follow-up message. Everything else in the document is shared.
+export type WidgetHost = 'chatgpt' | 'claude'
+
+export const widgetHtml = (host: WidgetHost): string => `<!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <style>
 :root{--bg:#fff;--fg:#111827;--muted:#6b7280;--line:#e5e7eb;--accent:#4ebe7a;--on-accent:#111827}
@@ -21,20 +25,29 @@ button{margin-top:auto;border:0;border-radius:8px;padding:8px;background:var(--a
 button:disabled{opacity:.6;cursor:default}
 button:focus-visible{outline:2px solid var(--fg);outline-offset:2px}
 .foot{margin-top:6px;color:var(--muted);font-size:12px}
-</style></head><body><div id="head" class="head"></div><div id="root" role="list" class="row"></div><div id="foot" class="foot"></div>
+</style></head><body><div id="head" class="head"></div><div id="root" role="list" class="row"></div><div id="foot" class="foot"></div><div id="note" class="foot" role="status"></div>
 <script>
 (function(){
 var nextId=1,pending={};
 function rpc(method,params){return new Promise(function(res,rej){var id=nextId++;pending[id]={res:res,rej:rej};parent.postMessage({jsonrpc:'2.0',id:id,method:method,params:params},'*');});}
 function notify(method,params){parent.postMessage({jsonrpc:'2.0',method:method,params:params},'*');}
 function el(tag,cls,text){var e=document.createElement(tag);if(cls)e.className=cls;if(text!==undefined)e.textContent=text;return e;}
+// How each host takes a follow-up message from the widget. Each sender resolves to a status line to show ('' = none).
+// ChatGPT sends it straight away. Claude may decline it, or hold it for the user to approve or send from their message box.
+var HOST='${host}';
+var SEND={
+  chatgpt:function(t){return Promise.resolve().then(function(){return window.openai.sendFollowUpMessage({prompt:t});}).then(function(){return '';},function(){return '';});},
+  claude:function(t){return rpc('ui/message',{role:'user',content:[{type:'text',text:t}]}).then(
+    function(res){return res&&res.isError?"Claude didn't take the request. Try again.":'Sent to Claude. Approve it there if prompted.';},
+    function(){return "Couldn't confirm Claude got it. Check your message box.";});}
+};
 // Learn More asks the model for this account's details as a chat message; there is no outbound link.
 function ask(r){
   var inst=r.institution_display_name||r.institution_name||'',prod=r.product_name||'';
   var name=(prod.toLowerCase().indexOf(inst.toLowerCase())===0?prod:inst+' '+prod).trim(); // product names often already start with the bank
   var text='Tell me more about '+name+' ('+r.listing_slug+') and why it could fit my business.';
-  if(window.openai&&window.openai.sendFollowUpMessage){window.openai.sendFollowUpMessage({prompt:text});}
-  else{rpc('ui/message',{role:'user',content:{type:'text',text:text}}).catch(function(){});}
+  note.textContent='';
+  SEND[HOST](text).then(function(s){note.textContent=s;});
 }
 function card(r){
   var c=el('div','card');c.setAttribute('role','listitem');
@@ -58,9 +71,9 @@ function resize(){
   notify('ui/notifications/size-changed',{height:h});
 }
 if(window.ResizeObserver)new ResizeObserver(resize).observe(document.body);
-var head=document.getElementById('head'),root=document.getElementById('root'),foot=document.getElementById('foot');
+var head=document.getElementById('head'),root=document.getElementById('root'),foot=document.getElementById('foot'),note=document.getElementById('note');
 var lastKey=''; // ChatGPT creates this frame only once the result exists, so there is no loading state to draw
-function clear(){head.textContent='';root.textContent='';foot.textContent='';}
+function clear(){head.textContent='';root.textContent='';foot.textContent='';note.textContent='';}
 function fail(msg){if(lastKey)return;clear();root.appendChild(el('div','meta',msg));resize();} // an error never replaces cards already shown
 function render(data){
   var key=JSON.stringify(data);if(key===lastKey)return;lastKey=key; // toolOutput and tool-result both deliver the same data: render it once

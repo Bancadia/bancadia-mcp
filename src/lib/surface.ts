@@ -6,7 +6,7 @@ import { validateOrigin } from './origin'
 import { newQueryMeta } from './analytics'
 import { negotiateProtocolVersion } from './mcp-protocol'
 import { createSession, getSession, touchSession, SESSION_HEADER } from './session'
-import { WIDGET_URI, WIDGET_MIME, WIDGET_HTML } from '../chatgpt/widget'
+import { WIDGET_URI, WIDGET_MIME, widgetHtml } from '../chatgpt/widget'
 import { presentRow } from '../chatgpt/present'
 import {
   V2_LIST, DEFAULT_LIMIT, MAX_LIMIT, CARD_FIELDS, CONTEXT_FIELDS,
@@ -77,7 +77,7 @@ export function createSurface(opts: SurfaceOptions) {
           contents: [{
             uri: WIDGET_URI,
             mimeType: WIDGET_MIME,
-            text: WIDGET_HTML,
+            text: widgetHtml(opts.channel),
             _meta: { ui: { prefersBorder: true, csp: { connectDomains: [], resourceDomains: [] } } },
           }],
         })

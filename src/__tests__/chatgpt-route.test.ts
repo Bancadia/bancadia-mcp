@@ -14,7 +14,9 @@ import { env, createExecutionContext, waitOnExecutionContext } from 'cloudflare:
 import app from '../index'
 import { setupDb, callMcp, listPayload, listingPayload, factsPayload, feesPayload, type Json } from './v2-unit-helpers'
 import { TOOLS_V2 } from '../lib/tools-v2'
-import { WIDGET_HTML } from '../chatgpt/widget'
+import { widgetHtml } from '../chatgpt/widget'
+
+const WIDGET_HTML = widgetHtml('chatgpt')
 import { LISTING_SLUGS } from '../chatgpt/tools'
 
 beforeEach(() => vi.clearAllMocks())
