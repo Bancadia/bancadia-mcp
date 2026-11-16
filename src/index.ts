@@ -12,6 +12,7 @@ import { runTool, isKnownTool, failureMessage } from './lib/run-tool'
 import { SUPPORTED_PROTOCOL_VERSIONS, negotiateProtocolVersion } from './lib/mcp-protocol'
 import rest from './rest/router'
 import chatgpt from './chatgpt/route'
+import claude from './claude/route'
 
 const app = new Hono<{ Bindings: Env }>()
 
@@ -57,6 +58,8 @@ app.route('/v1', rest)
 
 // ChatGPT App (stateless MCP + widget resource); own tool surface, see src/chatgpt/
 app.route('/chatgpt', chatgpt)
+// Claude connector: same tools plus data in the text block and an optional Mcp-Session-Id; see src/claude/
+app.route('/claude', claude)
 
 // Health check
 app.get('/health', (c) => c.json({ status: 'ok' }))

@@ -6,8 +6,8 @@ import { profileOfTool } from './tools-v2'
 export type QueryMeta = {
   toolName: string
   developerId: string | null
-  channel: 'mcp' | 'rest' | 'chatgpt'
-  sessionId: string | null // null for REST and chatgpt (stateless)
+  channel: 'mcp' | 'rest' | 'chatgpt' | 'claude'
+  sessionId: string | null // null for REST and chatgpt; optional for claude (the Mcp-Session-Id it echoed, if any)
   userAgent: string | null
   // Generated once per tools/call in index.ts. Written as
   // query_events.request_id (and on that call's query_match_events rows) AND
