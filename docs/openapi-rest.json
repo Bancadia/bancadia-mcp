@@ -109,6 +109,16 @@
             "name": "sub_accounts_supported",
             "in": "query",
             "required": false,
+            "description": "Sub-accounts with own controls, cards or account numbers (not earmark-only buckets)",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "savings_buckets_supported",
+            "in": "query",
+            "required": false,
+            "description": "Earmark-only buckets (taxes, payroll); no own cards or controls. May also have sub_accounts_supported",
             "schema": {
               "type": "boolean"
             }
@@ -1573,6 +1583,16 @@
             "name": "sub_accounts_supported",
             "in": "query",
             "required": false,
+            "description": "Sub-accounts with own controls, cards or account numbers (not earmark-only buckets)",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "savings_buckets_supported",
+            "in": "query",
+            "required": false,
+            "description": "Earmark-only buckets (taxes, payroll); no own cards or controls. May also have sub_accounts_supported",
             "schema": {
               "type": "boolean"
             }

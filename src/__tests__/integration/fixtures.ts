@@ -99,6 +99,8 @@ export const REST_FILTER_CASES: Array<{ name: string; query: string; mcp: Record
   { name: 'interest_bearing=true', query: 'interest_bearing=true', mcp: { interest_bearing: true }, slugs: [K.bluevine, K.found, K.grasshopper, K.ramp] },
   { name: 'sub_accounts_supported=true', query: 'sub_accounts_supported=true', mcp: { sub_accounts_supported: true },
     slugs: [K.bluevine, K.found, K.mercury, K.ramp, K.relay, K.rho] },
+  { name: 'savings_buckets_supported=true', query: 'savings_buckets_supported=true', mcp: { savings_buckets_supported: true },
+    slugs: [K.novo, K.found, K.lili] },
   { name: 'cash_deposit_available=true', query: 'cash_deposit_available=true', mcp: { cash_deposit_available: true },
     slugs: [K.bluevine, K.citibank, K.found, K.chase, K.lili, K.relay] },
   { name: 'free_transactions_min=20', query: 'free_transactions_min=20', mcp: { free_transactions_min: 20 }, slugs: [K.citibank, K.chase] },
