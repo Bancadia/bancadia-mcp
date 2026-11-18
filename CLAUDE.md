@@ -15,6 +15,8 @@ npx vitest run src/__tests__/query-business-checking.test.ts   # run a single te
 npm run lint              # tsc --noEmit (type-check only, no separate linter configured)
 npm run lint:openapi      # generate the OpenAPI doc (scripts/print-openapi.ts) and lint it with Redocly (recommended ruleset)
 npm run db:start|db:reset|db:stop   # local Supabase via ../bancadia-db (override with BANCADIA_DB_PATH); db:reset also applies grants and seeds test fixtures
+npm run db:sync-from-dev  # copy dev's registry tables into ../bancadia-db/supabase/seeds/dev-data.sql (needs DEV_SUPABASE_SECRET_KEY in .env)
+npm run db:fresh          # db:sync-from-dev, then db:reset: local becomes a copy of dev
 npm run test:integration  # real-Postgres suite; target from SUPABASE_URL/SUPABASE_SECRET_KEY in env, else .dev.vars (host allowlist: local or the dev project)
 npm run deploy:staging    # wrangler deploy --env staging
 npm run deploy:production # wrangler deploy --env production
@@ -56,6 +58,15 @@ When adding a new filter on a joined details table, don't rely on a bare `mockQu
 **Env bindings** are typed once in `src/types.ts` (`Env`): `SUPABASE_URL`, `SUPABASE_SECRET_KEY`, `UPSTASH_REDIS_REST_URL`, `UPSTASH_REDIS_REST_TOKEN`, and optional `RATE_LIMIT_REQUESTS` / `RATE_LIMIT_WINDOW_SECONDS` (default 100 req / 60s) and `ANON_RATE_LIMIT_REQUESTS` / `ANON_RATE_LIMIT_WINDOW_SECONDS` (default 60 req / 60s). `createSupabaseClient()` (src/lib/supabase.ts) is a per-request factory, deliberately not a module-level singleton, since Workers isolates are stateless/ephemeral between requests.
 
 **Environments:** `wrangler.toml` defines `staging` (workers.dev enabled) and `production` (workers.dev disabled, routed at `mcp.bancadia.com/*`, plus the custom domain `api.bancadia.com` serving the REST API at `https://api.bancadia.com/v1`; the Worker doesn't check `Host`, so both hosts answer both surfaces). Secrets for each are set via `wrangler secret put <KEY> --env <environment>`, not committed.
+
+## How to test before pushing
+
+Run the integration tests against a fresh copy of dev, never against a stale local database. Local seeds drift from dev because the verifier and data migrations change dev's data, and goldens or literals asserted against stale local data then fail in CI.
+
+1. `npm run db:fresh` (syncs dev's registry data into local, then resets local). Needs `DEV_SUPABASE_SECRET_KEY` in the git-ignored `.env` (see `.env.example`).
+2. `npm run test:integration`
+
+Always do both, in this order, before pushing or when an integration test fails. If a test fails only because dev's data changed, update the test or golden (`npm run capture:goldens`) to the dev data. Do not edit seeds to make local match a test.
 
 ## Testing conventions
 
