@@ -452,8 +452,8 @@ describe('query_business_checking: response contract', () => {
 
 describe('query_business_checking: Bluevine golden record', () => {
   // Hard-coded on purpose: a literal snapshot of one rich listing (default
-  // APY below max APY, three plan tiers, distinct wire fees). If bancadia-db's
-  // onboarding script for Bluevine changes, update this deliberately.
+  // APY below max APY, three plan tiers, distinct wire fees). If Bluevine's data changes
+  // (migrations, verifier edits), update this deliberately; the dev project is ground truth.
   it('matches the expected literal response', async () => {
     const row = (await query()).find((r) => r.listing_slug === KNOWN_SLUGS.bluevine)!
     const { last_modified, last_verified, ...rest } = normalizeQueryRow(row)
@@ -505,7 +505,7 @@ describe('query_business_checking: Bluevine golden record', () => {
       outgoing_domestic_wire_fee: 15,
       incoming_domestic_wire_fee: 0,
       outgoing_international_wire_fee: 25,
-      incoming_international_wire_fee: 0,
+      incoming_international_wire_fee: 15, // 0 until bancadia-db migration 088
       multicurrency_support: false,
       free_domestic_wires_per_month: null,
       per_transaction_fee_after_limit: null,
