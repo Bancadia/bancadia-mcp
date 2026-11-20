@@ -241,6 +241,21 @@ describe.runIf(LOCAL)('admin API writes (local database, throwaway listing)', ()
 })
 
 // The real Supabase JWT path: real auth users, real sign-in, real admin_users lookup. Local only (creates auth users).
+// A user JWT must be aal2 (password + TOTP), so these tests enroll and verify a real authenticator, which needs
+// [auth.mfa.totp] enroll_enabled/verify_enabled = true in the local supabase/config.toml.
+const B32 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567'
+async function totpCode(secret: string) {
+  const bits = [...secret.replace(/=+$/, '').toUpperCase()].map((c) => B32.indexOf(c).toString(2).padStart(5, '0')).join('')
+  const key = new Uint8Array(Math.floor(bits.length / 8)).map((_, i) => parseInt(bits.slice(i * 8, i * 8 + 8), 2))
+  const counter = new DataView(new ArrayBuffer(8))
+  counter.setBigUint64(0, BigInt(Math.floor(Date.now() / 30000)))
+  const hmac = new Uint8Array(await crypto.subtle.sign('HMAC', await crypto.subtle.importKey('raw', key, { name: 'HMAC', hash: 'SHA-1' }, false, ['sign']), counter))
+  const o = hmac[19]! & 15
+  const n = ((hmac[o]! & 0x7f) << 24) | (hmac[o + 1]! << 16) | (hmac[o + 2]! << 8) | hmac[o + 3]!
+  return String(n % 1_000_000).padStart(6, '0')
+}
+const claimsOf = (jwt: string) => JSON.parse(atob(jwt.split('.')[1]!.replace(/-/g, '+').replace(/_/g, '/'))) as { aal?: string }
+
 describe.runIf(LOCAL)('admin API with real Supabase sessions', () => {
   const password = `Pw-${rand()}`
   const mk = (kind: string) => ({ email: `it-admin-${kind}-${rand().slice(0, 10)}@example.test`, password })
@@ -249,11 +264,21 @@ describe.runIf(LOCAL)('admin API with real Supabase sessions', () => {
   const ids: string[] = []
   const jwt: Record<string, string> = {}
 
-  async function signIn(u: { email: string; password: string }) {
-    // sign-in goes through GoTrue; a throwaway client so the shared service client keeps its auth state
+  // sign-in goes through GoTrue; a throwaway client so the shared service client keeps its auth state.
+  // withTotp: also enroll and verify an authenticator, which upgrades the session to aal2.
+  async function signIn(u: { email: string; password: string }, withTotp = false) {
     const client = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
     const { data, error } = await client.auth.signInWithPassword(u)
     if (error) throw error
+    if (withTotp) {
+      const enrolled = await client.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'it' })
+      if (enrolled.error) throw new Error(`TOTP enroll failed (is [auth.mfa.totp] enabled in config.toml?): ${enrolled.error.message}`)
+      const challenge = await client.auth.mfa.challenge({ factorId: enrolled.data.id })
+      if (challenge.error) throw challenge.error
+      const verified = await client.auth.mfa.verify({ factorId: enrolled.data.id, challengeId: challenge.data.id, code: await totpCode(enrolled.data.totp.secret) })
+      if (verified.error) throw verified.error
+      return (await client.auth.getSession()).data.session!.access_token
+    }
     return data.session!.access_token
   }
 
@@ -263,8 +288,9 @@ describe.runIf(LOCAL)('admin API with real Supabase sessions', () => {
       if (error) throw error
       ids.push(data.user.id)
       if (kind === 'admin') await db.from('admin_users').insert({ user_id: data.user.id })
-      jwt[kind] = await signIn(u)
+      jwt[kind] = await signIn(u, kind === 'admin')
     }
+    jwt.adminPasswordOnly = await signIn(adminUser) // same account, fresh sign-in: password only, so aal1
   })
   afterAll(async () => {
     for (const id of ids) await db.auth.admin.deleteUser(id) // admin_users row cascades
@@ -274,6 +300,22 @@ describe.runIf(LOCAL)('admin API with real Supabase sessions', () => {
     expect((await api('', { token: jwt.admin })).status).toBe(200)
     expect((await api('', { token: jwt.plain })).status).toBe(403)
     expect((await api('', { token: `${jwt.admin}x` })).status).toBe(401)
+  })
+
+  it('MFA is enforced: a password-only session of the same admin is 403, the aal2 session is 200', async () => {
+    expect(claimsOf(jwt.adminPasswordOnly!).aal).toBe('aal1')
+    expect(claimsOf(jwt.admin!).aal).toBe('aal2')
+    const denied = await api('', { token: jwt.adminPasswordOnly })
+    expect(denied.status).toBe(403)
+    expect((await denied.json()).detail).toMatch(/MFA required/)
+    expect((await api('', { token: jwt.admin })).status).toBe(200)
+  })
+
+  it('a password-only session cannot add its own authenticator once one is verified', async () => {
+    const client = createClient(env.SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { persistSession: false, autoRefreshToken: false } })
+    await client.auth.signInWithPassword(adminUser)
+    const second = await client.auth.mfa.enroll({ factorType: 'totp', friendlyName: 'attacker' })
+    expect(second.error?.message).toMatch(/AAL2 required/)
   })
 
   it('a user JWT may write, and the audit trail names the account', async () => {
