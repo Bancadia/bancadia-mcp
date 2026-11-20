@@ -2,3 +2,5 @@ SUPABASE_URL=
 SUPABASE_SECRET_KEY=
 UPSTASH_REDIS_REST_URL=
 UPSTASH_REDIS_REST_TOKEN=
+# Browser origins allowed to call the admin API and the MCP endpoint (comma-separated). Add the Next dev server locally:
+# ALLOWED_ORIGINS=http://localhost:3000,https://bancadia.com

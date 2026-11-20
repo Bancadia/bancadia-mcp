@@ -34,6 +34,57 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_api_tokens: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          last_used_at: string | null
+          name: string
+          revoked_at: string | null
+          scope: string
+          token_hash: string
+          token_prefix: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name: string
+          revoked_at?: string | null
+          scope?: string
+          token_hash: string
+          token_prefix: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          last_used_at?: string | null
+          name?: string
+          revoked_at?: string | null
+          scope?: string
+          token_hash?: string
+          token_prefix?: string
+        }
+        Relationships: []
+      }
+      admin_users: {
+        Row: {
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       business_cd_details: {
         Row: {
           apy: number
@@ -116,6 +167,7 @@ export type Database = {
           remote_deposit_capture: boolean
           rtp_network: Database["public"]["Enums"]["rtp_network_enum"] | null
           rtp_supported: boolean
+          savings_buckets_supported: boolean
           sub_accounts_supported: boolean
           tax_integration_available: boolean
           virtual_cards_available: boolean
@@ -154,6 +206,7 @@ export type Database = {
           remote_deposit_capture?: boolean
           rtp_network?: Database["public"]["Enums"]["rtp_network_enum"] | null
           rtp_supported?: boolean
+          savings_buckets_supported?: boolean
           sub_accounts_supported?: boolean
           tax_integration_available?: boolean
           virtual_cards_available?: boolean
@@ -192,6 +245,7 @@ export type Database = {
           remote_deposit_capture?: boolean
           rtp_network?: Database["public"]["Enums"]["rtp_network_enum"] | null
           rtp_supported?: boolean
+          savings_buckets_supported?: boolean
           sub_accounts_supported?: boolean
           tax_integration_available?: boolean
           virtual_cards_available?: boolean
@@ -1077,7 +1131,6 @@ export type Database = {
           id: string
           institution_id: string
           listing_id: string
-          product_type: string
         }
         Insert: {
           action: string
@@ -1089,7 +1142,6 @@ export type Database = {
           id?: string
           institution_id: string
           listing_id: string
-          product_type: string
         }
         Update: {
           action?: string
@@ -1101,9 +1153,49 @@ export type Database = {
           id?: string
           institution_id?: string
           listing_id?: string
-          product_type?: string
         }
         Relationships: []
+      }
+      listing_sources: {
+        Row: {
+          created_at: string
+          fetch_mode: string
+          format: string
+          id: string
+          is_active: boolean
+          listing_id: string
+          source_type: Database["public"]["Enums"]["verification_source_type"]
+          url: string
+        }
+        Insert: {
+          created_at?: string
+          fetch_mode?: string
+          format?: string
+          id?: string
+          is_active?: boolean
+          listing_id: string
+          source_type: Database["public"]["Enums"]["verification_source_type"]
+          url: string
+        }
+        Update: {
+          created_at?: string
+          fetch_mode?: string
+          format?: string
+          id?: string
+          is_active?: boolean
+          listing_id?: string
+          source_type?: Database["public"]["Enums"]["verification_source_type"]
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "listing_sources_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "business_deposit_accounts"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       personal_cd_details: {
         Row: {
@@ -1496,6 +1588,7 @@ export type Database = {
       query_events: {
         Row: {
           channel: string
+          chat_conversation_id: string | null
           created_at: string
           developer_id: string | null
           error_message: string | null
@@ -1510,10 +1603,10 @@ export type Database = {
           tool_name: string
           total_matches: number | null
           user_agent: string | null
-          chat_conversation_id: string | null
         }
         Insert: {
           channel?: string
+          chat_conversation_id?: string | null
           created_at?: string
           developer_id?: string | null
           error_message?: string | null
@@ -1528,10 +1621,10 @@ export type Database = {
           tool_name: string
           total_matches?: number | null
           user_agent?: string | null
-          chat_conversation_id?: string | null
         }
         Update: {
           channel?: string
+          chat_conversation_id?: string | null
           created_at?: string
           developer_id?: string | null
           error_message?: string | null
@@ -1546,7 +1639,6 @@ export type Database = {
           tool_name?: string
           total_matches?: number | null
           user_agent?: string | null
-          chat_conversation_id?: string | null
         }
         Relationships: [
           {
@@ -1599,6 +1691,257 @@ export type Database = {
             referencedColumns: ["request_id"]
           },
         ]
+      }
+      source_snapshots: {
+        Row: {
+          changed: boolean | null
+          content_type: string | null
+          error: string | null
+          etag: string | null
+          fetched_at: string
+          final_url: string | null
+          http_status: number | null
+          id: string
+          last_modified_hdr: string | null
+          normalized_sha256: string | null
+          raw_sha256: string | null
+          run_id: string
+          source_id: string
+          storage_path: string | null
+        }
+        Insert: {
+          changed?: boolean | null
+          content_type?: string | null
+          error?: string | null
+          etag?: string | null
+          fetched_at?: string
+          final_url?: string | null
+          http_status?: number | null
+          id?: string
+          last_modified_hdr?: string | null
+          normalized_sha256?: string | null
+          raw_sha256?: string | null
+          run_id: string
+          source_id: string
+          storage_path?: string | null
+        }
+        Update: {
+          changed?: boolean | null
+          content_type?: string | null
+          error?: string | null
+          etag?: string | null
+          fetched_at?: string
+          final_url?: string | null
+          http_status?: number | null
+          id?: string
+          last_modified_hdr?: string | null
+          normalized_sha256?: string | null
+          raw_sha256?: string | null
+          run_id?: string
+          source_id?: string
+          storage_path?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "source_snapshots_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "verification_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "source_snapshots_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "listing_sources"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      verifiable_fields: {
+        Row: {
+          auto_apply: boolean
+          column_name: string
+          note: string | null
+          table_name: string
+          value_type: string
+        }
+        Insert: {
+          auto_apply?: boolean
+          column_name: string
+          note?: string | null
+          table_name: string
+          value_type: string
+        }
+        Update: {
+          auto_apply?: boolean
+          column_name?: string
+          note?: string | null
+          table_name?: string
+          value_type?: string
+        }
+        Relationships: []
+      }
+      verification_findings: {
+        Row: {
+          column_name: string
+          created_at: string
+          evidence_quote: string | null
+          extracted_value: string | null
+          fee_type: string | null
+          gates: Json | null
+          id: string
+          listing_id: string
+          model: string | null
+          needs_copy_review: boolean
+          note: string | null
+          outcome: string
+          registry_value: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          review_state: string
+          run_id: string
+          source_id: string | null
+          source_text_sha: string | null
+          source_url: string | null
+          table_name: string
+          target_row_id: string
+        }
+        Insert: {
+          column_name: string
+          created_at?: string
+          evidence_quote?: string | null
+          extracted_value?: string | null
+          fee_type?: string | null
+          gates?: Json | null
+          id?: string
+          listing_id: string
+          model?: string | null
+          needs_copy_review?: boolean
+          note?: string | null
+          outcome: string
+          registry_value?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          review_state?: string
+          run_id: string
+          source_id?: string | null
+          source_text_sha?: string | null
+          source_url?: string | null
+          table_name: string
+          target_row_id: string
+        }
+        Update: {
+          column_name?: string
+          created_at?: string
+          evidence_quote?: string | null
+          extracted_value?: string | null
+          fee_type?: string | null
+          gates?: Json | null
+          id?: string
+          listing_id?: string
+          model?: string | null
+          needs_copy_review?: boolean
+          note?: string | null
+          outcome?: string
+          registry_value?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          review_state?: string
+          run_id?: string
+          source_id?: string | null
+          source_text_sha?: string | null
+          source_url?: string | null
+          table_name?: string
+          target_row_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "verification_findings_listing_id_fkey"
+            columns: ["listing_id"]
+            isOneToOne: false
+            referencedRelation: "business_deposit_accounts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_findings_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "verification_runs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_findings_source_id_fkey"
+            columns: ["source_id"]
+            isOneToOne: false
+            referencedRelation: "listing_sources"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "verification_findings_table_name_column_name_fkey"
+            columns: ["table_name", "column_name"]
+            isOneToOne: false
+            referencedRelation: "verifiable_fields"
+            referencedColumns: ["table_name", "column_name"]
+          },
+        ]
+      }
+      verification_runs: {
+        Row: {
+          batch_id: string | null
+          cost_usd: number | null
+          error: string | null
+          finished_at: string | null
+          id: string
+          input_tokens: number | null
+          model: string | null
+          output_tokens: number | null
+          sources_changed: number | null
+          sources_failed: number | null
+          sources_total: number | null
+          sources_unchanged: number | null
+          started_at: string
+          status: string
+          trigger: string
+          week: string
+        }
+        Insert: {
+          batch_id?: string | null
+          cost_usd?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          sources_changed?: number | null
+          sources_failed?: number | null
+          sources_total?: number | null
+          sources_unchanged?: number | null
+          started_at?: string
+          status: string
+          trigger?: string
+          week: string
+        }
+        Update: {
+          batch_id?: string | null
+          cost_usd?: number | null
+          error?: string | null
+          finished_at?: string | null
+          id?: string
+          input_tokens?: number | null
+          model?: string | null
+          output_tokens?: number | null
+          sources_changed?: number | null
+          sources_failed?: number | null
+          sources_total?: number | null
+          sources_unchanged?: number | null
+          started_at?: string
+          status?: string
+          trigger?: string
+          week?: string
+        }
+        Relationships: []
       }
     }
     Views: {
@@ -1661,12 +2004,80 @@ export type Database = {
       }
     }
     Functions: {
+      admin__columns: {
+        Args: { p_exclude?: string[]; p_table: string }
+        Returns: string[]
+      }
+      admin__resource_enum_columns: {
+        Args: { p_resource: string }
+        Returns: {
+          col: string
+          typ_name: string
+          typ_ns: string
+        }[]
+      }
+      admin__update_row: {
+        Args: {
+          p_allowed: string[]
+          p_payload: Json
+          p_table: string
+          p_where: Json
+        }
+        Returns: Json
+      }
+      admin_add_enum_value: {
+        Args: { p_field: string; p_resource: string; p_value: string }
+        Returns: Json
+      }
+      admin_field_enums: { Args: { p_resource: string }; Returns: Json }
+      admin_mutate: {
+        Args: {
+          p_actor_id: string
+          p_actor_label: string
+          p_listing_id: string
+          p_op: string
+          p_payload: Json
+          p_row_id: string
+          p_table: string
+        }
+        Returns: Json
+      }
+      admin_set_status: {
+        Args: {
+          p_actor_id: string
+          p_actor_label: string
+          p_listing_id: string
+          p_status: string
+        }
+        Returns: Json
+      }
+      admin_update_details: {
+        Args: {
+          p_accounts: Json
+          p_actor_id: string
+          p_actor_label: string
+          p_details: Json
+          p_listing_id: string
+        }
+        Returns: Json
+      }
       fees_by_type: {
-        Args: { p_fee_types: string[]; p_plan?: string; p_slugs?: string[] }
+        Args: {
+          p_fee_types: string[]
+          p_max_rows_per_bank?: number
+          p_plan?: string
+          p_slugs?: string[]
+        }
         Returns: Json
       }
       get_listing_sections: {
-        Args: { p_sections?: string[]; p_slugs: string[] }
+        Args: {
+          p_feature_chars?: number
+          p_max_features?: number
+          p_query?: string
+          p_sections?: string[]
+          p_slugs: string[]
+        }
         Returns: Json
       }
       list_business_checking: {
@@ -1685,7 +2096,11 @@ export type Database = {
       mcp_checking_default_fields: { Args: never; Returns: string[] }
       mcp_checking_fields: { Args: never; Returns: string[] }
       mcp_checking_rows_json: {
-        Args: { p_fields: string[]; p_ids: string[] }
+        Args: {
+          p_fields: string[]
+          p_ids: string[]
+          p_keep_explicit?: string[]
+        }
         Returns: {
           listing_id: string
           obj: Json
@@ -1775,6 +2190,7 @@ export type Database = {
         | "card_replacement"
         | "foreign_transaction"
         | "other"
+        | "expense_management"
       fee_unit_enum:
         | "per_wire"
         | "per_100"
@@ -1824,6 +2240,13 @@ export type Database = {
         | "search"
         | "referral"
         | "ai_assistant"
+      verification_source_type:
+        | "product_page"
+        | "fee_schedule"
+        | "rates"
+        | "terms"
+        | "promo"
+        | "disclosure"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2012,6 +2435,7 @@ export const Constants = {
         "card_replacement",
         "foreign_transaction",
         "other",
+        "expense_management",
       ],
       fee_unit_enum: [
         "per_wire",
@@ -2065,6 +2489,14 @@ export const Constants = {
         "search",
         "referral",
         "ai_assistant",
+      ],
+      verification_source_type: [
+        "product_page",
+        "fee_schedule",
+        "rates",
+        "terms",
+        "promo",
+        "disclosure",
       ],
     },
   },

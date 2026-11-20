@@ -20,6 +20,11 @@ MCP_PROFILE = "v2"
 name = "bancadia-mcp-staging"
 workers_dev = true
 
+# Vars are not inherited by envs, so the non-secret ones are repeated here. Supabase/Upstash come from secrets.
+[env.staging.vars]
+
+ALLOWED_ORIGINS = "https://bancadia-app-dev.up.railway.app"
+
 [env.production]
 name = "bancadia-mcp-production"
 workers_dev = false
@@ -27,3 +32,7 @@ routes = [
   { pattern = "mcp.bancadia.com/*", zone_name = "bancadia.com" },
   { pattern = "api.bancadia.com", custom_domain = true },
 ]
+
+# Browser origins allowed to call the Worker (admin dashboard). Supabase/Upstash come from secrets.
+[env.production.vars]
+ALLOWED_ORIGINS = "https://bancadia.com"

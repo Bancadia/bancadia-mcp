@@ -3,3 +3,7 @@ node_modules/
 dist/
 .dev.vars
 supabase/.temp/
+.env
+
+# Personal tooling that never leaves this machine (sync scripts and their tokens)
+scripts/local/
