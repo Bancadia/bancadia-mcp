@@ -11,6 +11,7 @@ import { newQueryMeta } from './lib/analytics'
 import { runTool, isKnownTool, failureMessage } from './lib/run-tool'
 import { SUPPORTED_PROTOCOL_VERSIONS, negotiateProtocolVersion } from './lib/mcp-protocol'
 import rest from './rest/router'
+import adminListings from './admin/app'
 import chatgpt from './chatgpt/route'
 import claude from './claude/route'
 import { FAVICON_ICO, ICON_PNG_192 } from './lib/icons'
@@ -53,6 +54,10 @@ function sendJsonRpc(
 
   return c.json(body, status)
 }
+
+// Admin listing API (admin credentials only; own CORS, no-store). Mounted before /v1 so the public router's
+// catch-all and wildcard CORS never see /v1/listings.
+app.route('/v1/listings', adminListings)
 
 // Public REST API (no session, optional bearer token)
 app.route('/v1', rest)
