@@ -9,12 +9,27 @@ export type AdminAuth = { ok: true; actor: Actor } | { ok: false; status: 401 | 
 
 const DENY_401: AdminAuth = { ok: false, status: 401, detail: 'Missing, invalid or expired credentials.' }
 const DENY_403: AdminAuth = { ok: false, status: 403, detail: 'This credential is not authorized for the admin API.' }
+const DENY_MFA: AdminAuth = { ok: false, status: 403, detail: 'MFA required: verify your authenticator code.' }
 const TOKEN_PREFIX = 'sk_admin_'
+
+// The `aal` claim of a Supabase access token: aal2 means a second factor (TOTP) was verified in this session. Only
+// call this on a token auth.getUser() has already validated; it reads the payload and does not check the signature.
+// A missing, malformed or any other value counts as aal1.
+export function isAal2(jwt: string): boolean {
+  try {
+    const payload = jwt.split('.')[1] ?? ''
+    return (JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))) as { aal?: unknown }).aal === 'aal2'
+  } catch {
+    return false
+  }
+}
 
 // Two credentials, deliberately uncached so revocation and sign-out take effect on the next request:
 //   Authorization: Bearer sk_admin_...   a row in admin_api_tokens (hashed; scope read|write; expires/revoked)
-//   Authorization: Bearer <Supabase JWT> a Supabase user that has a row in admin_users
-// 401 = no/invalid credential. 403 = valid credential that is not an admin.
+//   Authorization: Bearer <Supabase JWT> a Supabase user that has a row in admin_users AND a session at aal2
+//                                        (password + TOTP). A password alone is not enough: the Supabase sign-in
+//                                        endpoint is public, so only this check makes a guessed password useless.
+// 401 = no/invalid credential. 403 = valid credential that is not an admin, or an admin without MFA.
 export async function authenticateAdmin(request: Request, env: Env, ctx: ExecutionContext): Promise<AdminAuth> {
   const header = request.headers.get('Authorization') ?? ''
   const token = header.startsWith('Bearer ') ? header.slice(7).trim() : ''
@@ -41,5 +56,6 @@ export async function authenticateAdmin(request: Request, env: Env, ctx: Executi
   const { data: row, error } = await db.from('admin_users').select('user_id').eq('user_id', userData.user.id).maybeSingle()
   if (error) throw error
   if (!row) return DENY_403
+  if (!isAal2(token)) return DENY_MFA
   return { ok: true, actor: { kind: 'user', id: userData.user.id, label: userData.user.email ?? userData.user.id, scope: 'write' } }
 }
