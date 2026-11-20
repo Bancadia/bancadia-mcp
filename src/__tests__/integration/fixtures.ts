@@ -30,9 +30,8 @@ export const ALL_KNOWN_SLUGS: string[] = Object.values(KNOWN_SLUGS)
 // listing, read from the seeded local database (bancadia-db migration 052's
 // backfill). Stored as decimals (0.03 = 3%). The other 8 checking listings
 // are interest_bearing = false and have NULL for both -- including
-// karat-business-checking since bancadia-db migration 059 (single plan,
-// checking earns 0.00%; its 1.00% ATP rate is an account feature, not
-// checking APY). Deliberately chosen so apy_default and apy_max diverge for
+// karat-business-checking was non-interest-bearing from migration 059 until
+// migration 091 made it interest-bearing (apy_default 0, apy_max 0.01). Deliberately chosen so apy_default and apy_max diverge for
 // found/bluevine -- that's what lets a test tell "filters on apy_max" apart
 // from "filters on apy_default".
 export const APY_EXPECTED = {
@@ -41,6 +40,8 @@ export const APY_EXPECTED = {
   [KNOWN_SLUGS.ramp]: { apy_default: 0.02, apy_max: 0.02 },
   [KNOWN_SLUGS.found]: { apy_default: 0, apy_max: 0.025 },
   [KNOWN_SLUGS.bluevine]: { apy_default: 0.013, apy_max: 0.033 },
+  // Karat became interest-bearing again (bancadia-db migration 091): checking 0.00% default, 1.00% max.
+  'karat-business-checking': { apy_default: 0, apy_max: 0.01 },
 } as const
 
 export const APY_SLUGS: string[] = Object.keys(APY_EXPECTED)
@@ -99,8 +100,10 @@ export const REST_FILTER_CASES: Array<{ name: string; query: string; mcp: Record
   { name: 'interest_bearing=true', query: 'interest_bearing=true', mcp: { interest_bearing: true }, slugs: [K.bluevine, K.found, K.grasshopper, K.ramp] },
   { name: 'sub_accounts_supported=true', query: 'sub_accounts_supported=true', mcp: { sub_accounts_supported: true },
     slugs: [K.bluevine, K.found, K.mercury, K.ramp, K.relay, K.rho] },
+  { name: 'savings_buckets_supported=true', query: 'savings_buckets_supported=true', mcp: { savings_buckets_supported: true },
+    slugs: [K.novo, K.found, K.lili] },
   { name: 'cash_deposit_available=true', query: 'cash_deposit_available=true', mcp: { cash_deposit_available: true },
-    slugs: [K.bluevine, K.citibank, K.found, K.chase, K.lili, K.relay] },
+    slugs: [K.bluevine, K.citibank, K.found, K.chase, K.grasshopper, K.lili, K.relay] }, // grasshopper since migration 088
   { name: 'free_transactions_min=20', query: 'free_transactions_min=20', mcp: { free_transactions_min: 20 }, slugs: [K.citibank, K.chase] },
   { name: 'apy_min=0.02', query: 'apy_min=0.02', mcp: { apy_min: 0.02 }, slugs: [K.ramp, K.found, K.bluevine] },
   { name: 'rtp_network=fednow', query: 'rtp_network=fednow', mcp: { rtp_network: 'fednow' }, slugs: [K.found, K.grasshopper] },

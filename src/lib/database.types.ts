@@ -116,6 +116,7 @@ export type Database = {
           remote_deposit_capture: boolean
           rtp_network: Database["public"]["Enums"]["rtp_network_enum"] | null
           rtp_supported: boolean
+          savings_buckets_supported: boolean
           sub_accounts_supported: boolean
           tax_integration_available: boolean
           virtual_cards_available: boolean
@@ -154,6 +155,7 @@ export type Database = {
           remote_deposit_capture?: boolean
           rtp_network?: Database["public"]["Enums"]["rtp_network_enum"] | null
           rtp_supported?: boolean
+          savings_buckets_supported?: boolean
           sub_accounts_supported?: boolean
           tax_integration_available?: boolean
           virtual_cards_available?: boolean
@@ -192,6 +194,7 @@ export type Database = {
           remote_deposit_capture?: boolean
           rtp_network?: Database["public"]["Enums"]["rtp_network_enum"] | null
           rtp_supported?: boolean
+          savings_buckets_supported?: boolean
           sub_accounts_supported?: boolean
           tax_integration_available?: boolean
           virtual_cards_available?: boolean
@@ -1077,7 +1080,6 @@ export type Database = {
           id: string
           institution_id: string
           listing_id: string
-          product_type: string
         }
         Insert: {
           action: string
@@ -1089,7 +1091,6 @@ export type Database = {
           id?: string
           institution_id: string
           listing_id: string
-          product_type: string
         }
         Update: {
           action?: string
@@ -1101,7 +1102,6 @@ export type Database = {
           id?: string
           institution_id?: string
           listing_id?: string
-          product_type?: string
         }
         Relationships: []
       }

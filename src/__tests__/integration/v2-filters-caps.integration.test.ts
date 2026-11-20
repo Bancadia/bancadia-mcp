@@ -22,7 +22,7 @@ async function detailsBySlug(): Promise<Map<string, Record<string, any>>> {
   return new Map(data!.filter((d: any) => ids.has(d.listing_id)).map((d: any) => [ids.get(d.listing_id)!, d]))
 }
 
-const NEW_BOOLS = ['remote_deposit_capture', 'check_writing_available', 'multicurrency_support', 'bill_pay_available', 'virtual_cards_available', 'corporate_card_available', 'physical_debit_card_available']
+const NEW_BOOLS = ['remote_deposit_capture', 'check_writing_available', 'multicurrency_support', 'bill_pay_available', 'virtual_cards_available', 'corporate_card_available', 'physical_debit_card_available', 'sub_accounts_supported', 'savings_buckets_supported']
 
 // Proves: each new boolean filter returns exactly the listings whose details column is true (oracle: the table),
 // and a requested field shows its true value on those rows.

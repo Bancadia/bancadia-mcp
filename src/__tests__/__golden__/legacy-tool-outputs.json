@@ -386,7 +386,7 @@
     "ALL"
    ],
    "bill_pay_available": true,
-   "cash_deposit_available": false,
+   "cash_deposit_available": true,
    "cash_deposit_fee_per_100": null,
    "check_writing_available": true,
    "corporate_card_available": true,
@@ -425,7 +425,7 @@
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": true,
-   "outgoing_domestic_wire_fee": 5,
+   "outgoing_domestic_wire_fee": 10,
    "outgoing_international_wire_fee": 25,
    "overdraft_line_of_credit_available": false,
    "overdraft_protection_available": true,
@@ -573,8 +573,8 @@
    "accounting_integration_available": true,
    "ach_debit_block_available": false,
    "application_url": "https://bancadia.com/go/karat/business-checking?src=mcp&qr=<qr>",
-   "apy_default": null,
-   "apy_max": null,
+   "apy_default": 0,
+   "apy_max": 0.01,
    "apy_tiers": null,
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
@@ -612,7 +612,7 @@
    },
    "institution_name": "Karat Financial Technologies Incorporated",
    "insurance_type": "fdic",
-   "interest_bearing": false,
+   "interest_bearing": true,
    "is_verified": true,
    "last_modified": "<ts>",
    "last_verified": "<ts>",
@@ -988,7 +988,7 @@
    "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
-   "incoming_international_wire_fee": 0,
+   "incoming_international_wire_fee": 15,
    "institution": {
     "display_name": "Bluevine",
     "institution_type": "fintech",
@@ -1451,7 +1451,7 @@
     "ALL"
    ],
    "bill_pay_available": true,
-   "cash_deposit_available": false,
+   "cash_deposit_available": true,
    "cash_deposit_fee_per_100": null,
    "check_writing_available": true,
    "corporate_card_available": true,
@@ -1490,7 +1490,7 @@
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": true,
-   "outgoing_domestic_wire_fee": 5,
+   "outgoing_domestic_wire_fee": 10,
    "outgoing_international_wire_fee": 25,
    "overdraft_line_of_credit_available": false,
    "overdraft_protection_available": true,
@@ -1638,8 +1638,8 @@
    "accounting_integration_available": true,
    "ach_debit_block_available": false,
    "application_url": "https://bancadia.com/go/karat/business-checking?src=mcp&qr=<qr>",
-   "apy_default": null,
-   "apy_max": null,
+   "apy_default": 0,
+   "apy_max": 0.01,
    "apy_tiers": null,
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
@@ -1677,7 +1677,7 @@
    },
    "institution_name": "Karat Financial Technologies Incorporated",
    "insurance_type": "fdic",
-   "interest_bearing": false,
+   "interest_bearing": true,
    "is_verified": true,
    "last_modified": "<ts>",
    "last_verified": "<ts>",
@@ -2053,7 +2053,7 @@
    "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
-   "incoming_international_wire_fee": 0,
+   "incoming_international_wire_fee": 15,
    "institution": {
     "display_name": "Bluevine",
     "institution_type": "fintech",
@@ -2750,7 +2750,7 @@
     "ALL"
    ],
    "bill_pay_available": true,
-   "cash_deposit_available": false,
+   "cash_deposit_available": true,
    "cash_deposit_fee_per_100": null,
    "check_writing_available": true,
    "corporate_card_available": true,
@@ -2789,7 +2789,7 @@
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": true,
-   "outgoing_domestic_wire_fee": 5,
+   "outgoing_domestic_wire_fee": 10,
    "outgoing_international_wire_fee": 25,
    "overdraft_line_of_credit_available": false,
    "overdraft_protection_available": true,
@@ -2937,8 +2937,8 @@
    "accounting_integration_available": true,
    "ach_debit_block_available": false,
    "application_url": "https://bancadia.com/go/karat/business-checking?src=mcp&qr=<qr>",
-   "apy_default": null,
-   "apy_max": null,
+   "apy_default": 0,
+   "apy_max": 0.01,
    "apy_tiers": null,
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
@@ -2976,7 +2976,7 @@
    },
    "institution_name": "Karat Financial Technologies Incorporated",
    "insurance_type": "fdic",
-   "interest_bearing": false,
+   "interest_bearing": true,
    "is_verified": true,
    "last_modified": "<ts>",
    "last_verified": "<ts>",
@@ -3352,7 +3352,7 @@
    "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
-   "incoming_international_wire_fee": 0,
+   "incoming_international_wire_fee": 15,
    "institution": {
     "display_name": "Bluevine",
     "institution_type": "fintech",
@@ -3816,7 +3816,7 @@
     "ALL"
    ],
    "bill_pay_available": true,
-   "cash_deposit_available": false,
+   "cash_deposit_available": true,
    "cash_deposit_fee_per_100": null,
    "check_writing_available": true,
    "corporate_card_available": true,
@@ -3855,7 +3855,7 @@
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": true,
-   "outgoing_domestic_wire_fee": 5,
+   "outgoing_domestic_wire_fee": 10,
    "outgoing_international_wire_fee": 25,
    "overdraft_line_of_credit_available": false,
    "overdraft_protection_available": true,
@@ -4003,8 +4003,8 @@
    "accounting_integration_available": true,
    "ach_debit_block_available": false,
    "application_url": "https://bancadia.com/go/karat/business-checking?src=mcp&qr=<qr>",
-   "apy_default": null,
-   "apy_max": null,
+   "apy_default": 0,
+   "apy_max": 0.01,
    "apy_tiers": null,
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
@@ -4042,7 +4042,7 @@
    },
    "institution_name": "Karat Financial Technologies Incorporated",
    "insurance_type": "fdic",
-   "interest_bearing": false,
+   "interest_bearing": true,
    "is_verified": true,
    "last_modified": "<ts>",
    "last_verified": "<ts>",
@@ -4418,7 +4418,7 @@
    "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
-   "incoming_international_wire_fee": 0,
+   "incoming_international_wire_fee": 15,
    "institution": {
     "display_name": "Bluevine",
     "institution_type": "fintech",
@@ -4881,7 +4881,7 @@
     "ALL"
    ],
    "bill_pay_available": true,
-   "cash_deposit_available": false,
+   "cash_deposit_available": true,
    "cash_deposit_fee_per_100": null,
    "check_writing_available": true,
    "corporate_card_available": true,
@@ -4920,7 +4920,7 @@
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": true,
-   "outgoing_domestic_wire_fee": 5,
+   "outgoing_domestic_wire_fee": 10,
    "outgoing_international_wire_fee": 25,
    "overdraft_line_of_credit_available": false,
    "overdraft_protection_available": true,
@@ -5068,8 +5068,8 @@
    "accounting_integration_available": true,
    "ach_debit_block_available": false,
    "application_url": "https://bancadia.com/go/karat/business-checking?src=mcp&qr=<qr>",
-   "apy_default": null,
-   "apy_max": null,
+   "apy_default": 0,
+   "apy_max": 0.01,
    "apy_tiers": null,
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
@@ -5107,7 +5107,7 @@
    },
    "institution_name": "Karat Financial Technologies Incorporated",
    "insurance_type": "fdic",
-   "interest_bearing": false,
+   "interest_bearing": true,
    "is_verified": true,
    "last_modified": "<ts>",
    "last_verified": "<ts>",
@@ -5483,7 +5483,7 @@
    "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
-   "incoming_international_wire_fee": 0,
+   "incoming_international_wire_fee": 15,
    "institution": {
     "display_name": "Bluevine",
     "institution_type": "fintech",
@@ -5937,7 +5937,7 @@
    "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
-   "incoming_international_wire_fee": 0,
+   "incoming_international_wire_fee": 15,
    "institution": {
     "display_name": "Bluevine",
     "institution_type": "fintech",
@@ -6672,7 +6672,7 @@
     "ALL"
    ],
    "bill_pay_available": true,
-   "cash_deposit_available": false,
+   "cash_deposit_available": true,
    "cash_deposit_fee_per_100": null,
    "check_writing_available": true,
    "corporate_card_available": true,
@@ -6711,7 +6711,7 @@
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": true,
-   "outgoing_domestic_wire_fee": 5,
+   "outgoing_domestic_wire_fee": 10,
    "outgoing_international_wire_fee": 25,
    "overdraft_line_of_credit_available": false,
    "overdraft_protection_available": true,
@@ -6859,8 +6859,8 @@
    "accounting_integration_available": true,
    "ach_debit_block_available": false,
    "application_url": "https://bancadia.com/go/karat/business-checking?src=mcp&qr=<qr>",
-   "apy_default": null,
-   "apy_max": null,
+   "apy_default": 0,
+   "apy_max": 0.01,
    "apy_tiers": null,
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
@@ -6898,7 +6898,7 @@
    },
    "institution_name": "Karat Financial Technologies Incorporated",
    "insurance_type": "fdic",
-   "interest_bearing": false,
+   "interest_bearing": true,
    "is_verified": true,
    "last_modified": "<ts>",
    "last_verified": "<ts>",
@@ -7274,7 +7274,7 @@
    "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
-   "incoming_international_wire_fee": 0,
+   "incoming_international_wire_fee": 15,
    "institution": {
     "display_name": "Bluevine",
     "institution_type": "fintech",
@@ -7765,15 +7765,6 @@
      "amount": 0,
      "amount_description": null,
      "eligibility_criteria": null,
-     "fee_type": "card_replacement",
-     "tiers": null,
-     "waivable": false,
-     "waiver_condition": null
-    },
-    {
-     "amount": 0,
-     "amount_description": null,
-     "eligibility_criteria": null,
      "fee_type": "monthly_maintenance",
      "tiers": null,
      "waivable": false,
@@ -7838,6 +7829,15 @@
      "amount_description": null,
      "eligibility_criteria": null,
      "fee_type": "dormancy",
+     "tiers": null,
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 5,
+     "amount_description": null,
+     "eligibility_criteria": null,
+     "fee_type": "card_replacement",
      "tiers": null,
      "waivable": false,
      "waiver_condition": null
@@ -8388,7 +8388,7 @@
     },
     {
      "category": "platform_integrations",
-     "description": "Built-in invoicing software to create, send, and track invoices; automated transaction categorization for bookkeeping; and tax savings tools to set aside funds throughout the year.",
+     "description": "Built-in invoicing software to create, send, and track invoices, and automated transaction categorization for bookkeeping.",
      "value": null
     },
     {
@@ -8489,6 +8489,15 @@
      ],
      "waivable": false,
      "waiver_condition": null
+    },
+    {
+     "amount": 5,
+     "amount_description": null,
+     "eligibility_criteria": null,
+     "fee_type": "atm_foreign",
+     "tiers": null,
+     "waivable": false,
+     "waiver_condition": null
     }
    ],
    "incoming_domestic_wire_fee": 0,
@@ -8542,6 +8551,11 @@
        "value": 200
       },
       {
+       "category": "account_management",
+       "description": "Tax savings: automatically allocate funds towards tax payments. Not available on the free Lili Core plan.",
+       "value": null
+      },
+      {
        "category": "cards_and_atm",
        "description": "Cardholders can earn cashback at participating merchants through Visa SavingsEdge.",
        "value": null
@@ -8585,6 +8599,11 @@
        "value": 200
       },
       {
+       "category": "account_management",
+       "description": "Tax savings: automatically allocate funds towards tax payments. Not available on the free Lili Core plan.",
+       "value": null
+      },
+      {
        "category": "cards_and_atm",
        "description": "Cardholders can earn cashback at participating merchants through Visa SavingsEdge.",
        "value": null
@@ -8616,6 +8635,11 @@
        "category": "account_management",
        "description": "BalanceUp — free overdraft protection covering up to $200 in debit card purchase overdrafts, with no fee charged. Requires at least $500 in qualifying monthly deposits to enroll; any negative balance must be resolved within 30 days.",
        "value": 200
+      },
+      {
+       "category": "account_management",
+       "description": "Tax savings: automatically allocate funds towards tax payments. Not available on the free Lili Core plan.",
+       "value": null
       },
       {
        "category": "cards_and_atm",
