@@ -147,9 +147,9 @@ describe('query_business_checking — real local Supabase', () => {
       }
       const mercury = results.find((r) => r.listing_slug === KNOWN_SLUGS.mercury)
       expect(mercury).toMatchObject({ apy_max: null, apy_default: null })
-      // Karat went non-interest-bearing in bancadia-db migration 059.
+      // Karat is interest-bearing since bancadia-db migration 091 (its values are in APY_EXPECTED).
       const karat = results.find((r) => r.listing_slug === 'karat-business-checking')
-      expect(karat).toMatchObject({ interest_bearing: false, apy_max: null, apy_default: null })
+      expect(karat).toMatchObject({ interest_bearing: true })
     })
 
     it('apy_min filters on apy_max, not apy_default (found/bluevine have default < 0.02 <= max)', async () => {
@@ -169,9 +169,8 @@ describe('query_business_checking — real local Supabase', () => {
     it('apy_min also excludes NULL-apy_max listings (the !inner join restricts rows)', async () => {
       const results = await run({ apy_min: 0.0001 })
       const slugs = results.map((r) => r.listing_slug)
-      // All 8 non-interest-bearing checking listings have NULL apy_max
-      // (Karat since bancadia-db migration 059).
-      for (const slug of [KNOWN_SLUGS.mercury, KNOWN_SLUGS.novo, KNOWN_SLUGS.chase, KNOWN_SLUGS.citibank, 'karat-business-checking']) {
+      // The non-interest-bearing checking listings have NULL apy_max.
+      for (const slug of [KNOWN_SLUGS.mercury, KNOWN_SLUGS.novo, KNOWN_SLUGS.chase, KNOWN_SLUGS.citibank]) {
         expect(slugs).not.toContain(slug)
       }
       expect(apyScoped(results).sort()).toEqual([...APY_SLUGS].sort())

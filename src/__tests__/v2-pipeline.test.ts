@@ -56,7 +56,7 @@ describe('v2 argument to RPC mapping', () => {
     expect((db.rpc.mock.calls.at(-1)![1] as Json).p_filters).toEqual({ has_active_promotion: true })
   })
 
-  const NEW_BOOLS = ['remote_deposit_capture', 'check_writing_available', 'multicurrency_support', 'bill_pay_available', 'virtual_cards_available', 'corporate_card_available', 'physical_debit_card_available']
+  const NEW_BOOLS = ['remote_deposit_capture', 'check_writing_available', 'multicurrency_support', 'bill_pay_available', 'virtual_cards_available', 'corporate_card_available', 'physical_debit_card_available', 'sub_accounts_supported', 'savings_buckets_supported']
   it.each(NEW_BOOLS)('new filter %s passes through to p_filters (false kept) and rejects non-booleans', async (k) => {
     const db = setupDb({ list_business_checking: { data: listPayload() } })
     await callMcp('list_business_checking', { [k]: false, rank_industries: ['ecommerce'] })

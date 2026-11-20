@@ -15,6 +15,8 @@ npx vitest run src/__tests__/query-business-checking.test.ts   # run a single te
 npm run lint              # tsc --noEmit (type-check only, no separate linter configured)
 npm run lint:openapi      # generate the OpenAPI doc (scripts/print-openapi.ts) and lint it with Redocly (recommended ruleset)
 npm run db:start|db:reset|db:stop   # local Supabase via ../bancadia-db (override with BANCADIA_DB_PATH); db:reset also applies grants and seeds test fixtures
+npm run db:sync-from-dev  # copy dev's registry tables into ../bancadia-db/supabase/seeds/dev-data.sql (needs DEV_SUPABASE_SECRET_KEY in .env)
+npm run db:fresh          # db:sync-from-dev, then db:reset: local becomes a copy of dev
 npm run test:integration  # real-Postgres suite; target from SUPABASE_URL/SUPABASE_SECRET_KEY in env, else .dev.vars (host allowlist: local or the dev project)
 npm run deploy:staging    # wrangler deploy --env staging
 npm run deploy:production # wrangler deploy --env production
