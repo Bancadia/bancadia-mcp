@@ -109,7 +109,7 @@
             "name": "sub_accounts_supported",
             "in": "query",
             "required": false,
-            "description": "Sub-accounts with own controls, cards or account numbers (not earmark-only buckets)",
+            "description": "Sub-accounts with own controls, cards or account numbers (not earmark buckets)",
             "schema": {
               "type": "boolean"
             }
@@ -118,7 +118,7 @@
             "name": "savings_buckets_supported",
             "in": "query",
             "required": false,
-            "description": "Earmark-only buckets (taxes, payroll); no own cards or controls. May also have sub_accounts_supported",
+            "description": "Earmark-only buckets (taxes, payroll); no own cards or controls. May overlap sub_accounts_supported",
             "schema": {
               "type": "boolean"
             }
@@ -145,6 +145,7 @@
             "name": "accounting_integration_available",
             "in": "query",
             "required": false,
+            "description": "Third-party accounting sync only",
             "schema": {
               "type": "boolean"
             }
@@ -234,7 +235,7 @@
             "name": "has_active_promotion",
             "in": "query",
             "required": false,
-            "description": "true: only current promotions (rows include promotions); false: none. Recorded for some banks only",
+            "description": "true: only current promotions (rows include them); false: none. Some banks only",
             "schema": {
               "type": "boolean"
             }
@@ -252,7 +253,7 @@
             "name": "min_insured_usd",
             "in": "query",
             "required": false,
-            "description": "Min total FDIC/extended coverage in USD; extended coverage with unpublished amount goes to possible_matches",
+            "description": "Min total FDIC/extended coverage, USD; unpublished extended amounts go to possible_matches",
             "schema": {
               "type": "number"
             }
@@ -261,7 +262,7 @@
             "name": "apy_min",
             "in": "query",
             "required": false,
-            "description": "Min best-case rate (apy_max), decimal: 0.02 = 2%. apy_default is the standard rate",
+            "description": "Min apy_max (best case), decimal: 0.02 = 2%",
             "schema": {
               "type": "number"
             }
@@ -270,7 +271,7 @@
             "name": "integrations_any",
             "in": "query",
             "required": false,
-            "description": "Integrates with ANY, e.g. quickbooks, xero, stripe (aliases like qbo work)",
+            "description": "Integrates with ANY: quickbooks, xero, stripe (aliases like qbo ok) or built-in native-ar (invoicing/AR), native-ap (bill mgmt/AP)",
             "schema": {
               "type": "array",
               "items": {
@@ -284,7 +285,7 @@
             "name": "integrations_all",
             "in": "query",
             "required": false,
-            "description": "Integrates with ALL",
+            "description": "Integrates with ALL (same slugs)",
             "schema": {
               "type": "array",
               "items": {
@@ -298,7 +299,7 @@
             "name": "min_limits",
             "in": "query",
             "required": false,
-            "description": "Value >= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
+            "description": ">= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
             "schema": {
               "type": "string"
             }
@@ -307,7 +308,7 @@
             "name": "rank_industries",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes: orders by how many of these segments a bank is tagged for, after any explicit sort. Values: ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
+            "description": "RANK ONLY, never excludes: orders by number of matching segment tags, after any explicit sort. Values: ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
             "schema": {
               "type": "array",
               "items": {
@@ -321,7 +322,7 @@
             "name": "rank_profiles",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes (ordering as rank_industries). Values: early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
+            "description": "RANK ONLY, never excludes (as rank_industries). Values: early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
             "schema": {
               "type": "array",
               "items": {
@@ -1583,7 +1584,7 @@
             "name": "sub_accounts_supported",
             "in": "query",
             "required": false,
-            "description": "Sub-accounts with own controls, cards or account numbers (not earmark-only buckets)",
+            "description": "Sub-accounts with own controls, cards or account numbers (not earmark buckets)",
             "schema": {
               "type": "boolean"
             }
@@ -1592,7 +1593,7 @@
             "name": "savings_buckets_supported",
             "in": "query",
             "required": false,
-            "description": "Earmark-only buckets (taxes, payroll); no own cards or controls. May also have sub_accounts_supported",
+            "description": "Earmark-only buckets (taxes, payroll); no own cards or controls. May overlap sub_accounts_supported",
             "schema": {
               "type": "boolean"
             }
@@ -1619,6 +1620,7 @@
             "name": "accounting_integration_available",
             "in": "query",
             "required": false,
+            "description": "Third-party accounting sync only",
             "schema": {
               "type": "boolean"
             }
@@ -1708,7 +1710,7 @@
             "name": "has_active_promotion",
             "in": "query",
             "required": false,
-            "description": "true: only current promotions (rows include promotions); false: none. Recorded for some banks only",
+            "description": "true: only current promotions (rows include them); false: none. Some banks only",
             "schema": {
               "type": "boolean"
             }
@@ -1726,7 +1728,7 @@
             "name": "min_insured_usd",
             "in": "query",
             "required": false,
-            "description": "Min total FDIC/extended coverage in USD; extended coverage with unpublished amount goes to possible_matches",
+            "description": "Min total FDIC/extended coverage, USD; unpublished extended amounts go to possible_matches",
             "schema": {
               "type": "number"
             }
@@ -1735,7 +1737,7 @@
             "name": "apy_min",
             "in": "query",
             "required": false,
-            "description": "Min best-case rate (apy_max), decimal: 0.02 = 2%. apy_default is the standard rate",
+            "description": "Min apy_max (best case), decimal: 0.02 = 2%",
             "schema": {
               "type": "number"
             }
@@ -1744,7 +1746,7 @@
             "name": "integrations_any",
             "in": "query",
             "required": false,
-            "description": "Integrates with ANY, e.g. quickbooks, xero, stripe (aliases like qbo work)",
+            "description": "Integrates with ANY: quickbooks, xero, stripe (aliases like qbo ok) or built-in native-ar (invoicing/AR), native-ap (bill mgmt/AP)",
             "schema": {
               "type": "array",
               "items": {
@@ -1758,7 +1760,7 @@
             "name": "integrations_all",
             "in": "query",
             "required": false,
-            "description": "Integrates with ALL",
+            "description": "Integrates with ALL (same slugs)",
             "schema": {
               "type": "array",
               "items": {
@@ -1772,7 +1774,7 @@
             "name": "min_limits",
             "in": "query",
             "required": false,
-            "description": "Value >= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
+            "description": ">= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd. Comma-separated key:number pairs, e.g. sub_accounts:12,free_wires:2.",
             "schema": {
               "type": "string"
             }
@@ -1781,7 +1783,7 @@
             "name": "rank_industries",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes: orders by how many of these segments a bank is tagged for, after any explicit sort. Values: ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
+            "description": "RANK ONLY, never excludes: orders by number of matching segment tags, after any explicit sort. Values: ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first",
             "schema": {
               "type": "array",
               "items": {
@@ -1795,7 +1797,7 @@
             "name": "rank_profiles",
             "in": "query",
             "required": false,
-            "description": "RANK ONLY, never excludes (ordering as rank_industries). Values: early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
+            "description": "RANK ONLY, never excludes (as rank_industries). Values: early_stage_startup, vc_backed, bootstrapped_solopreneur, established_smb, high_growth, side_hustle",
             "schema": {
               "type": "array",
               "items": {
