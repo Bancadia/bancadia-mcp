@@ -21,6 +21,9 @@ const LISTING = '11111111-1111-4111-8111-111111111111'
 const ROW = '22222222-2222-4222-8222-222222222222'
 const FEATURE = '33333333-3333-4333-8333-333333333333'
 const ADMIN_USER = { id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', email: 'admin@example.com' }
+// A decodable (unsigned) JWT: auth.getUser is mocked, and the Worker only reads the aal claim from the payload.
+const b64 = (o: unknown) => btoa(JSON.stringify(o)).replace(/=+$/, '').replace(/\+/g, '-').replace(/\//g, '_')
+const jwt = (claims: Record<string, unknown> = { aal: 'aal2' }) => `${b64({ alg: 'ES256' })}.${b64(claims)}.sig`
 const TOKEN_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
 
 type Result = { data: unknown; error: { message: string; code?: string } | null }
@@ -56,7 +59,7 @@ function setup(o: Setup = {}) {
 }
 
 async function call(path: string, init: RequestInit & { auth?: string | null } = {}) {
-  const { auth = 'Bearer jwt-token', headers, ...rest } = init
+  const { auth = `Bearer ${jwt()}`, headers, ...rest } = init
   const h = new Headers(headers)
   if (auth) h.set('Authorization', auth)
   h.set('CF-Connecting-IP', '1.2.3.4')
@@ -91,6 +94,30 @@ describe('authentication', () => {
   it('403 for a valid Supabase user that is not an admin', async () => {
     setup({ isAdmin: false })
     expect((await call('')).status).toBe(403)
+  })
+
+  it.each([
+    ['aal1', { aal: 'aal1' }],
+    ['no aal claim', {}],
+    ['an unknown aal value', { aal: 'aal3' }],
+  ])('403 "MFA required" for an admin whose session is %s (a password alone is not enough)', async (_name, claims) => {
+    const m = setup()
+    const res = await call('', { auth: `Bearer ${jwt(claims)}` })
+    expect(res.status).toBe(403)
+    expect((await res.json()).detail).toMatch(/MFA required/)
+    expect(m.rpc).not.toHaveBeenCalled()
+  })
+
+  it('403 "MFA required" for a token that is not decodable as a JWT', async () => {
+    setup()
+    expect((await call('', { auth: 'Bearer not-a-jwt' })).status).toBe(403)
+  })
+
+  it('a non-admin never learns about MFA: same generic 403 at aal1', async () => {
+    setup({ isAdmin: false })
+    const res = await call('', { auth: `Bearer ${jwt({ aal: 'aal1' })}` })
+    expect(res.status).toBe(403)
+    expect((await res.json()).detail).not.toMatch(/MFA/)
   })
 
   it('200 for an admin user', async () => {
