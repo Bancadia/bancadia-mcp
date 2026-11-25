@@ -359,8 +359,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -379,7 +378,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -390,13 +388,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -411,7 +409,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -1437,8 +1435,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -1457,7 +1454,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -1468,13 +1464,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -1489,7 +1485,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -2755,8 +2751,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -2775,7 +2770,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -2786,13 +2780,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -2807,7 +2801,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -3840,8 +3834,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -3860,7 +3853,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -3871,13 +3863,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -3892,7 +3884,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -4918,8 +4910,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -4938,7 +4929,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -4949,13 +4939,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -4970,7 +4960,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -6734,8 +6724,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -6754,7 +6743,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -6765,13 +6753,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -6786,7 +6774,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
