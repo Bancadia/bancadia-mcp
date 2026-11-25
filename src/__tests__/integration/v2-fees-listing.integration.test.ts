@@ -28,10 +28,10 @@ describe('v2 fees_by_type', () => {
     expect(f.free_allowance).toEqual({ amount: 1, unit: 'count', period: 'month' })
   })
 
-  it('cash_deposit pinned values: Citi $0.35 per_100 with $5,000 free per month', async () => {
+  it('cash_deposit pinned values: Citi $0.17 per_100 with $10,000 free per month', async () => {
     const f = bank(await fees({ fee_types: ['cash_deposit'], slugs: four }), K.citibank).fees[0]
-    expect(f).toMatchObject({ amount: 0.35, fee_unit: 'per_100', amount_status: 'set' })
-    expect(f.free_allowance).toEqual({ amount: 5000, unit: 'usd', period: 'month' })
+    expect(f).toMatchObject({ amount: 0.17, fee_unit: 'per_100', amount_status: 'set' })
+    expect(f.free_allowance).toEqual({ amount: 10000, unit: 'usd', period: 'month' })
   })
 
   it('cash_deposit pinned values: Lili is free; Chase is 0.30 percent with $5,000 free', async () => {

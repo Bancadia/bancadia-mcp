@@ -71,6 +71,7 @@ const planTierShape = {
   apy: numN,
   apy_max_balance_eligible: intN,
   apy_condition: sn,
+  source_url: sn,
   is_default: bool.optional(),
 } satisfies Shape<TablesInsert<'business_deposit_plan_tiers'>>
 

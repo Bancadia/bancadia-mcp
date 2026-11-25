@@ -250,6 +250,7 @@ function expectedTier(t: Row): Row {
     apy_condition: t.apy_condition,
     is_default: t.is_default,
     sort_order: t.sort_order,
+    source_url: t.source_url,
   }
 }
 
@@ -387,7 +388,7 @@ const QUERY_KEYS = [
 const INSTITUTION_KEYS = ['display_name', 'institution_type', 'logo_url', 'support_email', 'website_url']
 const PLAN_TIER_KEYS = [
   'apy', 'apy_condition', 'apy_max_balance_eligible', 'is_default', 'monthly_fee', 'monthly_fee_waiver_condition',
-  'plan_name', 'sort_order',
+  'plan_name', 'sort_order', 'source_url',
 ]
 const PROMOTION_KEYS = ['bonus_amount', 'condition_description', 'expiry_date', 'minimum_deposit', 'promo_url']
 const FEE_KEYS = ['amount', 'amount_description', 'eligibility_criteria', 'fee_type', 'tiers', 'waivable', 'waiver_condition']
@@ -491,7 +492,7 @@ describe('query_business_checking: Bluevine golden record', () => {
       free_transactions_per_month: null,
       cash_deposit_available: true,
       cash_deposit_fee_per_100: null,
-      monthly_cash_deposit_limit: null,
+      monthly_cash_deposit_limit: 7500,
       sub_accounts_supported: true,
       rtp_supported: false,
       rtp_network: null,
@@ -534,6 +535,7 @@ describe('query_business_checking: Bluevine golden record', () => {
             'Spend $500/month on Bluevine Business Debit Mastercard OR receive $2,500/month in deposits to checking or sub-accounts',
           is_default: true,
           sort_order: 0,
+          source_url: null,
         },
         {
           plan_name: 'Plus',
@@ -545,6 +547,7 @@ describe('query_business_checking: Bluevine golden record', () => {
           apy_condition: null,
           is_default: false,
           sort_order: 1,
+          source_url: null,
         },
         {
           plan_name: 'Premier',
@@ -556,6 +559,7 @@ describe('query_business_checking: Bluevine golden record', () => {
           apy_condition: null,
           is_default: false,
           sort_order: 2,
+          source_url: null,
         },
       ],
       promotions: [],

@@ -11,11 +11,17 @@
    "atm_fee_reimbursement_limit": null,
    "atm_network": "Allpoint + Cardtronics",
    "available_states": [
-    "ALL"
+    "CA",
+    "FL",
+    "IL",
+    "MD",
+    "NV",
+    "NY",
+    "DC"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": 0.35,
+   "cash_deposit_fee_per_100": 0.17,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -284,7 +290,7 @@
    "last_verified": "<ts>",
    "listing_slug": "found-online-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 4000,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -303,7 +309,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.015,
@@ -311,9 +318,10 @@
      "apy_max_balance_eligible": 20000,
      "is_default": false,
      "monthly_fee": 35,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.025,
@@ -321,9 +329,10 @@
      "apy_max_balance_eligible": null,
      "is_default": false,
      "monthly_fee": 80,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -715,7 +724,8 @@
      "monthly_fee": 15,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Pro",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -725,7 +735,8 @@
      "monthly_fee": 35,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Smart",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -735,7 +746,8 @@
      "monthly_fee": 55,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Premium",
-     "sort_order": 3
+     "sort_order": 3,
+     "source_url": null
     },
     {
      "apy": null,
@@ -745,7 +757,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Core",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -913,7 +926,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Grow",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -923,7 +937,8 @@
      "monthly_fee": 90,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Scale",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -933,7 +948,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Starter",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -1004,7 +1020,7 @@
    "last_verified": "<ts>",
    "listing_slug": "bluevine-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 7500,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -1023,7 +1039,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.0175,
@@ -1033,7 +1050,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.033,
@@ -1043,7 +1061,8 @@
      "monthly_fee": 95,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": true,
@@ -1349,7 +1368,7 @@
    "last_verified": "<ts>",
    "listing_slug": "found-online-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 4000,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -1368,7 +1387,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.015,
@@ -1376,9 +1396,10 @@
      "apy_max_balance_eligible": 20000,
      "is_default": false,
      "monthly_fee": 35,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.025,
@@ -1386,9 +1407,10 @@
      "apy_max_balance_eligible": null,
      "is_default": false,
      "monthly_fee": 80,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -1780,7 +1802,8 @@
      "monthly_fee": 15,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Pro",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -1790,7 +1813,8 @@
      "monthly_fee": 35,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Smart",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -1800,7 +1824,8 @@
      "monthly_fee": 55,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Premium",
-     "sort_order": 3
+     "sort_order": 3,
+     "source_url": null
     },
     {
      "apy": null,
@@ -1810,7 +1835,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Core",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -1978,7 +2004,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Grow",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -1988,7 +2015,8 @@
      "monthly_fee": 90,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Scale",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -1998,7 +2026,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Starter",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -2069,7 +2098,7 @@
    "last_verified": "<ts>",
    "listing_slug": "bluevine-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 7500,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -2088,7 +2117,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.0175,
@@ -2098,7 +2128,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.033,
@@ -2108,7 +2139,8 @@
      "monthly_fee": 95,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": true,
@@ -2375,11 +2407,17 @@
    "atm_fee_reimbursement_limit": null,
    "atm_network": "Allpoint + Cardtronics",
    "available_states": [
-    "ALL"
+    "CA",
+    "FL",
+    "IL",
+    "MD",
+    "NV",
+    "NY",
+    "DC"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": 0.35,
+   "cash_deposit_fee_per_100": 0.17,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -2648,7 +2686,7 @@
    "last_verified": "<ts>",
    "listing_slug": "found-online-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 4000,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -2667,7 +2705,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.015,
@@ -2675,9 +2714,10 @@
      "apy_max_balance_eligible": 20000,
      "is_default": false,
      "monthly_fee": 35,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.025,
@@ -2685,9 +2725,10 @@
      "apy_max_balance_eligible": null,
      "is_default": false,
      "monthly_fee": 80,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -3079,7 +3120,8 @@
      "monthly_fee": 15,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Pro",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -3089,7 +3131,8 @@
      "monthly_fee": 35,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Smart",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -3099,7 +3142,8 @@
      "monthly_fee": 55,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Premium",
-     "sort_order": 3
+     "sort_order": 3,
+     "source_url": null
     },
     {
      "apy": null,
@@ -3109,7 +3153,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Core",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -3277,7 +3322,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Grow",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -3287,7 +3333,8 @@
      "monthly_fee": 90,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Scale",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -3297,7 +3344,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Starter",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -3368,7 +3416,7 @@
    "last_verified": "<ts>",
    "listing_slug": "bluevine-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 7500,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -3387,7 +3435,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.0175,
@@ -3397,7 +3446,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.033,
@@ -3407,7 +3457,8 @@
      "monthly_fee": 95,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": true,
@@ -3441,11 +3492,17 @@
    "atm_fee_reimbursement_limit": null,
    "atm_network": "Allpoint + Cardtronics",
    "available_states": [
-    "ALL"
+    "CA",
+    "FL",
+    "IL",
+    "MD",
+    "NV",
+    "NY",
+    "DC"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": 0.35,
+   "cash_deposit_fee_per_100": 0.17,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -3714,7 +3771,7 @@
    "last_verified": "<ts>",
    "listing_slug": "found-online-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 4000,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -3733,7 +3790,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.015,
@@ -3741,9 +3799,10 @@
      "apy_max_balance_eligible": 20000,
      "is_default": false,
      "monthly_fee": 35,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.025,
@@ -3751,9 +3810,10 @@
      "apy_max_balance_eligible": null,
      "is_default": false,
      "monthly_fee": 80,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -4145,7 +4205,8 @@
      "monthly_fee": 15,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Pro",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -4155,7 +4216,8 @@
      "monthly_fee": 35,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Smart",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -4165,7 +4227,8 @@
      "monthly_fee": 55,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Premium",
-     "sort_order": 3
+     "sort_order": 3,
+     "source_url": null
     },
     {
      "apy": null,
@@ -4175,7 +4238,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Core",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -4343,7 +4407,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Grow",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -4353,7 +4418,8 @@
      "monthly_fee": 90,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Scale",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -4363,7 +4429,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Starter",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -4434,7 +4501,7 @@
    "last_verified": "<ts>",
    "listing_slug": "bluevine-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 7500,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -4453,7 +4520,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.0175,
@@ -4463,7 +4531,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.033,
@@ -4473,7 +4542,8 @@
      "monthly_fee": 95,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": true,
@@ -4779,7 +4849,7 @@
    "last_verified": "<ts>",
    "listing_slug": "found-online-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 4000,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -4798,7 +4868,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.015,
@@ -4806,9 +4877,10 @@
      "apy_max_balance_eligible": 20000,
      "is_default": false,
      "monthly_fee": 35,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.025,
@@ -4816,9 +4888,10 @@
      "apy_max_balance_eligible": null,
      "is_default": false,
      "monthly_fee": 80,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -5210,7 +5283,8 @@
      "monthly_fee": 15,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Pro",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -5220,7 +5294,8 @@
      "monthly_fee": 35,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Smart",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -5230,7 +5305,8 @@
      "monthly_fee": 55,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Premium",
-     "sort_order": 3
+     "sort_order": 3,
+     "source_url": null
     },
     {
      "apy": null,
@@ -5240,7 +5316,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Core",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -5408,7 +5485,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Grow",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -5418,7 +5496,8 @@
      "monthly_fee": 90,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Scale",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -5428,7 +5507,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Starter",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -5499,7 +5579,7 @@
    "last_verified": "<ts>",
    "listing_slug": "bluevine-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 7500,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -5518,7 +5598,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.0175,
@@ -5528,7 +5609,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.033,
@@ -5538,7 +5620,8 @@
      "monthly_fee": 95,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": true,
@@ -5844,7 +5927,7 @@
    "last_verified": "<ts>",
    "listing_slug": "found-online-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 4000,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -5863,7 +5946,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.015,
@@ -5871,9 +5955,10 @@
      "apy_max_balance_eligible": 20000,
      "is_default": false,
      "monthly_fee": 35,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.025,
@@ -5881,9 +5966,10 @@
      "apy_max_balance_eligible": null,
      "is_default": false,
      "monthly_fee": 80,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -5953,7 +6039,7 @@
    "last_verified": "<ts>",
    "listing_slug": "bluevine-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 7500,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -5972,7 +6058,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.0175,
@@ -5982,7 +6069,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.033,
@@ -5992,7 +6080,8 @@
      "monthly_fee": 95,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": true,
@@ -6297,11 +6386,17 @@
    "atm_fee_reimbursement_limit": null,
    "atm_network": "Allpoint + Cardtronics",
    "available_states": [
-    "ALL"
+    "CA",
+    "FL",
+    "IL",
+    "MD",
+    "NV",
+    "NY",
+    "DC"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": 0.35,
+   "cash_deposit_fee_per_100": 0.17,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -6570,7 +6665,7 @@
    "last_verified": "<ts>",
    "listing_slug": "found-online-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 4000,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -6589,7 +6684,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.015,
@@ -6597,9 +6693,10 @@
      "apy_max_balance_eligible": 20000,
      "is_default": false,
      "monthly_fee": 35,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.025,
@@ -6607,9 +6704,10 @@
      "apy_max_balance_eligible": null,
      "is_default": false,
      "monthly_fee": 80,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -7001,7 +7099,8 @@
      "monthly_fee": 15,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Pro",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -7011,7 +7110,8 @@
      "monthly_fee": 35,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Smart",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -7021,7 +7121,8 @@
      "monthly_fee": 55,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Premium",
-     "sort_order": 3
+     "sort_order": 3,
+     "source_url": null
     },
     {
      "apy": null,
@@ -7031,7 +7132,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Core",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -7199,7 +7301,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Grow",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": null,
@@ -7209,7 +7312,8 @@
      "monthly_fee": 90,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Scale",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -7219,7 +7323,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Starter",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -7290,7 +7395,7 @@
    "last_verified": "<ts>",
    "listing_slug": "bluevine-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 7500,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -7309,7 +7414,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.0175,
@@ -7319,7 +7425,8 @@
      "monthly_fee": 30,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     },
     {
      "apy": 0.033,
@@ -7329,7 +7436,8 @@
      "monthly_fee": 95,
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": true,
@@ -7622,27 +7730,22 @@
    "general_features": [
     {
      "category": "account_management",
-     "description": "No overdraft fees: Found does not charge overdraft fees or insufficient funds fees. When the account balance is insufficient to cover a transaction, the transaction is declined. Accounts with a negative balance for 30 or more consecutive days may be closed.",
+     "description": "Interest is available only through the optional Found Plus ($35/month or $315/year) and Found Pro ($80/month or $720/year) subscriptions; the base Found account earns no interest. See the Plus and Pro rows for rates.",
      "value": null
     },
     {
      "category": "account_management",
-     "description": "Optional interest-bearing subscriptions: the base Found Business Checking account earns no interest. Found Plus subscribers ($35/month or $315/year) earn 1.50% APY on balances up to $20,000. Found Pro subscribers ($80/month or $720/year) earn 2.50% APY on all balances with no balance cap. Subscriptions auto-renew and can be canceled at any time from app settings.",
-     "value": null
-    },
-    {
-     "category": "account_management",
-     "description": "Pockets (virtual sub-accounts): create multiple named sub-accounts within a single Found account to organize and earmark funds. Default Pockets (Primary and Tax) are provided automatically. Each Pocket receives its own unique routing number for direct ACH deposits and can have a virtual card assigned for card spending. Custom Pockets can be added, renamed, and deactivated at any time.",
+     "description": "Pockets (virtual sub-accounts): create multiple named sub-accounts within a single Found account to organize and earmark funds. Default Pockets (Primary and Tax) are provided automatically. Each Pocket has its own unique account number for direct ACH deposits and can have a virtual card assigned for card spending. Custom Pockets can be added, renamed, and deactivated at any time.",
      "value": 20
     },
     {
      "category": "cards_and_atm",
-     "description": "ATM access: Found does not charge fees for ATM withdrawals. ATM operator and network surcharges may be imposed by the ATM owner and are not controlled or reimbursed by Found. Daily ATM cash withdrawal limit: $550. Card works at any ATM displaying Mastercard, Interlink, Maestro, or Cirrus acceptance marks.",
+     "description": "ATM access: Found does not charge fees for ATM withdrawals. ATM operator surcharges may be imposed by the ATM owner and are not reimbursed by Found. Daily ATM cash withdrawal limit: $550 at ATMs that accept Mastercard.",
      "value": null
     },
     {
      "category": "cards_and_atm",
-     "description": "Digital wallet support: the Found Mastercard Business Debit Card can be added to Apple Pay, Google Pay, Samsung Pay, and other digital wallets at no additional charge from Found.",
+     "description": "Digital wallet support: the Found Mastercard Business Debit Card (including virtual cards) can be added to Apple Pay and Google Pay at no additional charge from Found.",
      "value": null
     },
     {
@@ -7657,22 +7760,12 @@
     },
     {
      "category": "cash_handling",
-     "description": "Cash deposits: you can deposit up to $2,000 per rolling 7 days.",
+     "description": "Cash deposits: you can deposit up to $2,000 per rolling 7 days and $4,000 per rolling 30 days. Minimum cash deposit size must be $5. Maximum deposit amounts may be limited by the merchant.",
      "value": null
     },
     {
-     "category": "cash_handling",
-     "description": "Cash deposits: you can deposit up to $4,000 per rolling 30 days.",
-     "value": null
-    },
-    {
-     "category": "cash_handling",
-     "description": "Maximum deposit amounts may be limited by the merchant.",
-     "value": null
-    },
-    {
-     "category": "cash_handling",
-     "description": "The minimum cash deposit size must be $5.",
+     "category": "customer_service",
+     "description": "24/7 virtual assistance via Found Assistant, plus human support by phone and email. Included on all plans.",
      "value": null
     },
     {
@@ -7682,7 +7775,7 @@
     },
     {
      "category": "fraud_protection",
-     "description": "Security features include two-factor authentication (2FA), data encryption, secure infrastructure, and comprehensive fraud monitoring. Customer support is available via live chat and email at help@found.com.",
+     "description": "Security features include two-factor authentication (2FA), data encryption, and fraud monitoring.",
      "value": null
     },
     {
@@ -7692,12 +7785,17 @@
     },
     {
      "category": "online_banking",
-     "description": "Mobile check deposit: deposit checks by photographing the front and back using the Found mobile app. Funds are ordinarily available within 5 business days. Check deposit cutoff time: 3:00 PM ET for same-day processing.",
+     "description": "Mobile check deposit: deposit checks by photographing the front and back in the Found mobile app. Funds are typically available after 4 business days. Limit of up to $3,000 per week via check, up to $30,000 per week for some accounts after verification.",
      "value": null
     },
     {
      "category": "payment_rails",
-     "description": "ACH transfers and direct deposit: free to send and receive with no per-transaction fee. Standard ACH transfers initiated through the mobile app may take up to 5 business days. Direct deposit is accepted via ACH.",
+     "description": "ACH transfers and direct deposit: free to send and receive with no per-transaction fee. Direct deposit is accepted via ACH.",
+     "value": null
+    },
+    {
+     "category": "payment_rails",
+     "description": "Bill pay: pay bills from the Found account. Included on all plans.",
      "value": null
     },
     {
@@ -7707,37 +7805,42 @@
     },
     {
      "category": "payment_rails",
-     "description": "Instant Payments via FedNow: near-real-time payments sent and received through the FedNow Service operated by the Federal Reserve. Outgoing fee: the greater of 1.75% of the payment amount or $0.50. Receiving Instant Payments is free. Instant Payments are irrevocable once submitted and cannot be canceled, reversed, or amended.",
+     "description": "Instant payments to other Found accounts: completed instantly at no fee. Included on all plans.",
      "value": null
     },
     {
      "category": "payment_rails",
-     "description": "Outgoing check payments: send paper checks via the Found mobile app. Fee: $1.00 per outgoing check, refundable if canceled within 30 minutes of submission. Found Pro subscribers ($80/month or $720/year) send checks at no charge.",
+     "description": "Instant Payments: near-real-time payments sent and received over instant payment networks, including the FedNow Service operated by the Federal Reserve. Outgoing fee: the greater of 1.75% of the payment amount or $0.50, capped at $50. Receiving Instant Payments is free. Instant Payments are irrevocable once submitted.",
      "value": null
     },
     {
      "category": "payment_rails",
-     "description": "Outgoing wire transfers: available as an optional service. Standard accounts pay $15 per outgoing wire. Found Pro subscribers pay $10 per outgoing wire. The fee is refunded if the wire is canceled or rejected; it is otherwise nonrefundable including if the wire is returned. Note international wires are not supported.",
+     "description": "Outgoing check payments: send paper checks via the Found mobile app. Fee: $1.00 per outgoing check on the Found plan, refundable if canceled within 30 minutes of submission. Found Plus and Found Pro subscribers send checks at no charge.",
+     "value": null
+    },
+    {
+     "category": "payment_rails",
+     "description": "Outgoing domestic wire transfers: $15 per wire on the Found plan, $12 on Found Plus, $8 on Found Pro. The fee is refunded if the wire is canceled or rejected; it is otherwise nonrefundable including if the wire is returned. International wires are not supported.",
+     "value": null
+    },
+    {
+     "category": "payment_rails",
+     "description": "Tap to Pay: accept in-person contactless payments on your phone via Stripe (Stripe fees apply: 2.7% + $0.05 + $0.10 per tap per the fee schedule). Included on all plans.",
      "value": null
     },
     {
      "category": "platform_integrations",
-     "description": "Automated bookkeeping and expense tracking: real-time expense categorization and financial insights built into the Found platform. View spending by category and track business finances without leaving the app.",
+     "description": "Bookkeeping on all plans: import transactions from other banks, apps and cards; auto-categorize with rules; receipt scanning and matching; custom tags and categories; split transactions and chart of accounts; profit and loss, income and expense reports; accountant collaboration in the app.",
      "value": null
     },
     {
      "category": "platform_integrations",
-     "description": "Built-in invoicing: create, send, and track invoices directly within Found. Accept invoice payments via Stripe. Stripe processing fees (charged by Stripe, not Found): 2.9% + $0.30 for card payments; $1.50 per link + 0.8% per transfer for direct debit; 3.1% + $0.30 for Cash App Pay. Tap to Pay for in-person contactless payments via Stripe: 2.7% + $0.05 + $0.10 per tap.",
+     "description": "Contractor payments on all plans: no per-contractor fees; pay by ACH, wire, check, text or email; request W-9s with automated reminders; generate and e-file 1099-NECs.",
      "value": null
     },
     {
      "category": "platform_integrations",
-     "description": "Contractor management: collect W-9 information from independent contractors and generate 1099 forms for contractors paid through the Found account. Supports 1099 delivery to contractors.",
-     "value": null
-    },
-    {
-     "category": "platform_integrations",
-     "description": "Found Pro dedicated account manager: Found Pro subscribers ($80/month or $720/year) receive access to a dedicated account manager for personalized support and faster response times. Found Pro also includes 1% cash back on qualifying card purchases.",
+     "description": "Invoicing on all plans: create and send unlimited invoices, scheduled and recurring invoices, automatic reminders, estimates and payment requests, and invoice templates. Invoice payments run through Stripe (Stripe fees: 2.9% + $0.30 card; $1.50 per link + 0.8% per transfer direct debit; 3.1% + $0.30 Cash App Pay).",
      "value": null
     },
     {
@@ -7747,7 +7850,7 @@
     },
     {
      "category": "platform_integrations",
-     "description": "Tax tools for the self-employed: automatic tracking and estimation of self-employment tax obligations. Found helps estimate quarterly self-employment tax payments and can facilitate direct payment to the IRS using account funds.",
+     "description": "Tax tools on all plans: automatic write-off detection, automatic saving for taxes in the Taxes Pocket, real-time tax estimates, mileage and home office deduction tracking, and Schedule C and 1120/1120-S generation.",
      "value": null
     }
    ],
@@ -7801,16 +7904,7 @@
      "amount": 1,
      "amount_description": "1% of transfer amount (minimum $0.50, maximum $25.00 per transfer)",
      "eligibility_criteria": null,
-     "fee_type": "other",
-     "tiers": null,
-     "waivable": false,
-     "waiver_condition": null
-    },
-    {
-     "amount": 1,
-     "amount_description": null,
-     "eligibility_criteria": null,
-     "fee_type": "other",
+     "fee_type": "transaction_fee",
      "tiers": null,
      "waivable": false,
      "waiver_condition": null
@@ -7820,6 +7914,15 @@
      "amount_description": "Greater of 1.75% of outgoing payment amount or $0.50 per Instant Payment; receiving is free",
      "eligibility_criteria": null,
      "fee_type": "other",
+     "tiers": null,
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 1.75,
+     "amount_description": null,
+     "eligibility_criteria": null,
+     "fee_type": "transaction_fee",
      "tiers": null,
      "waivable": false,
      "waiver_condition": null
@@ -7869,7 +7972,7 @@
    "last_verified": "<ts>",
    "listing_slug": "found-online-business-checking",
    "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
+   "monthly_cash_deposit_limit": 4000,
    "monthly_fee": 0,
    "monthly_fee_waiver_condition": null,
    "multicurrency_support": false,
@@ -7885,36 +7988,100 @@
      "apy_condition": null,
      "apy_max_balance_eligible": null,
      "features": [],
-     "fees": [],
+     "fees": [
+      {
+       "amount": 1,
+       "amount_description": null,
+       "eligibility_criteria": null,
+       "fee_type": "check_payment",
+       "tiers": null,
+       "waivable": false,
+       "waiver_condition": null
+      }
+     ],
      "is_default": true,
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": 0.015,
      "apy_condition": "Requires an active Found Plus subscription ($35/month or $315/year). Rate is variable and subject to change.",
      "apy_max_balance_eligible": 20000,
-     "features": [],
-     "fees": [],
-     "is_default": false,
-     "monthly_fee": 35,
-     "monthly_fee_waiver_condition": null,
-     "plan_name": "Found Plus",
-     "sort_order": 1
-    },
-    {
-     "apy": 0.025,
-     "apy_condition": "Requires an active Found Pro subscription ($80/month or $720/year). Rate is variable and subject to change.",
-     "apy_max_balance_eligible": null,
-     "features": [],
+     "features": [
+      {
+       "category": "account_management",
+       "description": "Business credit building: Found reports Found Plus subscription payments to commercial credit bureaus.",
+       "value": null
+      },
+      {
+       "category": "customer_service",
+       "description": "Dedicated account manager for Found Plus subscribers",
+       "value": null
+      },
+      {
+       "category": "platform_integrations",
+       "description": "In-app quarterly federal tax payments for Found Plus subscribers (Schedule C filers only).",
+       "value": null
+      }
+     ],
      "fees": [
       {
        "amount": 0,
        "amount_description": null,
        "eligibility_criteria": null,
-       "fee_type": "other",
+       "fee_type": "check_payment",
+       "tiers": null,
+       "waivable": false,
+       "waiver_condition": null
+      }
+     ],
+     "is_default": false,
+     "monthly_fee": 35,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
+     "plan_name": "Found Plus",
+     "sort_order": 1,
+     "source_url": null
+    },
+    {
+     "apy": 0.025,
+     "apy_condition": "Requires an active Found Pro subscription ($80/month or $720/year). Rate is variable and subject to change.",
+     "apy_max_balance_eligible": null,
+     "features": [
+      {
+       "category": "account_management",
+       "description": "Business credit building: Found reports Found Pro subscription payments to commercial credit bureaus.",
+       "value": null
+      },
+      {
+       "category": "cards_and_atm",
+       "description": "1% cash back on eligible debit and credit card purchases for Found Pro subscribers, excluding ATM withdrawals, P2P transfers and cash equivalents.",
+       "value": null
+      },
+      {
+       "category": "cards_and_atm",
+       "description": "Premium metal debit card for Found Pro subscribers, limited to one card per account and available after the first paid Pro bill.",
+       "value": null
+      },
+      {
+       "category": "customer_service",
+       "description": "Dedicated account manager for Found Pro subscribers + priority phone support",
+       "value": null
+      },
+      {
+       "category": "platform_integrations",
+       "description": "In-app quarterly federal tax payments for Found Pro subscribers (Schedule C filers only).",
+       "value": null
+      }
+     ],
+     "fees": [
+      {
+       "amount": 0,
+       "amount_description": null,
+       "eligibility_criteria": null,
+       "fee_type": "check_payment",
        "tiers": null,
        "waivable": false,
        "waiver_condition": null
@@ -7922,9 +8089,10 @@
      ],
      "is_default": false,
      "monthly_fee": 80,
-     "monthly_fee_waiver_condition": null,
+     "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
@@ -8538,7 +8706,8 @@
      "monthly_fee": 0,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Core",
-     "sort_order": 0
+     "sort_order": 0,
+     "source_url": null
     },
     {
      "apy": null,
@@ -8586,7 +8755,8 @@
      "monthly_fee": 55,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Premium",
-     "sort_order": 3
+     "sort_order": 3,
+     "source_url": null
     },
     {
      "apy": null,
@@ -8624,7 +8794,8 @@
      "monthly_fee": 35,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Smart",
-     "sort_order": 2
+     "sort_order": 2,
+     "source_url": null
     },
     {
      "apy": null,
@@ -8652,7 +8823,8 @@
      "monthly_fee": 15,
      "monthly_fee_waiver_condition": null,
      "plan_name": "Lili Pro",
-     "sort_order": 1
+     "sort_order": 1,
+     "source_url": null
     }
    ],
    "positive_pay_available": false,
