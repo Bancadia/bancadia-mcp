@@ -271,7 +271,7 @@
             "name": "integrations_any",
             "in": "query",
             "required": false,
-            "description": "Integrates with ANY: quickbooks, xero, stripe (aliases like qbo ok) or built-in: native-ar, native-ap, native-tax-planning, native-bookkeeping",
+            "description": "Integrates with ANY: quickbooks, xero, stripe (aliases like qbo ok) or built-in: native-{ar,ap,tax-planning,bookkeeping}, tap-to-pay",
             "schema": {
               "type": "array",
               "items": {
@@ -1746,7 +1746,7 @@
             "name": "integrations_any",
             "in": "query",
             "required": false,
-            "description": "Integrates with ANY: quickbooks, xero, stripe (aliases like qbo ok) or built-in: native-ar, native-ap, native-tax-planning, native-bookkeeping",
+            "description": "Integrates with ANY: quickbooks, xero, stripe (aliases like qbo ok) or built-in: native-{ar,ap,tax-planning,bookkeeping}, tap-to-pay",
             "schema": {
               "type": "array",
               "items": {

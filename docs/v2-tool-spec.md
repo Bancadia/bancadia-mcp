@@ -42,7 +42,7 @@ The exact JSON Schemas are in `docs/v2-tool-manifest.json`. No JSON-Schema `enum
 
 ### Normalization (module `src/lib/normalize-args.ts`, `normalizeArgs(toolName, args)`)
 Pure, returns a new args object, run after `validateArgs` and before the DB call:
-- `integrations_any/all` resolve against `integration_vocab` (slug, label or alias). Besides third-party products it holds `in_house` kinds (`native-ar` invoicing/AR, `native-ap` bill management/AP, `native-tax-planning`, `native-bookkeeping`) for software the bank ships itself; those never set `accounting_integration_available` (third-party sync only) and carry no `connection_method`.
+- `integrations_any/all` resolve against `integration_vocab` (slug, label or alias). Besides third-party products it holds `in_house` kinds (`native-ar` invoicing/AR, `native-ap` bill management/AP, `native-tax-planning`, `native-bookkeeping`) for software the bank ships itself; those never set `accounting_integration_available` (third-party sync only) and carry no `connection_method`. `tap-to-pay` (kind `payments`) is accepting card payments on the business's own phone with no reader, usually Stripe/Square-powered.
 - lower-cased (and trimmed): `insurance_type, rtp_network, sort, entity_types_accepted[], integrations_any[], integrations_all[], rank_industries[], rank_profiles[], fields[], min_limits` keys, `topic`, `fee_types[]`, `sections[]`, `slugs[]` (all tools).
 - upper-cased (and trimmed): `available_states[]`.
 - `plan` is passed trimmed, not case-changed (the DB compares case-insensitively).
