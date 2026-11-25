@@ -656,6 +656,7 @@ export type Database = {
           monthly_fee_waiver_condition: string | null
           plan_name: string
           sort_order: number
+          source_url: string | null
           updated_at: string
         }
         Insert: {
@@ -670,6 +671,7 @@ export type Database = {
           monthly_fee_waiver_condition?: string | null
           plan_name: string
           sort_order?: number
+          source_url?: string | null
           updated_at?: string
         }
         Update: {
@@ -684,6 +686,7 @@ export type Database = {
           monthly_fee_waiver_condition?: string | null
           plan_name?: string
           sort_order?: number
+          source_url?: string | null
           updated_at?: string
         }
         Relationships: [

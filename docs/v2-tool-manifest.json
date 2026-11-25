@@ -31,7 +31,7 @@
           "free_transactions_min": {"type": "number", "description": "Min free transactions per month"},
           "min_insured_usd": {"type": "number", "description": "Min total FDIC/extended coverage, USD; unpublished extended amounts go to possible_matches"},
           "apy_min": {"type": "number", "description": "Min apy_max (best case), decimal: 0.02 = 2%"},
-          "integrations_any": {"type": "array", "items": {"type": "string"}, "description": "Integrates with ANY: quickbooks, xero, stripe (aliases like qbo ok) or built-in native-ar (invoicing/AR), native-ap (bill mgmt/AP)"},
+          "integrations_any": {"type": "array", "items": {"type": "string"}, "description": "Integrates with ANY: quickbooks, xero, stripe (aliases like qbo ok) or built-in: native-ar, native-ap, native-tax-planning, native-bookkeeping"},
           "integrations_all": {"type": "array", "items": {"type": "string"}, "description": "Integrates with ALL (same slugs)"},
           "min_limits": {"type": "object", "additionalProperties": {"type": "number"}, "description": ">= n on any plan. Keys: sub_accounts, free_cash_deposit_usd, free_wires, monthly_cash_limit_usd"},
           "rank_industries": {"type": "array", "items": {"type": "string"}, "description": "RANK ONLY, never excludes: orders by number of matching segment tags, after any explicit sort. Values: ecommerce, retail_storefront, restaurant_food_service, content_creator_solopreneur, professional_services, real_estate, healthcare_practice, construction_trades, trucking_logistics, agriculture, saas_tech, nonprofit, small_business_digital_first"},

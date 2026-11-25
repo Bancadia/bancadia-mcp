@@ -84,6 +84,7 @@ export async function handleGetBusinessCheckingListing(
       apy: tier.apy,
       apy_max_balance_eligible: tier.apy_max_balance_eligible,
       apy_condition: tier.apy_condition,
+      source_url: tier.source_url,
       is_default: tier.is_default,
       sort_order: tier.sort_order,
       features: features.filter((f) => f.plan_tier_id === tier.id).map(mapFeature),

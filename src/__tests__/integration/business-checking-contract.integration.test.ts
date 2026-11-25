@@ -491,7 +491,7 @@ describe('query_business_checking: Bluevine golden record', () => {
       free_transactions_per_month: null,
       cash_deposit_available: true,
       cash_deposit_fee_per_100: null,
-      monthly_cash_deposit_limit: null,
+      monthly_cash_deposit_limit: 7500,
       sub_accounts_supported: true,
       rtp_supported: false,
       rtp_network: null,

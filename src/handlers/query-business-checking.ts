@@ -251,6 +251,7 @@ export function mapBusinessCheckingRow(row: BusinessCheckingQueryRow) {
       apy: t.apy,
       apy_max_balance_eligible: t.apy_max_balance_eligible,
       apy_condition: t.apy_condition,
+      source_url: t.source_url,
       is_default: t.is_default,
       sort_order: t.sort_order,
     })),
