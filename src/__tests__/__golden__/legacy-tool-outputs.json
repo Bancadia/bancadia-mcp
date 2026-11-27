@@ -310,7 +310,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.015,
@@ -321,7 +321,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.025,
@@ -332,7 +332,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     }
    ],
    "positive_pay_available": false,
@@ -359,8 +359,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -379,7 +378,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -390,13 +388,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -411,7 +409,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -1040,7 +1038,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.0175,
@@ -1051,7 +1049,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.033,
@@ -1062,7 +1060,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     }
    ],
    "positive_pay_available": true,
@@ -1388,7 +1386,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.015,
@@ -1399,7 +1397,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.025,
@@ -1410,7 +1408,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     }
    ],
    "positive_pay_available": false,
@@ -1437,8 +1435,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -1457,7 +1454,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -1468,13 +1464,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -1489,7 +1485,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -2118,7 +2114,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.0175,
@@ -2129,7 +2125,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.033,
@@ -2140,7 +2136,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     }
    ],
    "positive_pay_available": true,
@@ -2706,7 +2702,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.015,
@@ -2717,7 +2713,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.025,
@@ -2728,7 +2724,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     }
    ],
    "positive_pay_available": false,
@@ -2755,8 +2751,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -2775,7 +2770,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -2786,13 +2780,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -2807,7 +2801,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -3436,7 +3430,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.0175,
@@ -3447,7 +3441,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.033,
@@ -3458,7 +3452,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     }
    ],
    "positive_pay_available": true,
@@ -3791,7 +3785,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.015,
@@ -3802,7 +3796,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.025,
@@ -3813,7 +3807,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     }
    ],
    "positive_pay_available": false,
@@ -3840,8 +3834,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -3860,7 +3853,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -3871,13 +3863,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -3892,7 +3884,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -4521,7 +4513,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.0175,
@@ -4532,7 +4524,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.033,
@@ -4543,7 +4535,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     }
    ],
    "positive_pay_available": true,
@@ -4869,7 +4861,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.015,
@@ -4880,7 +4872,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.025,
@@ -4891,7 +4883,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     }
    ],
    "positive_pay_available": false,
@@ -4918,8 +4910,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -4938,7 +4929,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -4949,13 +4939,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -4970,7 +4960,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -5599,7 +5589,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.0175,
@@ -5610,7 +5600,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.033,
@@ -5621,7 +5611,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     }
    ],
    "positive_pay_available": true,
@@ -5947,7 +5937,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.015,
@@ -5958,7 +5948,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.025,
@@ -5969,7 +5959,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     }
    ],
    "positive_pay_available": false,
@@ -6059,7 +6049,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.0175,
@@ -6070,7 +6060,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.033,
@@ -6081,7 +6071,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     }
    ],
    "positive_pay_available": true,
@@ -6685,7 +6675,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.015,
@@ -6696,7 +6686,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.025,
@@ -6707,7 +6697,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     }
    ],
    "positive_pay_available": false,
@@ -6734,8 +6724,7 @@
    "apy_default": 0.01,
    "apy_max": 0.0135,
    "apy_tiers": {
-    "effective_date": "2025-11-03",
-    "relationship_condition": null,
+    "effective_date": "2026-10-13",
     "tiers": [
      {
       "max_balance": 24999,
@@ -6754,7 +6743,6 @@
       }
      },
      {
-      "max_balance": null,
       "min_balance": 250001,
       "standard": {
        "apy": 0.01,
@@ -6765,13 +6753,13 @@
    },
    "atm_fee_reimbursement": false,
    "atm_fee_reimbursement_limit": null,
-   "atm_network": "MoneyPass (37,000+) + SUM (8,500+)",
+   "atm_network": "Allpoint, MoneyPass, SUM",
    "available_states": [
     "ALL"
    ],
    "bill_pay_available": true,
    "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": null,
+   "cash_deposit_fee_per_100": 0,
    "check_writing_available": true,
    "corporate_card_available": true,
    "daily_debit_limit": null,
@@ -6786,7 +6774,7 @@
     "partnership"
    ],
    "expense_integration_available": false,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": 5,
@@ -7415,7 +7403,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Standard",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.0175,
@@ -7426,7 +7414,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $20,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $2,000 on the Bluevine Business Debit Mastercard or Bluevine Business Cashback Mastercard.",
      "plan_name": "Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     },
     {
      "apy": 0.033,
@@ -7437,7 +7425,7 @@
      "monthly_fee_waiver_condition": "Waived each billing period by maintaining an average daily balance of at least $100,000 in Bluevine Business Checking and/or sub-accounts AND spending at least $5,000 on the Bluevine Business Debit Mastercard.",
      "plan_name": "Premier",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://www.bluevine.com/business-checking/plans-and-pricing"
     }
    ],
    "positive_pay_available": true,
@@ -7904,7 +7892,7 @@
      "amount": 1,
      "amount_description": "1% of transfer amount (minimum $0.50, maximum $25.00 per transfer)",
      "eligibility_criteria": null,
-     "fee_type": "transaction_fee",
+     "fee_type": "same_day_ach",
      "tiers": null,
      "waivable": false,
      "waiver_condition": null
@@ -7922,7 +7910,7 @@
      "amount": 1.75,
      "amount_description": null,
      "eligibility_criteria": null,
-     "fee_type": "transaction_fee",
+     "fee_type": "instant_transaction",
      "tiers": null,
      "waivable": false,
      "waiver_condition": null
@@ -8004,7 +7992,7 @@
      "monthly_fee_waiver_condition": null,
      "plan_name": "Found Free",
      "sort_order": 0,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.015,
@@ -8043,7 +8031,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($26.25/mo)",
      "plan_name": "Found Plus",
      "sort_order": 1,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     },
     {
      "apy": 0.025,
@@ -8092,7 +8080,7 @@
      "monthly_fee_waiver_condition": "25% off when billed annually ($60/mo)",
      "plan_name": "Found Pro",
      "sort_order": 2,
-     "source_url": null
+     "source_url": "https://found.com/pricing#compare"
     }
    ],
    "positive_pay_available": false,

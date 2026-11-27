@@ -80,6 +80,14 @@ const targetSegmentShape = {
   segment: s,
 } satisfies Shape<TablesInsert<'business_deposit_account_target_segments'>>
 
+const sourceShape = {
+  source_type: s,
+  url: s,
+  format: z.enum(['html', 'pdf']).optional(),
+  fetch_mode: z.enum(['http', 'browser', 'pdf_vision', 'manual']).optional(),
+  is_active: bool.optional(),
+} satisfies Shape<TablesInsert<'listing_sources'>>
+
 export type Resource = {
   table: string
   shape: Record<string, z.ZodType>
@@ -102,6 +110,8 @@ export const RESOURCES = {
     table: 'business_deposit_account_target_segments', shape: targetSegmentShape, readonly: ['created_at'],
     order: ['created_at'],
   },
+  // Watch list for the weekly verifier (bancadia-db 084). Not part of the 096 last_modified triggers.
+  sources: { table: 'listing_sources', shape: sourceShape, readonly: ['created_at'], order: ['created_at'] },
 } satisfies Record<string, Resource>
 
 export type ResourceName = keyof typeof RESOURCES
@@ -202,7 +212,7 @@ export const integrationCreateSchema = z.strictObject({ integration_slug: s, ...
 export const integrationUpdateSchema = z.strictObject(integrationFields)
 
 // resources with enum dropdowns: the names admin_field_enums (099) understands
-export const ENUM_RESOURCES = ['details', 'fees', 'features', 'promotions', 'plan-tiers', 'target-segments', 'integrations']
+export const ENUM_RESOURCES = ['details', 'fees', 'features', 'promotions', 'plan-tiers', 'target-segments', 'integrations', 'sources']
 export const enumValueSchema = z.strictObject({ value: z.string().regex(/^[a-z][a-z0-9_]{0,62}$/) })
 
 export const pick = (row: Record<string, unknown> | null | undefined, cols: string[]) =>
