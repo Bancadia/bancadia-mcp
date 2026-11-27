@@ -282,6 +282,7 @@ describe('reads', () => {
           business_deposit_fees: [{ id: 'f2', created_at: '2' }, { id: 'f1', created_at: '1' }],
           business_deposit_account_features: [{ id: 'x', sort_order: null, created_at: '1', business_deposit_feature_integrations: [] }],
           business_deposit_plan_tiers: [], business_deposit_promotions: [], business_deposit_account_target_segments: [],
+          listing_sources: [{ id: 's1', created_at: '1' }],
         }),
       },
     })
@@ -291,7 +292,7 @@ describe('reads', () => {
     expect(text).not.toContain('tracker_url')
     expect(text).not.toContain('is_affiliate_tracked')
     const { data } = JSON.parse(text) as { data: Record<string, any> }
-    expect(Object.keys(data).sort()).toEqual(['account', 'checking', 'features', 'fees', 'plan_tiers', 'promotions', 'target_segments'])
+    expect(Object.keys(data).sort()).toEqual(['account', 'checking', 'features', 'fees', 'plan_tiers', 'promotions', 'sources', 'target_segments'])
     expect(data.fees.map((f: { id: string }) => f.id)).toEqual(['f1', 'f2'])
     expect(data.account.institution).toEqual({ name: 'I', display_name: null })
   })
@@ -301,6 +302,39 @@ describe('reads', () => {
     const res = await call(`/${LISTING}/nope`)
     expect(res.status).toBe(404)
     expect(res.headers.get('Cache-Control')).toBe('no-store')
+  })
+})
+
+describe('sources', () => {
+  const body = { source_type: 'fee_schedule', url: 'https://example.com/fees.pdf', format: 'pdf', fetch_mode: 'manual' }
+
+  it('create, update and delete go through admin_mutate on listing_sources', async () => {
+    const m = setup({ rpc: done({ id: ROW, listing_id: LISTING, ...body }) })
+    expect((await call(`/${LISTING}/sources`, { method: 'POST', body: json(body) })).status).toBe(201)
+    expect(m.rpc).toHaveBeenLastCalledWith('admin_mutate', expect.objectContaining({ p_op: 'create', p_table: 'listing_sources', p_payload: body }))
+    expect((await call(`/${LISTING}/sources/${ROW}`, { method: 'PUT', body: json({ is_active: false }) })).status).toBe(200)
+    expect(m.rpc).toHaveBeenLastCalledWith('admin_mutate', expect.objectContaining({ p_op: 'update', p_row_id: ROW, p_payload: { is_active: false } }))
+    expect((await call(`/${LISTING}/sources/${ROW}`, { method: 'DELETE' })).status).toBe(200)
+    expect(m.rpc).toHaveBeenLastCalledWith('admin_mutate', expect.objectContaining({ p_op: 'delete', p_table: 'listing_sources' }))
+  })
+
+  it('rejects an unknown fetch_mode or format, and keys the API must not accept', async () => {
+    const m = setup()
+    expect((await call(`/${LISTING}/sources`, { method: 'POST', body: json({ ...body, fetch_mode: 'curl' }) })).status).toBe(422)
+    expect((await call(`/${LISTING}/sources`, { method: 'POST', body: json({ ...body, format: 'docx' }) })).status).toBe(422)
+    expect((await call(`/${LISTING}/sources`, { method: 'POST', body: json({ ...body, listing_id: ROW }) })).status).toBe(422)
+    expect(m.rpc).not.toHaveBeenCalled()
+  })
+
+  it('a duplicate (listing, url) is a 409', async () => {
+    setup({ rpc: done(null, { message: 'duplicate key value', code: '23505' }) })
+    expect((await call(`/${LISTING}/sources`, { method: 'POST', body: json(body) })).status).toBe(409)
+  })
+
+  it('enums for sources resolve through admin_field_enums', async () => {
+    const m = setup({ rpc: done({ source_type: ['product_page'] }) })
+    expect((await call('/enums/sources')).status).toBe(200)
+    expect(m.rpc).toHaveBeenCalledWith('admin_field_enums', { p_resource: 'sources' })
   })
 })
 

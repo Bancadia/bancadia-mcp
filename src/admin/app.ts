@@ -206,6 +206,7 @@ admin.get('/:id', withListing(async (c, id) => {
     plan_tiers: rel('plan-tiers'),
     promotions: rel('promotions'),
     target_segments: rel('target-segments'),
+    sources: rel('sources'),
   })
 }))
 
@@ -245,7 +246,7 @@ admin.put('/:id/details', withListing(async (c, id) => {
   return ok(c, { account: pick(r.business_deposit_accounts, ACCOUNT_COLUMNS), checking: pick(r.business_checking_details, CHECKING_COLUMNS) })
 }))
 
-// ── single-table sub-resources: fees, features, promotions, plan-tiers, target-segments ───────────────────────
+// ── single-table sub-resources: fees, features, promotions, plan-tiers, target-segments, sources ───────────────────────
 for (const name of Object.keys(RESOURCES) as ResourceName[]) {
   const r = RESOURCES[name]
   const cols = columnsOf(r)

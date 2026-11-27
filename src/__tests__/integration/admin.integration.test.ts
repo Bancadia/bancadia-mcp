@@ -97,13 +97,13 @@ describe('admin API reads (real schema: every selected column must exist)', () =
     expect(text).not.toContain('tracker_url')
     expect(text).not.toContain('is_affiliate_tracked')
     const { data } = JSON.parse(text)
-    expect(Object.keys(data).sort()).toEqual(['account', 'checking', 'features', 'fees', 'plan_tiers', 'promotions', 'target_segments'])
+    expect(Object.keys(data).sort()).toEqual(['account', 'checking', 'features', 'fees', 'plan_tiers', 'promotions', 'sources', 'target_segments'])
     expect(data.account.id).toBe(listingId)
     expect(data.account.institution.name).toBeTruthy()
     for (const f of data.features) expect(Array.isArray(f.business_deposit_feature_integrations)).toBe(true)
   })
 
-  it.each(['fees', 'features', 'promotions', 'plan-tiers', 'target-segments', 'integrations', 'details'])(
+  it.each(['fees', 'features', 'promotions', 'plan-tiers', 'target-segments', 'integrations', 'sources', 'details'])(
     'GET /{id}/%s works against the live columns',
     async (name) => {
       const res = await api(`/${listingId}/${name}`)
@@ -210,7 +210,12 @@ describe.runIf(LOCAL)('admin API writes (local database, throwaway listing)', ()
     expect((await w(`/fees/${fee.id}`, 'PUT', { plan_tier_id: '99999999-9999-4999-8999-999999999999' })).status).toBe(422)
     const seg = (await j(await w('/target-segments', 'POST', { category: 'industry_vertical', segment: 'ecommerce' }))).data
     expect((await w('/target-segments', 'POST', { category: 'industry_vertical', segment: 'ecommerce' })).status).toBe(409)
-    for (const [path, row] of [['/target-segments', seg], ['/fees', fee], ['/plan-tiers', tier], ['/promotions', promo], ['/features', feature]] as const) {
+    // watch sources: unique (listing, url), CHECK-constrained fetch_mode, deactivate then delete
+    const src = (await j(await w('/sources', 'POST', { source_type: 'fee_schedule', url: 'https://example.com/it-fees.pdf', format: 'pdf', fetch_mode: 'manual' }))).data
+    expect((await w('/sources', 'POST', { source_type: 'fee_schedule', url: 'https://example.com/it-fees.pdf' })).status).toBe(409)
+    expect((await w(`/sources/${src.id}`, 'PUT', { fetch_mode: 'curl' })).status).toBe(422)
+    expect((await w(`/sources/${src.id}`, 'PUT', { is_active: false })).status).toBe(200)
+    for (const [path, row] of [['/sources', src], ['/target-segments', seg], ['/fees', fee], ['/plan-tiers', tier], ['/promotions', promo], ['/features', feature]] as const) {
       expect((await w(`${path}/${row.id}`, 'DELETE')).status).toBe(200)
     }
   })

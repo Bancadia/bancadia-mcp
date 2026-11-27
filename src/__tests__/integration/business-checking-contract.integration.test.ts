@@ -535,7 +535,7 @@ describe('query_business_checking: Bluevine golden record', () => {
             'Spend $500/month on Bluevine Business Debit Mastercard OR receive $2,500/month in deposits to checking or sub-accounts',
           is_default: true,
           sort_order: 0,
-          source_url: null,
+          source_url: 'https://www.bluevine.com/business-checking/plans-and-pricing',
         },
         {
           plan_name: 'Plus',
@@ -547,7 +547,7 @@ describe('query_business_checking: Bluevine golden record', () => {
           apy_condition: null,
           is_default: false,
           sort_order: 1,
-          source_url: null,
+          source_url: 'https://www.bluevine.com/business-checking/plans-and-pricing',
         },
         {
           plan_name: 'Premier',
@@ -559,7 +559,7 @@ describe('query_business_checking: Bluevine golden record', () => {
           apy_condition: null,
           is_default: false,
           sort_order: 2,
-          source_url: null,
+          source_url: 'https://www.bluevine.com/business-checking/plans-and-pricing',
         },
       ],
       promotions: [],
