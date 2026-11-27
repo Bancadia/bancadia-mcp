@@ -526,11 +526,11 @@
     "llc",
     "c_corp",
     "s_corp",
-    "sole_prop",
-    "partnership"
+    "partnership",
+    "sole_prop"
    ],
    "expense_integration_available": true,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": null,
@@ -1602,11 +1602,11 @@
     "llc",
     "c_corp",
     "s_corp",
-    "sole_prop",
-    "partnership"
+    "partnership",
+    "sole_prop"
    ],
    "expense_integration_available": true,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": null,
@@ -2918,11 +2918,11 @@
     "llc",
     "c_corp",
     "s_corp",
-    "sole_prop",
-    "partnership"
+    "partnership",
+    "sole_prop"
    ],
    "expense_integration_available": true,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": null,
@@ -4001,11 +4001,11 @@
     "llc",
     "c_corp",
     "s_corp",
-    "sole_prop",
-    "partnership"
+    "partnership",
+    "sole_prop"
    ],
    "expense_integration_available": true,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": null,
@@ -5077,11 +5077,11 @@
     "llc",
     "c_corp",
     "s_corp",
-    "sole_prop",
-    "partnership"
+    "partnership",
+    "sole_prop"
    ],
    "expense_integration_available": true,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": null,
@@ -6891,11 +6891,11 @@
     "llc",
     "c_corp",
     "s_corp",
-    "sole_prop",
-    "partnership"
+    "partnership",
+    "sole_prop"
    ],
    "expense_integration_available": true,
-   "free_domestic_wires_per_month": 1000000,
+   "free_domestic_wires_per_month": null,
    "free_transactions_per_month": null,
    "incoming_domestic_wire_fee": 0,
    "incoming_international_wire_fee": null,
