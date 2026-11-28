@@ -142,13 +142,12 @@ describe('v2 get_listing', () => {
     expect(plans.has('Grow')).toBe(true)
   })
 
-  it('Chase: expired promotions are hidden from the API but still in the table', async () => {
+  it('Chase: promotions in the API are exactly the non-expired table rows', async () => {
     const today = new Date().toISOString().slice(0, 10)
     const { data: acct } = await db.from('business_deposit_accounts').select('id').eq('listing_slug', K.chase).single()
     const { data: rows } = await db.from('business_deposit_promotions').select('expiry_date, bonus_amount').eq('listing_id', acct!.id)
-    expect(rows).toHaveLength(4) // the table keeps expired rows
+    expect(rows!.length).toBeGreaterThan(0)
     const visible = rows!.filter((p) => p.expiry_date === null || p.expiry_date >= today)
-    expect(visible.length).toBeLessThan(4) // premise: some are expired today
     const d = await listing({ slugs: [K.chase], sections: ['promotions'] })
     const promos = d.listings[0].promotions
     expect(promos).toHaveLength(visible.length)

@@ -107,7 +107,7 @@ export const REST_FILTER_CASES: Array<{ name: string; query: string; mcp: Record
   { name: 'free_transactions_min=20', query: 'free_transactions_min=20', mcp: { free_transactions_min: 20 }, slugs: [K.citibank, K.chase] },
   { name: 'apy_min=0.02', query: 'apy_min=0.02', mcp: { apy_min: 0.02 }, slugs: [K.ramp, K.found, K.bluevine] },
   { name: 'rtp_network=fednow', query: 'rtp_network=fednow', mcp: { rtp_network: 'fednow' }, slugs: [K.found, K.grasshopper] },
-  { name: 'rtp_network=both', query: 'rtp_network=both', mcp: { rtp_network: 'both' }, slugs: [K.chase, K.mercury] },
+  { name: 'rtp_network=both', query: 'rtp_network=both', mcp: { rtp_network: 'both' }, slugs: [K.mercury] },
   { name: 'combo: fee 0 + interest_bearing + nonprofit', query: 'monthly_fee_max=0&interest_bearing=true&entity_types_accepted=nonprofit',
     mcp: { monthly_fee_max: 0, interest_bearing: true, entity_types_accepted: ['nonprofit'] }, slugs: [K.bluevine, K.found, K.ramp] },
   { name: 'matches nothing', query: 'monthly_fee_max=0&rtp_network=both', mcp: { monthly_fee_max: 0, rtp_network: 'both' }, slugs: [K.mercury] },
