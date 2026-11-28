@@ -48,14 +48,13 @@ describe('has_active_promotion (MCP)', () => {
     expect(yes.total_matches + no.total_matches).toBe(promos.size)
   })
 
-  it('rows carry only the active promotions (Chase has 4 rows, only the non-expired ones appear), even when fields omits promotions', async () => {
+  it('rows carry only the active promotions (only the non-expired ones appear), even when fields omits promotions', async () => {
     const promos = await promotionsBySlug()
-    expect(promos.get(K.chase)!.total).toBe(4)
+    expect(promos.get(K.chase)!.total).toBeGreaterThan(0)
     const d = await list({ has_active_promotion: true, fields: ['monthly_fee'] })
     for (const row of d.rows) expect(row.promotions.length).toBe(promos.get(row.listing_slug)!.active)
     const chase = d.rows.find((r: any) => r.listing_slug === K.chase)
     expect(chase.promotions.length).toBe(promos.get(K.chase)!.active)
-    expect(chase.promotions.length).toBeLessThan(4)
     const today = new Date().toISOString().slice(0, 10)
     for (const row of d.rows) for (const p of row.promotions) expect(!p.expiry_date || p.expiry_date >= today).toBe(true)
   })

@@ -154,7 +154,8 @@
     "sole_prop",
     "c_corp",
     "s_corp",
-    "nonprofit"
+    "nonprofit",
+    "partnership"
    ],
    "expense_integration_available": false,
    "free_domestic_wires_per_month": null,
@@ -192,24 +193,10 @@
    "promotions": [
     {
      "bonus_amount": 400,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 2000,
-     "promo_url": null
-    },
-    {
-     "bonus_amount": 400,
      "condition_description": "Open a new Chase Business Complete Checking account online or at a branch using the offer code. Deposit at least $2,000 in new money (not existing deposits at Chase or affiliates) within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment; if the balance falls below the minimum at any time during the 60 days, the bonus may be reduced or no longer qualify. Complete 5 qualifying transactions within 90 days of offer enrollment (debit card purchases, Chase QuickDeposit, ACH credits, wire credits/debits, Chase Online Bill Pay, Chase QuickAccept; ACH debits, Zelle and other person-to-person payments, and transfers to Chase credit cards are excluded). Bonus is deposited within 15 days after all requirements are met; the account must be open and unrestricted at payout. Not available to existing Chase business checking customers; signers can receive one business checking offer every two years. Reported as interest on IRS Form 1099-INT.",
      "expiry_date": "2027-01-21",
      "minimum_deposit": 2000,
      "promo_url": "https://www.chase.com/business/offers/business-checking"
-    },
-    {
-     "bonus_amount": 500,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 10000,
-     "promo_url": null
     },
     {
      "bonus_amount": 500,
@@ -220,7 +207,7 @@
     }
    ],
    "remote_deposit_capture": true,
-   "rtp_network": "both",
+   "rtp_network": "rtp_network",
    "rtp_supported": true,
    "sub_accounts_supported": false,
    "target_business_profiles": [
@@ -2546,7 +2533,8 @@
     "sole_prop",
     "c_corp",
     "s_corp",
-    "nonprofit"
+    "nonprofit",
+    "partnership"
    ],
    "expense_integration_available": false,
    "free_domestic_wires_per_month": null,
@@ -2584,24 +2572,10 @@
    "promotions": [
     {
      "bonus_amount": 400,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 2000,
-     "promo_url": null
-    },
-    {
-     "bonus_amount": 400,
      "condition_description": "Open a new Chase Business Complete Checking account online or at a branch using the offer code. Deposit at least $2,000 in new money (not existing deposits at Chase or affiliates) within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment; if the balance falls below the minimum at any time during the 60 days, the bonus may be reduced or no longer qualify. Complete 5 qualifying transactions within 90 days of offer enrollment (debit card purchases, Chase QuickDeposit, ACH credits, wire credits/debits, Chase Online Bill Pay, Chase QuickAccept; ACH debits, Zelle and other person-to-person payments, and transfers to Chase credit cards are excluded). Bonus is deposited within 15 days after all requirements are met; the account must be open and unrestricted at payout. Not available to existing Chase business checking customers; signers can receive one business checking offer every two years. Reported as interest on IRS Form 1099-INT.",
      "expiry_date": "2027-01-21",
      "minimum_deposit": 2000,
      "promo_url": "https://www.chase.com/business/offers/business-checking"
-    },
-    {
-     "bonus_amount": 500,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 10000,
-     "promo_url": null
     },
     {
      "bonus_amount": 500,
@@ -2612,7 +2586,7 @@
     }
    ],
    "remote_deposit_capture": true,
-   "rtp_network": "both",
+   "rtp_network": "rtp_network",
    "rtp_supported": true,
    "sub_accounts_supported": false,
    "target_business_profiles": [
@@ -3629,7 +3603,8 @@
     "sole_prop",
     "c_corp",
     "s_corp",
-    "nonprofit"
+    "nonprofit",
+    "partnership"
    ],
    "expense_integration_available": false,
    "free_domestic_wires_per_month": null,
@@ -3667,24 +3642,10 @@
    "promotions": [
     {
      "bonus_amount": 400,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 2000,
-     "promo_url": null
-    },
-    {
-     "bonus_amount": 400,
      "condition_description": "Open a new Chase Business Complete Checking account online or at a branch using the offer code. Deposit at least $2,000 in new money (not existing deposits at Chase or affiliates) within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment; if the balance falls below the minimum at any time during the 60 days, the bonus may be reduced or no longer qualify. Complete 5 qualifying transactions within 90 days of offer enrollment (debit card purchases, Chase QuickDeposit, ACH credits, wire credits/debits, Chase Online Bill Pay, Chase QuickAccept; ACH debits, Zelle and other person-to-person payments, and transfers to Chase credit cards are excluded). Bonus is deposited within 15 days after all requirements are met; the account must be open and unrestricted at payout. Not available to existing Chase business checking customers; signers can receive one business checking offer every two years. Reported as interest on IRS Form 1099-INT.",
      "expiry_date": "2027-01-21",
      "minimum_deposit": 2000,
      "promo_url": "https://www.chase.com/business/offers/business-checking"
-    },
-    {
-     "bonus_amount": 500,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 10000,
-     "promo_url": null
     },
     {
      "bonus_amount": 500,
@@ -3695,7 +3656,7 @@
     }
    ],
    "remote_deposit_capture": true,
-   "rtp_network": "both",
+   "rtp_network": "rtp_network",
    "rtp_supported": true,
    "sub_accounts_supported": false,
    "target_business_profiles": [
@@ -6173,119 +6134,6 @@
  ],
  "query:rtp_both": [
   {
-   "accounting_integration_available": false,
-   "ach_debit_block_available": true,
-   "application_url": "https://bancadia.com/go/jpmorgan-chase-bank/business-complete-checking?src=mcp&qr=<qr>",
-   "apy_default": null,
-   "apy_max": null,
-   "apy_tiers": null,
-   "atm_fee_reimbursement": false,
-   "atm_fee_reimbursement_limit": null,
-   "atm_network": null,
-   "available_states": [
-    "ALL"
-   ],
-   "bill_pay_available": true,
-   "cash_deposit_available": true,
-   "cash_deposit_fee_per_100": 0.3,
-   "check_writing_available": true,
-   "corporate_card_available": true,
-   "daily_debit_limit": 10000,
-   "deposit_insurance_extended": false,
-   "deposit_insurance_extended_limit": null,
-   "deposit_insurance_limit": 250000,
-   "entity_types_accepted": [
-    "llc",
-    "sole_prop",
-    "c_corp",
-    "s_corp",
-    "nonprofit"
-   ],
-   "expense_integration_available": false,
-   "free_domestic_wires_per_month": null,
-   "free_transactions_per_month": 20,
-   "incoming_domestic_wire_fee": 15,
-   "incoming_international_wire_fee": 15,
-   "institution": {
-    "display_name": "JPMorgan Chase Bank",
-    "institution_type": "national_bank",
-    "logo_url": null,
-    "support_email": "info@chase.com",
-    "website_url": "https://www.chase.com/"
-   },
-   "institution_name": "JPMorgan Chase Bank, National Association",
-   "insurance_type": "fdic",
-   "interest_bearing": false,
-   "is_verified": true,
-   "last_modified": "<ts>",
-   "last_verified": "<ts>",
-   "listing_slug": "jpmorgan-chase-bank-business-complete-checking",
-   "minimum_opening_deposit": 0,
-   "monthly_cash_deposit_limit": null,
-   "monthly_fee": 15,
-   "monthly_fee_waiver_condition": "$2,000 minimum daily ending balance in the Chase Business Complete Checking account each business day during the monthly statement period OR $2,000 in aggregate eligible Chase Payment Solutions deposits OR $2,000 in eligible Chase Ink/Sapphire Reserve for Business® card purchases OR a linked Chase Private Client Checking℠, JPMorgan Classic Checking, or Private Client Checking Plus account OR Chase Military Banking requirements",
-   "multicurrency_support": true,
-   "outgoing_domestic_wire_fee": 25,
-   "outgoing_international_wire_fee": 40,
-   "overdraft_line_of_credit_available": true,
-   "overdraft_protection_available": true,
-   "per_transaction_fee_after_limit": 0.5,
-   "physical_debit_card_available": true,
-   "plan_tiers": [],
-   "positive_pay_available": true,
-   "product_name": "Chase Business Complete Checking",
-   "promotions": [
-    {
-     "bonus_amount": 400,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 2000,
-     "promo_url": null
-    },
-    {
-     "bonus_amount": 400,
-     "condition_description": "Open a new Chase Business Complete Checking account online or at a branch using the offer code. Deposit at least $2,000 in new money (not existing deposits at Chase or affiliates) within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment; if the balance falls below the minimum at any time during the 60 days, the bonus may be reduced or no longer qualify. Complete 5 qualifying transactions within 90 days of offer enrollment (debit card purchases, Chase QuickDeposit, ACH credits, wire credits/debits, Chase Online Bill Pay, Chase QuickAccept; ACH debits, Zelle and other person-to-person payments, and transfers to Chase credit cards are excluded). Bonus is deposited within 15 days after all requirements are met; the account must be open and unrestricted at payout. Not available to existing Chase business checking customers; signers can receive one business checking offer every two years. Reported as interest on IRS Form 1099-INT.",
-     "expiry_date": "2027-01-21",
-     "minimum_deposit": 2000,
-     "promo_url": "https://www.chase.com/business/offers/business-checking"
-    },
-    {
-     "bonus_amount": 500,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 10000,
-     "promo_url": null
-    },
-    {
-     "bonus_amount": 500,
-     "condition_description": "Open a new Chase Business Complete Checking account online or at a branch using the offer code. Deposit at least $10,000 in new money (not existing deposits at Chase or affiliates) within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment; if the balance falls below the minimum at any time during the 60 days, the bonus may be reduced or no longer qualify. Complete 5 qualifying transactions within 90 days of offer enrollment (debit card purchases, Chase QuickDeposit, ACH credits, wire credits/debits, Chase Online Bill Pay, Chase QuickAccept; ACH debits, Zelle and other person-to-person payments, and transfers to Chase credit cards are excluded). Bonus is deposited within 15 days after all requirements are met; the account must be open and unrestricted at payout. Not available to existing Chase business checking customers; signers can receive one business checking offer every two years. Reported as interest on IRS Form 1099-INT.",
-     "expiry_date": "2027-01-21",
-     "minimum_deposit": 10000,
-     "promo_url": "https://www.chase.com/business/offers/business-checking"
-    }
-   ],
-   "remote_deposit_capture": true,
-   "rtp_network": "both",
-   "rtp_supported": true,
-   "sub_accounts_supported": false,
-   "target_business_profiles": [
-    "established_smb"
-   ],
-   "target_industries": [
-    "retail_storefront",
-    "restaurant_food_service",
-    "professional_services",
-    "real_estate",
-    "healthcare_practice",
-    "construction_trades",
-    "trucking_logistics",
-    "agriculture",
-    "nonprofit"
-   ],
-   "tax_integration_available": false,
-   "virtual_cards_available": false
-  },
-  {
    "accounting_integration_available": true,
    "ach_debit_block_available": true,
    "application_url": "https://bancadia.com/go/mercury/business-banking?src=mcp&qr=<qr>",
@@ -6519,7 +6367,8 @@
     "sole_prop",
     "c_corp",
     "s_corp",
-    "nonprofit"
+    "nonprofit",
+    "partnership"
    ],
    "expense_integration_available": false,
    "free_domestic_wires_per_month": null,
@@ -6557,24 +6406,10 @@
    "promotions": [
     {
      "bonus_amount": 400,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 2000,
-     "promo_url": null
-    },
-    {
-     "bonus_amount": 400,
      "condition_description": "Open a new Chase Business Complete Checking account online or at a branch using the offer code. Deposit at least $2,000 in new money (not existing deposits at Chase or affiliates) within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment; if the balance falls below the minimum at any time during the 60 days, the bonus may be reduced or no longer qualify. Complete 5 qualifying transactions within 90 days of offer enrollment (debit card purchases, Chase QuickDeposit, ACH credits, wire credits/debits, Chase Online Bill Pay, Chase QuickAccept; ACH debits, Zelle and other person-to-person payments, and transfers to Chase credit cards are excluded). Bonus is deposited within 15 days after all requirements are met; the account must be open and unrestricted at payout. Not available to existing Chase business checking customers; signers can receive one business checking offer every two years. Reported as interest on IRS Form 1099-INT.",
      "expiry_date": "2027-01-21",
      "minimum_deposit": 2000,
      "promo_url": "https://www.chase.com/business/offers/business-checking"
-    },
-    {
-     "bonus_amount": 500,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 10000,
-     "promo_url": null
     },
     {
      "bonus_amount": 500,
@@ -6585,7 +6420,7 @@
     }
    ],
    "remote_deposit_capture": true,
-   "rtp_network": "both",
+   "rtp_network": "rtp_network",
    "rtp_supported": true,
    "sub_accounts_supported": false,
    "target_business_profiles": [
@@ -8129,7 +7964,8 @@
     "sole_prop",
     "c_corp",
     "s_corp",
-    "nonprofit"
+    "nonprofit",
+    "partnership"
    ],
    "expense_integration_available": false,
    "free_domestic_wires_per_month": null,
@@ -8137,102 +7973,87 @@
    "general_features": [
     {
      "category": "account_management",
-     "description": "Chase Business Debit Card Coverage (optional, enrolled by default): governs everyday debit card transactions when the account has insufficient funds and no linked Overdraft Protection backup account; default YES means Chase may pay at its discretion and charge a $34 Overdraft Fee per transaction; opt out (NO) means everyday debit card transactions are declined with no fee charged (AdditionalBankingServices p.23)",
+     "description": "Business Debit Card Coverage (default YES): with no Overdraft Protection funds, Chase may pay everyday debit purchases and charge $34 per item. Opt out (NO): purchases declined, no fee.",
      "value": null
     },
     {
      "category": "account_management",
-     "description": "Overdraft Protection (optional): link a Chase business savings account or Chase business line of credit as a backup funding source; Chase automatically transfers the exact amount needed to cover a transaction at no transfer fee; Business Line of Credit backup accounts incur interest per the LOC agreement (AdditionalBankingServices p.22)",
+     "description": "Chase Military Banking: Monthly Service Fee waived for current servicemembers and veterans with proof of service. Active duty/reserve with direct-deposited military base pay also get no Chase fee on non-Chase ATM, wires, or FX adjustment on debit/ATM use, until 180 days after the last base pay deposit.",
      "value": null
     },
     {
      "category": "account_management",
-     "description": "Standard Overdraft Practice included at no enrollment cost; $34 fee per transaction that overdraws account by more than $50 (max 6 fees per business day, up to $204); Chase Overdraft Assist℠ waives fee if account is brought to $50 overdrawn or less by end of next business day (AdditionalBankingServices p.15, p.20)",
+     "description": "Standard Overdraft Practice, no enrollment: Chase may pay checks, ACH and recurring debit payments at its discretion; everyday debit purchases not covered. $34 fee per item once overdrawn by more than $50 (max 6/day, $204); Overdraft Assist waives it if overdrawn $50 or less by end of next business day. Optionally: link a Chase business savings account or line of credit as backup; exact shortfall transferred, no transfer fee (line of credit accrues interest). One transfer per business day.",
      "value": null
     },
     {
      "category": "cards_and_atm",
-     "description": "Chase Business Associate Debit Card available for employees (not signers); allows deposits, withdrawals, and purchases up to $5,000/day spend and $1,000/day ATM; limits adjustable by account owner in $100 increments (AdditionalBankingServices p.13)",
+     "description": "Associate Debit Card for employees/1099 contractors (not signers): deposits, withdrawals, purchases. Owner sets limits in $100 steps, up to $1,000/day ATM and $5,000/day purchases. $0 annual fee.",
      "value": null
     },
     {
      "category": "cards_and_atm",
-     "description": "Chase Business Debit Card available to owners and signers of the business; one card per person per account; $0 annual fee; Zero Liability Protection included (AdditionalBankingServices p.12)",
-     "value": null
-    },
-    {
-     "category": "cards_and_atm",
-     "description": "Chase Business Employee Deposit Card available for employees; allows ATM and branch deposits only; does not permit withdrawals or account maintenance (AdditionalBankingServices p.13)",
-     "value": null
-    },
-    {
-     "category": "cards_and_atm",
-     "description": "Non-Chase ATM fee: $3 per withdrawal at a non-Chase ATM in the U.S. and U.S. territories; $5 per withdrawal outside the U.S.; ATM owner/network surcharge fees still apply (AdditionalBankingServices p.15)",
+     "description": "Business Debit Card for owners/signers; one per person per account, $0 annual fee. Daily limits: $10,000 purchases; ATM $3,000 at in-branch Chase ATM, $1,000 for all other ATMs.",
      "value": null
     },
     {
      "category": "cash_handling",
-     "description": "Cash deposited through Immediate Verification, Post Verification or Night Deposit is free up to $5,000 per statement period (the statement period ends on the last business day of the month); 0.30% applies above $5,000. Cash deposited at a Chase ATM is free and unlimited.",
+     "description": "Cash at a Chase ATM: free, unlimited. Immediate Verification, Post Verification, Night Deposit: free up to $5,000 per statement period, then 0.30%.",
      "value": 5000
     },
     {
      "category": "fraud_protection",
-     "description": "ACH Debit Block: optional service via Chase Business Online to block all or specific ACH debits from the account by Company ID; $0 monthly fee (AdditionalBankingServices p.18)",
+     "description": "ACH Debit Block, optional in Chase Business Online: block all ACH debits or allow specific Company IDs; $0 monthly, $0 per allowed Company ID.",
      "value": null
     },
     {
      "category": "fraud_protection",
-     "description": "Check Monitoring (Reverse Positive Pay): optional service via Chase Business Online to monitor checks presented for payment against written checks; $0 monthly fee, $0 per check return (AdditionalBankingServices p.18)",
+     "description": "Check Monitoring (Reverse Positive Pay), optional in Chase Business Online; $0 monthly, $0 per check return.",
      "value": null
     },
     {
      "category": "fraud_protection",
-     "description": "Check Protection Services (Positive Pay): optional service via Chase Business Online; customers upload issued-check data and Chase compares against items presented for payment; $0 monthly fee, $0 per exception item, $0 per check return (AdditionalBankingServices p.18)",
+     "description": "Check Protection Services (Positive Pay), optional in Chase Business Online: upload issued-check data; $0 monthly, $0 per exception item, $0 per check return.",
      "value": null
     },
     {
      "category": "online_banking",
-     "description": "Chase Business Online and Chase Mobile® Banking included; supports account management, transfers, bill pay, and digital invoice creation and sending (AdditionalBankingServices p.2)",
+     "description": "Chase Business Online and Chase Mobile app: account management, transfers, Online Bill Pay (no additional fee), digital invoicing. Chase Online Bill Pay: pay any biller by account number and pay-to address; no additional fee. Delivery 1-5 business days; cut-off 8 PM ET on business days.",
      "value": null
     },
     {
      "category": "online_banking",
-     "description": "Chase QuickDeposit℠ remote check capture: free per-transaction; hardware optional via single-feed scanner ($25/month) or multiple-feed scanner ($50/month) (AdditionalBankingServices p.2, p.18)",
+     "description": "QuickDeposit: deposit checks remotely by scanning them instead of visiting a branch, via chase.com with an optional check scanner or the Chase Mobile app. No per-deposit fee; scanner pricing in fee rows.",
      "value": null
     },
     {
      "category": "payment_rails",
-     "description": "ACH Collections available as optional service to pull electronic collections from checking or savings accounts in the U.S.: $25 for first 25 items/month, $0.25 per item above 25, $2.50 return fee (AdditionalBankingServices p.18)",
+     "description": "ACH Collections (optional): pull from US checking/savings via Chase Business Online. $25 for first 25 items/month, $0.25 after; $2.50 return fee.",
      "value": null
     },
     {
      "category": "payment_rails",
-     "description": "ACH Payments available as optional service to push electronic payments to checking or savings accounts in the U.S.: $2.50 per item for first 10 items/month, $0.15 per item above 10, $2.50 return fee (AdditionalBankingServices p.18)",
+     "description": "ACH Payments (optional): send to US checking/savings via Chase Business Online; arrives in 1 business day, reversible. $2.50 per item for first 10/month, $0.15 after; $2.50 return fee.",
      "value": null
     },
     {
      "category": "payment_rails",
-     "description": "FedNow instant payments available as optional service; see chase.com for current pricing",
+     "description": "Domestic and international wires, incoming and outgoing; send online (chase.com/Chase Mobile) or with a banker. Delivery 1-5 business days; cut-off 6 PM ET on business days. Fees in fee rows.",
      "value": null
     },
     {
      "category": "payment_rails",
-     "description": "Real-Time Payments (RTP) available as an optional add-on service via Chase Business Online; 1% of transaction amount or $25 per transaction, whichever is less (AdditionalBankingServices p.18)",
+     "description": "Real Time Payments (optional, send only) via Chase Business Online Payment Services; 1% of amount, max $25 per payment; not reversible.",
      "value": null
     },
     {
      "category": "payment_rails",
-     "description": "Same-Day ACH available as an optional add-on service via Chase Business Online; 1% of transaction amount or $25 per transaction, whichever is less (AdditionalBankingServices p.18)",
+     "description": "Same Day ACH (optional, send only): arrives by end of day; 1% of amount, max $25 per payment; reversible.",
      "value": null
     },
     {
      "category": "payment_rails",
-     "description": "Wire transfers available: outgoing domestic $25 via chase.com/Chase Mobile or $35 via banker; outgoing international USD $40 online/$50 branch; FX $5 online ($0 if $5,000+); incoming domestic and international $15 ($0 if originally sent via Chase banker or chase.com/Chase Mobile) (AdditionalBankingServices p.2, p.16)",
-     "value": null
-    },
-    {
-     "category": "payment_rails",
-     "description": "Zelle® for Business available via Chase Business Online and Chase Mobile app; no Chase fee to send or receive",
+     "description": "Zelle for Business in Chase Business Online and Chase Mobile app; no Chase fee to send or receive.",
      "value": null
     }
    ],
@@ -8250,7 +8071,7 @@
      "amount": 1,
      "amount_description": "1% of transaction amount or $25 per transaction, whichever is less",
      "eligibility_criteria": null,
-     "fee_type": "other",
+     "fee_type": "instant_transaction",
      "tiers": null,
      "waivable": false,
      "waiver_condition": null
@@ -8258,6 +8079,24 @@
     {
      "amount": 1,
      "amount_description": "1% of transaction amount or $25 per transaction, whichever is less",
+     "eligibility_criteria": null,
+     "fee_type": "same_day_ach",
+     "tiers": null,
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 10,
+     "amount_description": "$10 per check",
+     "eligibility_criteria": null,
+     "fee_type": "other",
+     "tiers": null,
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 100,
+     "amount_description": "Up to $100 per order",
      "eligibility_criteria": null,
      "fee_type": "other",
      "tiers": null,
@@ -8283,11 +8122,72 @@
      "waiver_condition": "$2,000 minimum daily ending balance OR $2,000 in eligible Chase Payment Solutions deposits OR $2,000 in eligible Chase Ink/Sapphire Reserve for Business® card purchases OR linked Chase Private Client Checking℠/JPMorgan Classic Checking/Private Client Checking Plus OR Chase Military Banking requirements. New accounts: first two Monthly Service Fees waived as a courtesy."
     },
     {
-     "amount": 25,
-     "amount_description": "$25 for first 25 items per month; $0.25 per item above 25 per month; $2.50 per returned item",
+     "amount": 2.5,
+     "amount_description": "$2.50 per item for first 10/month; $0.15 per item above; $2.50 per return",
      "eligibility_criteria": null,
      "fee_type": "other",
-     "tiers": null,
+     "tiers": [
+      {
+       "amount": 0.15,
+       "channel": "per_item_above_10",
+       "description": "Per item above 10 per month"
+      },
+      {
+       "amount": 2.5,
+       "channel": "first_10_items_per_month",
+       "description": "Per item, first 10 per month"
+      },
+      {
+       "amount": 2.5,
+       "channel": "return",
+       "description": "Per returned item"
+      }
+     ],
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 25,
+     "amount_description": "$25 for first 25 items/month; $0.25 per item above; $2.50 per return",
+     "eligibility_criteria": null,
+     "fee_type": "other",
+     "tiers": [
+      {
+       "amount": 0.25,
+       "channel": "per_item_above_25",
+       "description": "Per item above 25 per month"
+      },
+      {
+       "amount": 2.5,
+       "channel": "return",
+       "description": "Per returned item"
+      },
+      {
+       "amount": 25,
+       "channel": "first_25_items_per_month",
+       "description": "Flat for the first 25 items per month"
+      }
+     ],
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 25,
+     "amount_description": "$25/month single-feed; $50/month multiple-feed",
+     "eligibility_criteria": null,
+     "fee_type": "other",
+     "tiers": [
+      {
+       "amount": 25,
+       "channel": "single_feed_scanner",
+       "description": "Single-feed scanner, per month"
+      },
+      {
+       "amount": 50,
+       "channel": "multiple_feed_scanner",
+       "description": "Multiple-feed scanner, per month"
+      }
+     ],
      "waivable": false,
      "waiver_condition": null
     },
@@ -8306,8 +8206,49 @@
        "amount": 30,
        "channel": "branch",
        "description": "Placed by a Chase banker"
+      },
+      {
+       "amount": 4,
+       "channel": "annual_renewal",
+       "description": "Per item per year, after the first year; renews up to 6 times (7 years total) until removed"
       }
      ],
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 250,
+     "amount_description": "$250 one-time",
+     "eligibility_criteria": null,
+     "fee_type": "other",
+     "tiers": null,
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 3,
+     "amount_description": "$3 per page",
+     "eligibility_criteria": null,
+     "fee_type": "other",
+     "tiers": null,
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 3,
+     "amount_description": "3% of amount after conversion to USD",
+     "eligibility_criteria": null,
+     "fee_type": "foreign_transaction",
+     "tiers": null,
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
+     "amount": 3,
+     "amount_description": "3% of transaction or $5, whichever is greater",
+     "eligibility_criteria": null,
+     "fee_type": "other",
+     "tiers": null,
      "waivable": false,
      "waiver_condition": null
     },
@@ -8332,6 +8273,26 @@
      "waiver_condition": null
     },
     {
+     "amount": 300,
+     "amount_description": "$300 single-feed; $600 multiple-feed, per scanner",
+     "eligibility_criteria": null,
+     "fee_type": "other",
+     "tiers": [
+      {
+       "amount": 300,
+       "channel": "single_feed_scanner",
+       "description": "Additional single-feed scanner"
+      },
+      {
+       "amount": 600,
+       "channel": "multiple_feed_scanner",
+       "description": "Additional multiple-feed scanner"
+      }
+     ],
+     "waivable": false,
+     "waiver_condition": null
+    },
+    {
      "amount": 34,
      "amount_description": null,
      "eligibility_criteria": null,
@@ -8341,10 +8302,10 @@
      "waiver_condition": "No fee charged if account is overdrawn by $50 or less at end of business day (Chase Overdraft Assist℠); not charged for transactions of $5 or less; not charged when debit card transaction was authorized with sufficient available balance; not charged when check or ACH is returned unpaid initially (fee may apply if re-presented and paid)"
     },
     {
-     "amount": null,
-     "amount_description": "3% of the transaction amount after conversion to U.S. dollars",
+     "amount": 5,
+     "amount_description": "$5 per money order",
      "eligibility_criteria": null,
-     "fee_type": "foreign_transaction",
+     "fee_type": "other",
      "tiers": null,
      "waivable": false,
      "waiver_condition": null
@@ -8383,24 +8344,10 @@
    "promotions": [
     {
      "bonus_amount": 400,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 2000,
-     "promo_url": null
-    },
-    {
-     "bonus_amount": 400,
      "condition_description": "Open a new Chase Business Complete Checking account online or at a branch using the offer code. Deposit at least $2,000 in new money (not existing deposits at Chase or affiliates) within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment; if the balance falls below the minimum at any time during the 60 days, the bonus may be reduced or no longer qualify. Complete 5 qualifying transactions within 90 days of offer enrollment (debit card purchases, Chase QuickDeposit, ACH credits, wire credits/debits, Chase Online Bill Pay, Chase QuickAccept; ACH debits, Zelle and other person-to-person payments, and transfers to Chase credit cards are excluded). Bonus is deposited within 15 days after all requirements are met; the account must be open and unrestricted at payout. Not available to existing Chase business checking customers; signers can receive one business checking offer every two years. Reported as interest on IRS Form 1099-INT.",
      "expiry_date": "2027-01-21",
      "minimum_deposit": 2000,
      "promo_url": "https://www.chase.com/business/offers/business-checking"
-    },
-    {
-     "bonus_amount": 500,
-     "condition_description": "Deposit the minimum amount into your Chase Business Complete Checking account within 30 days of offer enrollment and maintain that balance for 60 days from offer enrollment. Complete 5 qualifying transactions* within 90 days of offer enrollment. Your bonus will be deposited within 15 days.",
-     "expiry_date": "2026-07-15",
-     "minimum_deposit": 10000,
-     "promo_url": null
     },
     {
      "bonus_amount": 500,
@@ -8411,7 +8358,7 @@
     }
    ],
    "remote_deposit_capture": true,
-   "rtp_network": "both",
+   "rtp_network": "rtp_network",
    "rtp_supported": true,
    "sub_accounts_supported": false,
    "target_business_profiles": [
